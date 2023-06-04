@@ -2,7 +2,8 @@
 <img src="https://user-images.githubusercontent.com/47888790/184152615-5b94905a-9ddc-4d8f-8f27-3b10a2fda858.png" width="300" />
 </p>
 
-# PhD-exp1-data-analysis
+# Ant_Tracking 
+# (re-organised version of PhD-exp1-data-analysis)
 
 <strong>Lasius niger Colony Maturation Experiment</strong> :ant: 🦠
 
