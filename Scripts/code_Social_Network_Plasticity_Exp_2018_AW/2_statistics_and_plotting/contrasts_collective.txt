@@ -1,0 +1,29 @@
+"Delta_control.small minus Delta_control.big"=c(0,0,0,0,0,-1,0,0)
+,
+"Delta_control.small minus Delta_pathogen.small"=c(0,0,0,0,0,0,-1,0)
+,
+"Delta_control.small minus Delta_pathogen.big"=c(0,0,0,0,0,0,0,-1)
+,
+"Delta_control.big minus Delta_pathogen.small"=c(0,0,0,0,0,1,-1,0)
+,
+"Delta_control.big minus Delta_pathogen.big"=c(0,0,0,0,0,1,0,-1)
+,
+"Delta_pathogen.small minus Delta_pathogen.big"=c(0,0,0,0,0,0,1,-1)
+
+
+
+
+
+
+"Delta_control minus Delta_pathogen"=c(0,0,0,0,-1,0)
+
+"Delta_small minus Delta_big"=c(0,0,0,0,0,-1)
+
+
+"Delta_control minus Delta_pathogen"=c(0,0,0,-1)
+
+"Delta_small minus Delta_big"=c(0,0,0,-1)
+
+
+
+
