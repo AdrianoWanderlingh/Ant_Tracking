@@ -23,7 +23,7 @@ choose_data_path <- function() {
 # Call the function to choose the data path
 data_path <- choose_data_path()
 
-code_path  <- "/media/cf19810/DISK4/Lasius-Bristol_pathogen_experiment/code_Social_Network_Plasticity_Exp_2018_AW/1_data_post_processing/source"
+code_path  <- "/home/cf19810/Ant_Tracking/Scripts/code_Social_Network_Plasticity_Exp_2018_AW/1_data_post_processing/source"
 executables_path <- "~/executables"
 FRAME_RATE <- 8 #AW
 ########################################################################
@@ -57,15 +57,15 @@ to_keep <- c(ls(),"to_keep")
 # source(paste(code_path,"/10_process_interaction_files.R",sep=""))
 # clean()
 
-
-source(paste(code_path,"/11_randomise_interactions.R",sep=""))
-clean()
-source(paste(code_path,"/12_simulate_transmission.R",sep=""))
-clean()
-source(paste(code_path,"/13_network_analysis.R",sep=""))
-clean()
-source(paste(code_path,"/14_summarise_interactions.R",sep=""))
-clean()
+# TO USE AW:
+# source(paste(code_path,"/11_randomise_interactions.R",sep=""))
+# clean()
+# source(paste(code_path,"/12_simulate_transmission.R",sep=""))
+# clean()
+# source(paste(code_path,"/13_network_analysis.R",sep=""))
+# clean()
+# source(paste(code_path,"/14_summarise_interactions.R",sep=""))
+# clean()
 
 # source(paste(code_path,"/15_heatmaps_individual.R",sep=""))
 # clean()
