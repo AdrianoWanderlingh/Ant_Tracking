@@ -67,6 +67,7 @@ for (seed_file in seed_files ){
         ####read interactions
         interaction_table <- read.table(interac,header=T,stringsAsFactors=F)
         interaction_table <- interaction_table[order(interaction_table$Starttime),]
+        interaction_table <- interaction_table[which(!duplicated(interaction_table)),] # AW remove dups
 
         ####get appropriate task_group list #AW
         colony_task_group  <- task_groups[which(task_groups$colony==colony),]
