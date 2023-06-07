@@ -247,7 +247,7 @@ for (input_folder in input_folders){
         #     net <- net - as.character(actors[which.min(degree(net))])
         #   }
         # }
-        outlier_removed <- actors[which(degree(net)<=5)]
+        outlier_removed <- actors[which(strength(net)<(5/60))]
         net <- net - as.character(outlier_removed)
         
         ##################update actor list
