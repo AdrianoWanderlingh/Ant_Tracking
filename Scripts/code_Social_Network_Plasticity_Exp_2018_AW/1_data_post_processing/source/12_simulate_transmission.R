@@ -67,6 +67,11 @@ for (seed_file in seed_files ){
         ####read interactions
         interaction_table <- read.table(interac,header=T,stringsAsFactors=F)
         interaction_table <- interaction_table[order(interaction_table$Starttime),]
+        
+        # interaction_table$New_Startframe <- round(1 + (interaction_table$Starttime-min(interaction_table$Starttime))*FRAME_RATE)
+        # interaction_table$New_Stopframe  <- round(1 + (interaction_table$Stoptime-min(interaction_table$Starttime))*FRAME_RATE)
+        
+        interaction_table <- interaction_table[which(!duplicated(interaction_table)),] # AW remove dups
 
         ####get appropriate task_group list #AW
         colony_task_group  <- task_groups[which(task_groups$colony==colony),]
@@ -82,7 +87,13 @@ for (seed_file in seed_files ){
         }else{
           alive      <- tag[which(as.numeric(tag$death)==0|as.numeric(tag$death)>=max(interaction_table$Stopframe,na.rm=T)),"tag"]
         }
-
+        
+        ###make sure interaction table only contains ants that were alive the end
+        if (!all(unique(c(interaction_table$Tag1,interaction_table$Tag2))%in%alive)){
+          print(paste("ATTENTION. For replicate ",interac," ant ",unique(c(interaction_table$Tag1,interaction_table$Tag2))[which(!unique(c(interaction_table$Tag1,interaction_table$Tag2))%in%alive)], " is present in interaction table but is not alive according to tag_list!"))
+          interaction_table <- interaction_table[which(interaction_table$Tag1%in%alive & interaction_table$Tag2%in%alive),]
+         }
+        
         ###read seeds
         seeds              <- read.table(paste(data_path,"/original_data/seeds/",seed_file,sep=""),header=T,stringsAsFactors = F)
         seeds              <- seeds[which(seeds$colony==colony),"tag"] #AW
@@ -138,7 +149,9 @@ for (seed_file in seed_files ){
         print("Performing simulations...")
         simulations <- NULL
         for (i in 1:N_SIM){
-          simulations <- rbind(simulations,data.frame(sim_number=i,simulate_transmission(interaction_table,antlist,time_start)))
+          simulations <- rbind(simulations,data.frame(sim_number=i,simulate_transmission(i_table=interaction_table,ant_list=antlist,t0=time_start,seed=i*which(seed_file==seed_files)*which(interac_folder==interac_folders)*which(interac==interac_list),frame_rate=FRAME_RATE)))
+          # Sys.sleep(1)
+          # gc()
         }
 
         ####Summarise simulations

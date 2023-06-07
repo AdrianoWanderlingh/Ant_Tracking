@@ -10,7 +10,7 @@
 
 ####################################
 to_keep_ori <- to_keep
-
+# library(outliers)
 #################################
 options(digits=16) ; options(digits.secs=6) ; options("scipen" = 10)
 
@@ -55,7 +55,7 @@ for (input_folder in input_folders){
     summary_collective <- NULL
     summary_individual <- NULL
     for (network_file in network_files){
-      # network_file <- "PreTreatment/observed/colony08BP_pathogen.big_PreTreatment_TH-12_TD0_interactions.txt"   #network_files[41]
+      # network_file <- "PostTreatment/observed/colony05BP_pathogen.big_PostTreatment_TH6_TD18_interactions.txt"
 
       # #### TEMPORARY EXCLUSION OF "PreTreatment/observed/colony08BP_pathogen.big_PreTreatment_TH-12_TD0_interactions.txt" as:
       # ## Error in aggregate.data.frame(lhs, mf[-1L], FUN = FUN, ...) : no rows to aggregate
@@ -190,13 +190,69 @@ for (input_folder in input_folders){
         E(net)$weight <- interactions[,"duration_min"]
         ###simplify graph (merge all edges involving the same pair of ants into a single one whose weight = sum of these weights)
         net <- simplify(net,remove.multiple=TRUE,remove.loop=TRUE,edge.attr.comb="sum")
+        
+        ###get all degress without removing any node
+        degrees_all         <- degree(net,mode="all")
         ##################remove unconnected nodes
         unconnected <- actors[degree(net)==0,]
         net <- net - as.character(unconnected)
+        ##get actor list from net
+        actors <- get.vertex.attribute(net,"name")
+        
+      ####Part 1: individual network properties ####
+        ###prepare table
+        tag["status"] <- "untreated"; tag[which(tag$tag%in%colony_treated),"status"] <- "treated"
+        individual <- data.frame(randy=input_folder,colony=colony,colony_size=colony_size,treatment=treatment,tag=tag$tag,age=tag$age,status=tag$group,period=period,time_hours=time_hours,time_of_day=time_of_day,
+                                 degree=NA,
+                                 aggregated_distance_to_queen=NA,
+                                 mean_aggregated_distance_to_treated=NA,
+                                 same_community_as_queen=NA)
+        ##degree
+         individual[match(names(degrees_all),individual$tag),"degree"] <- degrees_all
+        
+        ## skip queen in grooming interactions
+        if (!grepl("grooming",input_path)) {
+          communities             <- cluster_louvain(net, weights = E(net)$weight)
+          community_membership    <- communities$membership
+          ##same community as queen
+          queen_comm <- community_membership[which(V(net)$name==queenid)]
+          community_membership <- community_membership==queen_comm
+          individual[match(V(net)$name,individual$tag),"same_community_as_queen"] <- community_membership
+          ##path length to queen
+          if (queenid%in%actors){
+            path_length_to_queen <- t(shortest.paths(net,v=actors,to=queenid,weights=1/E(net)$weight))
+            individual[match(colnames(path_length_to_queen),individual$tag),"aggregated_distance_to_queen"] <- as.numeric(path_length_to_queen )
+          }
+        }
+        
+        ########Mean path length to treated; aggregated_network
+        if(option!="untreated_only"){
+          path_length_to_treated                             <- as.data.frame(as.matrix(shortest.paths(net,v=actors,to=as.character(colony_treated)[as.character(colony_treated)%in%V(net)$name],weights=1/E(net)$weight)))
+          path_length_to_treated["mean_distance_to_treated"] <- NA
+          path_length_to_treated$mean_distance_to_treated    <- as.numeric(rowMeans(path_length_to_treated,na.rm=T))
+          individual[match(rownames(path_length_to_treated),individual$tag),"mean_aggregated_distance_to_treated"] <- path_length_to_treated[,"mean_distance_to_treated"]
+        }
+        ###Add data to main data table
+        summary_individual <- rbind(summary_individual,individual)
+        
+        
+        ####Part 2: collective network properties ####
+        ##################remove outliers (e.g. ants that have only 1 or 2 connections)
+        # outlier_p <- 0
+        # outlier_removed <- c()
+        # while(outlier_p<0.05){
+        #   outlier_p <- grubbs.test(sort(degree(net))[1:min(30,length(degree(net)))])$p.value ###do the test on lowest 30 values first as test does not work as well when there are too many nodes
+        #   if (outlier_p<0.05){
+        #     outlier_removed <- c(outlier_removed,actors[which.min(degree(net))])
+        #     net <- net - as.character(actors[which.min(degree(net))])
+        #   }
+        # }
+        outlier_removed <- actors[which(degree(net)<=5)]
+        net <- net - as.character(outlier_removed)
+        
         ##################update actor list
         actors <- get.vertex.attribute(net,"name")
         
-        ####Part 1: collective network properties ####
         ##Assortativity  - Age
         ####if age experiment, get colony ages
         if (grepl("age",data_path)){
@@ -244,42 +300,12 @@ for (input_folder in input_folders){
                                                                   density=density,
                                                                   diameter=diameter,
                                                                   efficiency=efficiency,
-                                                                  modularity=modularity,stringsAsFactors = F))
+                                                                  modularity=modularity,
+                                                                  nb_unconnected=length(unconnected),
+                                                                  nb_outliers_removed=length(outlier_removed),
+                                                                  stringsAsFactors = F))
         
-        ####Part 2: individual network properties ####
-        ###prepare table
-        tag["status"] <- "untreated"; tag[which(tag$tag%in%colony_treated),"status"] <- "treated"
-        individual <- data.frame(randy=input_folder,colony=colony,colony_size=colony_size,treatment=treatment,tag=tag$tag,age=tag$age,status=tag$group,period=period,time_hours=time_hours,time_of_day=time_of_day,
-                                 degree=NA,
-                                 aggregated_distance_to_queen=NA,
-                                 mean_aggregated_distance_to_treated=NA,
-                                 same_community_as_queen=NA)
-        ##degree
-        individual[match(names(degrees),individual$tag),"degree"] <- degrees
-        
-        ## skip queen in grooming interactions
-        if (!grepl("grooming",input_path)) {
-          ##same community as queen
-          queen_comm <- community_membership[which(V(net)$name==queenid)]
-          community_membership <- community_membership==queen_comm
-          individual[match(V(net)$name,individual$tag),"same_community_as_queen"] <- community_membership
-          ##path length to queen
-          if (queenid%in%actors){
-            path_length_to_queen <- t(shortest.paths(net,v=actors,to=queenid,weights=1/E(net)$weight))
-            individual[match(colnames(path_length_to_queen),individual$tag),"aggregated_distance_to_queen"] <- as.numeric(path_length_to_queen )
-          }
-        }
-       
-        ########Mean path length to treated; aggregated_network
-        if(option!="untreated_only"){
-          path_length_to_treated                             <- as.data.frame(as.matrix(shortest.paths(net,v=actors,to=as.character(colony_treated)[as.character(colony_treated)%in%V(net)$name],weights=1/E(net)$weight)))
-          path_length_to_treated["mean_distance_to_treated"] <- NA
-          path_length_to_treated$mean_distance_to_treated    <- as.numeric(rowMeans(path_length_to_treated,na.rm=T))
-          individual[match(rownames(path_length_to_treated),individual$tag),"mean_aggregated_distance_to_treated"] <- path_length_to_treated[,"mean_distance_to_treated"]
-        }
-        ###Add data to main data table
-        summary_individual <- rbind(summary_individual,individual)
-      }
+       }
       clean()
     #}# TEMPORARY EXCLUSION 
     }

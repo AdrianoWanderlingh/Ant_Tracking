@@ -41,7 +41,7 @@ struct event{
 };
 
 // [[Rcpp::export]]
-DataFrame simulate_transmission(DataFrame i_table, DataFrame ant_list, double t0){
+DataFrame simulate_transmission(DataFrame i_table, DataFrame ant_list, double t0,unsigned seed, int frame_rate){
   // Fixed input parameters 
   double attenuation = 0.00066;	
   double load_threshold = 0.00024;
@@ -51,6 +51,7 @@ DataFrame simulate_transmission(DataFrame i_table, DataFrame ant_list, double t0
   vector <int> taglist       = ant_list["tag"];
   vector <int> status        = ant_list["status"];
   vector <double> load       = ant_list["load"];
+  vector <double> old_load   = ant_list["load"];
   int tag_count (taglist.size());
     
   vector <int> Tag1          = i_table["Tag1"];
@@ -62,11 +63,15 @@ DataFrame simulate_transmission(DataFrame i_table, DataFrame ant_list, double t0
   int table_size (Tag1.size());
 
 	//declare variables that will be used in the loop
-	double time;int index_source; int index_recipient;double proba_transfer; int transfer_duration;double random;double x0; double xtot; double amount_transferred;int frame_number;double threshold;
+	double time;int index_source; int index_recipient;double proba_transfer; 
+	double transfer_duration_seconds;
+	int transfer_duration;double random;double x0; double xtot; double amount_transferred;
+	//int frame_number;
+	double threshold;
 	int index1; int index2; double load1; double load2;
 	
 	// build random number generator
-	unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();//set a seed linked with the time at which the program is runs; ensures random number sequence will always be differemt
+//	unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();//set a seed linked with the time at which the program is runs; ensures random number sequence will always be differemt
   	std::default_random_engine generator (seed); //set the random number generator using the desited seed
   	std::uniform_real_distribution<double> distribution(0.0,1.0);	//define that you want a uniform diestribution between 0 and 1
 
@@ -131,10 +136,19 @@ DataFrame simulate_transmission(DataFrame i_table, DataFrame ant_list, double t0
 	// Loop over interactions
 	/////////////////////////////////////////////////////////
 	for (int i(0); i < table_size;i++){ //read all interaction lines
+//	  if ( Startframe[i] == 7 ){
+//	    for (int tagidx (0);tagidx < taglist.size(); tagidx ++){
+//	      if (taglist[tagidx] == 11){
+//	        cout << "At the beginning of frame "<< Startframe[i] << ", tag " << taglist[tagidx] << " had load " << load[tagidx] << endl;
+//	        cout << "At the beginning of frame "<< Startframe[i] << ", tag " << taglist[tagidx] << " had old load " << old_load[tagidx] << endl;
+//	      }
+//	    }
+//	  }
+	  
 		amount_transferred = 0;
 	  
 		//get frame number
-		frame_number = Startframe[i];
+		//frame_number = Startframe[i];
 
 		// get the tag index of each ant involved in the interaction
 		index1 = get_tag_index(taglist,Tag1[i]); index2 = get_tag_index(taglist,Tag2[i]);
@@ -164,13 +178,25 @@ DataFrame simulate_transmission(DataFrame i_table, DataFrame ant_list, double t0
 			
 			// Check if a stochastic transmission event should occur (i.e., if random < threshold); if so, perform the rest
 			if (random <= threshold){
-				// Determine the duration of the interaction in frames
-				transfer_duration = Stopframe[i] - Startframe[i] +1;
+				// Determine the duration of the interaction in seconds
+				transfer_duration_seconds = Stoptime[i] - Starttime[i] + double(1.0 / double(frame_rate)); // in seconds
+			  
+			  // Change unit of transfer duration to be expressed in number of frames of 0.5 seconds each (to match Science frame rate, for which parameterisation was done)
+			  transfer_duration = round(transfer_duration_seconds *2.0);
 	    	// Determine the amount transferred depending on the transfer duration
      		 		x0 = load[index_recipient];
      	 			xtot = x0 +  load[index_source];
 			      double amount_transferred = ((pow((1-2*attenuation),transfer_duration))*(x0-(xtot/2))+(xtot/2)) - x0;
-			      
+			 
+			// if (taglist[index_recipient]==122 && Startframe[i] == 7){
+			 //  cout << "At frame "<< Startframe[i] << ", tag " << taglist[index_recipient] << " receives " << amount_transferred << " from tag " << taglist [index_source] << endl;
+			 //  cout << "Tag " << taglist[index_recipient] << " had " << load[index_recipient] << " and tag " << taglist[index_source]<< " had " << load[index_source] << endl;
+			// }
+	//		 if (taglist[index_recipient]==40 && Startframe[i] <54){
+		//	   cout << "At frame "<< Startframe[i] << ", tag " << taglist[index_recipient] << " receives " << amount_transferred << " from tag " << taglist [index_source] << endl;
+			 //  cout << "Tag " << taglist[index_recipient] << " had " << load[index_recipient] << " and tag " << taglist[index_source]<< " had " << load[index_source] << endl;
+			// }
+			 
 			// If recipient ant was NOT contaminated yet, add a new event to table events
 				if (status[index_recipient]!=1){
 					// update status so that ant is now listed as contaminated
@@ -209,8 +235,17 @@ DataFrame simulate_transmission(DataFrame i_table, DataFrame ant_list, double t0
 				//4/ in any case, update load vector with new load values
 				load[index_source] = load[index_source] -amount_transferred ;
 				load[index_recipient] = load[index_recipient] +amount_transferred ;
+				
+
 			}
 		}
+//		if (  Startframe[i] == 7 ){
+//		  for (int tagidx (0);tagidx < taglist.size(); tagidx ++){
+//		    if (taglist[tagidx] == 11){
+//		      cout << "At the end of frame "<< Startframe[i] << ", tag " << taglist[tagidx] << " had load " << load[tagidx] << endl;
+//		    }
+//		  }
+//		}
 	}//end of transmission loop
 
 	//Prepare dataframe columns for output
