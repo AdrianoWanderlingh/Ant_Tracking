@@ -23,7 +23,7 @@ setwd(input_path2)
 interac_list <- c(interac_list,paste(input_path2,list.files(),sep="/"))
 
 to_keep <- c(ls(),"to_keep","i","interac")
-for (i in 81:100){#####perform 100 randomisations
+for (i in 1:100){#####perform 100 randomisations
   print(paste("Performing randomisations",i,"out of 100..."))
   for (interac in interac_list){
     #print(paste("Interaction file",which(interac==interac_list),"out of",length(interac_list)))
@@ -36,7 +36,7 @@ for (i in 81:100){#####perform 100 randomisations
       #cat("\rInteraction file",which(interac==interac_list),"out of",length(interac_list))
       #####read-in file
       interactions                 <- read.table(interac,header=T,stringsAsFactors=F)
-      randomised_partners          <- randomise_edges(interactions[c("Tag1","Tag2","Startframe","Stopframe")])
+      randomised_partners          <- randomise_edges(interactions[c("Tag1","Tag2","Starttime","Stoptime")])
       randomised_interactions      <- interactions
       randomised_interactions$Tag1 <- randomised_partners$Tag1;randomised_interactions$Tag2 <- randomised_partners$Tag2;
       write.table(randomised_interactions,file=outfile,col.names=T,row.names=F,quote=F,append=F)

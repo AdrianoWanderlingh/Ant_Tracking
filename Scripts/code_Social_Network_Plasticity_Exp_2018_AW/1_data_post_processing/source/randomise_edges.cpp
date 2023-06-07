@@ -27,8 +27,10 @@ DataFrame  randomise_edges(DataFrame i_table){
   //define columns
   vector <int> Tag1       = i_table["Tag1"];
   vector <int> Tag2       = i_table["Tag2"];
-  vector <int> Startframe = i_table["Startframe"];
-  vector <int> Stopframe  = i_table["Stopframe"];
+  vector <double> Starttime  = i_table["Starttime"];
+  vector <double> Stoptime   = i_table["Stoptime"];
+  //vector <int> Startframe = i_table["Startframe"];
+  //vector <int> Stopframe  = i_table["Stopframe"];
 
   /////////////////////////////////////////////////////////
   //get size of interaction table
@@ -75,8 +77,10 @@ DataFrame  randomise_edges(DataFrame i_table){
       i = 	Tag1[edge];
       j = 	Tag2[edge]; 
       // get min and max time of the interaction
-      min_time = Startframe[edge] ;
-      max_time = Stopframe[edge] ;
+      min_time = Starttime[edge] ;
+      max_time = Stoptime[edge] ;
+      //min_time = Startframe[edge] ;
+      //max_time = Stopframe[edge] ;
       //initialise condition variable
       bool condition (0);
       while(!condition){// while condition not fulfilled
@@ -86,8 +90,10 @@ DataFrame  randomise_edges(DataFrame i_table){
         jj = Tag2[index];
         
         // get min and max time of the interaction
-        min_ttime = Startframe[index];
-        max_ttime = Stopframe[index];
+        min_ttime = Starttime[index];
+        max_ttime = Stoptime[index];
+        //min_ttime = Startframe[index];
+        //max_ttime = Stopframe[index];
         
         // now draw a random number between 0 and 1 to determine which switch you want to do
         double rand (uniform_distribution(generator));
@@ -106,13 +112,13 @@ DataFrame  randomise_edges(DataFrame i_table){
         bool multiple_edge(0);
         for (int k(0); k < table_size;k++){
           //interactions overlapping with edge
-          if (((Startframe[k]>=min_time)&&(Startframe[k]<=max_time))||((Stopframe[k]>=min_time)&&(Stopframe[k]<=max_time))){
+          if (((Starttime[k]>=min_time)&&(Starttime[k]<=max_time))||((Stoptime[k]>=min_time)&&(Stoptime[k]<=max_time))){
             if (((Tag1[k]==new_i)&&(Tag2[k]==new_j))||((Tag1[k]==new_j)&&(Tag2[k]==new_i))){
               multiple_edge=1;								
             }
           }
           //interactions overlapping with index
-          if (((Startframe[k]>=min_ttime)&&(Startframe[k]<=max_ttime))||((Stopframe[k]>=min_ttime)&&(Stopframe[k]<=max_ttime))){
+          if (((Starttime[k]>=min_ttime)&&(Starttime[k]<=max_ttime))||((Stoptime[k]>=min_ttime)&&(Stoptime[k]<=max_ttime))){
             if (((Tag1[k]==new_ii)&&(Tag2[k]==new_jj))||((Tag1[k]==new_jj)&&(Tag2[k]==new_ii))){
               multiple_edge=1;								
             }
