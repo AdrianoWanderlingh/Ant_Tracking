@@ -26,7 +26,7 @@ outputfolder1 <- paste(data_path,"/processed_data/individual_behaviour/random_vs
 if (!file.exists(outputfolder1)){dir.create(outputfolder1,recursive = T)}
 
 summary_dol <- NULL
-to_keep <- c(ls(),"to_keep","input_folder","network_file","network_files","summary_interactions","summary_pairs","all_interactions")
+to_keep <- c(ls(),"to_keep","input_folder","network_file","network_files","summary_interactions","summary_interactions_grooming","summary_pairs","all_interactions")
 for (input_folder in input_folders){
   print(input_folder)
   setwd(input_path)
