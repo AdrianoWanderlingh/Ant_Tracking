@@ -1,12 +1,21 @@
 rm(list=ls())
 
+USER <- "2A13_Office" # Nath_office 
+
+if (USER == "2A13_Office") {
+  usr <- "cf19810"
+  source_path <- paste0("/home/",usr,"/Ant_Tracking/Scripts/code_Social_Network_Plasticity_Exp_2018_AW/2_statistics_and_plotting/source")
+} else {
+  usr <- "bzniks"
+  warning("the up to date code is in https://github.com/AdrianoWanderlingh/PhD-Ant_Colonies_Tracking_Analysis/. \n\nPlease use git clone <URL> to download")
+  #source_path  <- "~/Dropbox/Papers/4_Lausanne/5_OI/2_Science/SHARED_DATA_SCIENCE_REPOSITORIES/code/2_statistics_and_plotting_Adriano/source"
+}
+
+
 #####Overall parameters and functions ##########
 ####define folders
 figurefolder <- "~/figures"
-#disk_path    <- "/media/bzniks/DISK4/Lasius-Bristol_pathogen_experiment" # 
-disk_path    <- "/media/cf19810/DISK4/Lasius-Bristol_pathogen_experiment"
-#source_path  <- "~/Dropbox/Papers/4_Lausanne/5_OI/2_Science/SHARED_DATA_SCIENCE_REPOSITORIES/code/2_statistics_and_plotting_Adriano/source" # 
-source_path <- "/home/cf19810/Dropbox/2_statistics_and_plotting_Adriano/source"
+disk_path    <- paste0("/media/",usr,"/DISK4/Lasius-Bristol_pathogen_experiment")
 
 treatment_order <- c("control.small","control.big","pathogen.small","pathogen.big")
 exposure_order  <- c("control","pathogen")
