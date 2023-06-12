@@ -145,11 +145,15 @@ for (seed_file in seed_files ){
         interaction_table$Starttime                             <- as.numeric(interaction_table$Starttime )
         interaction_table$Stoptime                              <- as.numeric(interaction_table$Stoptime )
 
+        
+        # AW: for the seed condition to work, create vector of names matching the interac_folder format
+        interac_folders_named <- ifelse(interac_folders != "observed",sprintf("random_%03d", as.numeric(interac_folders)),interac_folders)
+        
         ####Perform simulations
         print("Performing simulations...")
         simulations <- NULL
         for (i in 1:N_SIM){
-          simulations <- rbind(simulations,data.frame(sim_number=i,simulate_transmission(i_table=interaction_table,ant_list=antlist,t0=time_start,seed=i*which(seed_file==seed_files)*which(interac_folder==interac_folders)*which(interac==interac_list),frame_rate=FRAME_RATE)))
+          simulations <- rbind(simulations,data.frame(sim_number=i,simulate_transmission(i_table=interaction_table,ant_list=antlist,t0=time_start,seed=i*which(seed_file==seed_files)*which(interac_folder==interac_folders_named)*which(interac==interac_list),frame_rate=FRAME_RATE)))
           # Sys.sleep(1)
           # gc()
         }
