@@ -63,7 +63,7 @@ post_hoc_outcomes <- NULL
 
 for (i in 1:length(variable_list)){
   # for (i in c(1)){
-  print(variable_list[i])
+  print(paste0("######## ",variable_list[i]," ########"))
   data <- data_ori
   
   ###create a variable column
@@ -224,6 +224,9 @@ for (i in 1:length(variable_list)){
 rownames(stats_outcomes) <- NULL
 
 
+# Reshape the data
+stats_outcomes_reshaped <- reshape(stats_outcomes[,which(names(stats_outcomes)!="df")], idvar = "predictor", timevar = "variable", direction = "wide")
+#colnames(reshaped_data)[-1] <- gsub("pval.", "", colnames(reshaped_data)[-1])
 
 
 
@@ -235,7 +238,8 @@ data_path <- paste(root_path,"/network_properties/pre_vs_post_treatment/all_work
 pattern="colony_data.txt"
 variable_list <- c("modularity","clustering","task_assortativity","efficiency","degree_mean","degree_maximum","density","diameter")
 names(variable_list) <- c("modularity","clustering","assortativity","efficiency","degree_mean","degree_maximum","density","diameter")
-transf_variable_list <- c("log"      ,"none"      ,"none"         ,"log"      ,"log"       ,"log"          ,"power0.01"   ,"power0.01")   ######"none", "sqrt" "log","power2"
+transf_variable_list <- c("log"       ,"sqrt"      ,"none"          ,"log"       ,"log"        ,"log"           ,"log"   ,"power0.01")   ######"none", "sqrt" "log","power2"
+# NOTE: task_assortativity is hard to normalise because of the bimodal distribution (small vs big cols)
 
 ###1. read data
 setwd(data_path)
@@ -427,6 +431,8 @@ for (i in 1:length(variable_list)){
 }
 rownames(stats_outcomes) <- NULL
 
+# Reshape the data
+stats_outcomes_reshaped <- reshape(stats_outcomes[,which(names(stats_outcomes)!="df")], idvar = "predictor", timevar = "variable", direction = "wide")
 
 ###################################################################################################################################
 ###III - Example individual analysis - for ONE type of individuals (e.g. treated workers only, or queens only)#####################
@@ -434,9 +440,9 @@ rownames(stats_outcomes) <- NULL
 root_path <- paste(disk_path,"/main_experiment",sep="") # root_path <- paste(disk_path,"/main_experiment_grooming",sep="")
 data_path=paste(root_path,"/processed_data/individual_behaviour/pre_vs_post_treatment",sep="")
 pattern="individual_behavioural_data"
-variable_list <- c("prop_time_outside")
-names(variable_list) <- c("prop_time_outside")
-transf_variable_list <- c("power0.01","none")   ######"none", "sqrt" "log","power2"
+variable_list <- c("prop_time_outside","proportion_time_active","duration_of_contact_with_treated_min","inter_caste_contact_duration")
+names(variable_list) <- c("prop_time_outside","proportion_time_active","duration_of_contact_with_treated_min","inter_caste_contact_duration")
+transf_variable_list <- c("power0.01"        ,"none"                  ,"sqrt"                                ,"none"      )   ######"none", "sqrt" "log","power2"
 
 which_individuals <- "treated" ## "treated","queen","nurse","forager"
 

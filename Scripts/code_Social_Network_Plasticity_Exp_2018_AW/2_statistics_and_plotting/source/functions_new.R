@@ -114,6 +114,19 @@ test_norm <- function(resids){
 ##############################################################################
 #AW Functions
 
+# convert significance levels to stars
+add_star <- function(p) {
+  if (p<0.001) {
+    return('***')
+  } else if (p<0.01) {
+    return('**')
+  } else if (p<0.05) {
+    return('*')
+  } else {
+    return('ns')
+  }
+}
+
 barplot_delta <- function(dataset=data,predictor,type,collective,plot_untransformed,diff_type){ #form_stat=NULL,
   
   #get difference on RAW data
@@ -138,8 +151,11 @@ barplot_delta <- function(dataset=data,predictor,type,collective,plot_untransfor
 
   
   ##### PLOT
-  max_mean_se <- max(means$mean + means$se)
+  max_mean_se <- 2*max(means$mean + means$se)
   
+  
+  if (all(names(post_hoc_outcomes[[variable_list[i]]])==levels(dataset$treatment))) { # if interaction period*treatment
+    print("period*treatment interaction significant")
   plot_var <- ggplot(means, aes_string(x = "predictor", y = "mean", fill = "predictor")) +
     geom_errorbar(aes_string(ymin = paste0("mean - se"), ymax =paste0("mean + se")),
                   position = position_dodge2(width = 0.8, preserve = "single")
@@ -148,12 +164,91 @@ barplot_delta <- function(dataset=data,predictor,type,collective,plot_untransfor
     STYLE +
     colFill_treatment +
     labs(
-      y = paste("Delta", names(variable_list[i]), sep = " ")
-    ) +
+      y = paste("Delta", names(variable_list[i]), sep = " "), x = predictor    ) +
     if (variable_list[i] %in% names(post_hoc_outcomes)) {
       geom_text(aes(label = post_hoc_outcomes[[variable_list[i]]][predictor], y= max_mean_se), position = position_dodge2(width = 0.8, preserve = "single"), vjust = -0.4)
       #geom_text(data = post_hoc_outcomes[[variable_list[i]]], aes(x = period, y = 70, group = treatment, label = letters, fontface = "bold"), position = position_dodge2(width = 0.9, preserve = "single"))
+    } 
+  
+  
+ } else if (all(names(post_hoc_outcomes[[variable_list[i]]])==levels(dataset$size))) {
+      print("Only period*size interaction significant")
+      
+      # Reorder the vector by size
+      treatment_order_size <- treatment_order[order(grepl("small", treatment_order, fixed = TRUE), decreasing = TRUE)]
+      means$predictor <-factor(means$predictor , levels=treatment_order_size[which(treatment_order_size %in% means$predictor )])
+      # Add a new variable for grouping and x-axis
+      means$group <- ifelse(grepl("small", means$predictor), "small", "big")
+      #create a gap in the layout add a +1 to the big colonies
+      means$x_axis <- as.numeric(means$predictor) + ifelse(means$group == "big", 1, 0)
+      
+      # Create the base ggplot object
+      plot_var <- ggplot(means, aes(x = x_axis, y = mean, fill = predictor)) +
+        geom_errorbar(aes(ymin = mean - se, ymax = mean + se),
+                      position = position_dodge2(width = 0.8, preserve = "single")
+        ) +
+        geom_col(position = position_dodge2(width = 0.8, preserve = "single")) +
+        STYLE +
+        colFill_treatment +
+        labs(y = paste("Delta", names(variable_list[i]), sep = " "), x = predictor) +
+        scale_x_continuous(labels = levels(means$predictor), breaks = 1:length(levels(means$predictor)) + c(0, 0, 1, 1)) +
+        theme(axis.text.x = element_text())
+      
+      # Add geom_segment and geom_text if the condition is true (for more than 1 element in the ggplot if statement, there is the error: Error in `+.gg`:! Cannot add ggproto objects together )
+      if (variable_list[i] %in% names(post_hoc_outcomes)) {
+        additional_geoms <- list(
+          geom_segment(aes(x = sum(means$x_axis[means$group == "small"])/2, xend = sum(means$x_axis[means$group == "big"])/2,
+                           y = max_mean_se, yend = max_mean_se)),
+          geom_text(aes(x = mean(means$x_axis), y = max_mean_se + 1/3*(max_mean_se),
+                        label = add_star(stats_outcomes[which(stats_outcomes$variable==variable_list[i] & stats_outcomes$predictor=="period:size"),"pval"])))
+        )
+        plot_var <- plot_var + additional_geoms
+      }
+      
+    } else if (all(names(post_hoc_outcomes[[variable_list[i]]])==levels(dataset$exposure))) {
+      print("Only period*exposure interaction significant")
+      
+      # Reorder the vector by size
+      treatment_order_exp <- treatment_order[order(grepl("control", treatment_order, fixed = TRUE), decreasing = TRUE)]
+      means$predictor <-factor(means$predictor , levels=treatment_order_exp[which(treatment_order_exp %in% means$predictor )])
+      # Add a new variable for grouping and x-axis
+      means$group <- ifelse(grepl("control", means$predictor), "control", "pathogen")
+      #create a gap in the layout add a +1 to the pathogen colonies
+      means$x_axis <- as.numeric(means$predictor) + ifelse(means$group == "pathogen", 1, 0)
+      
+      # Create the base ggplot object
+      plot_var <- ggplot(means, aes(x = x_axis, y = mean, fill = predictor)) +
+        geom_errorbar(aes(ymin = mean - se, ymax = mean + se),
+                      position = position_dodge2(width = 0.8, preserve = "single")
+        ) +
+        geom_col(position = position_dodge2(width = 0.8, preserve = "single")) +
+        STYLE +
+        colFill_treatment +
+        labs(y = paste("Delta", names(variable_list[i]), sep = " "), x = predictor) +
+        scale_x_continuous(labels = levels(means$predictor), breaks = 1:length(levels(means$predictor)) + c(0, 0, 1, 1)) +
+        theme(axis.text.x = element_text())
+      
+      # Add geom_segment and geom_text if the condition is true (for more than 1 element in the ggplot if statement, there is the error: Error in `+.gg`:! Cannot add ggproto objects together )
+      if (variable_list[i] %in% names(post_hoc_outcomes)) {
+        additional_geoms <- list(
+          geom_segment(aes(x = sum(means$x_axis[means$group == "control"])/2, xend = sum(means$x_axis[means$group == "pathogen"])/2,
+                           y = max_mean_se, yend = max_mean_se)),
+          geom_text(aes(x = mean(means$x_axis), y = max_mean_se + 1/3*(max_mean_se),
+                        label = add_star(stats_outcomes[which(stats_outcomes$variable==variable_list[i] & stats_outcomes$predictor=="period:size"),"pval"])))
+        )
+        plot_var <- plot_var + additional_geoms
+      }
+      
+      
+      
+      
+      
+      
+      
+
+      
     }
+  
   return(plot_var)
 }
 
@@ -333,14 +428,22 @@ for (i in 1:4) {
 # }
 
 ### ADD THE METADATA
-meta.data <- read.table(paste("/home/cf19810/Documents/scriptsR/EXP1_base_analysis/EXP_summary_data/Metadata_Exp1_2021_2023-02-27.txt", sep = ""), header = T, stringsAsFactors = F, sep = ",")
+#meta.data <- read.table(paste("/media/cf19810/DISK4/ADRIANO/EXPERIMENT_DATA/Metadata_Exp1_2021_2023-02-27.txt", sep = ""), header = T, stringsAsFactors = F, sep = ",")
+# HARD CODE THEM
+meta.data_size_treat <- c("BS", "SP", "SS", "BP")
+meta.data_REP_treat <- c("R1BS", "R1SP", "R1SS", "R10BP", "R11BP", "R11BS", "R11SP", 
+  "R11SS", "R12BP", "R12BS", "R12SP", "R13BS", "R13SP", "R13SS", 
+  "R14BP", "R14BS", "R14SP", "R14SS", "R2BP", "R2BS", "R2SP", "R2SS", 
+  "R3BP", "R3BS", "R3SP", "R3SS", "R4BP", "R4SS", "R5BP", "R5SP", 
+  "R5SS", "R6SP", "R6SS", "R7BP", "R7BS", "R7SP", "R7SS", "R8BP", 
+  "R8BS", "R8SP", "R8SS", "R9BS", "R9SP", "R9SS")
 
 # create groups to assign the colours
 Cols <- list()
 # divide each size_treat into a list element with its colonies inside
-for (i in 1:length(unique(meta.data$size_treat))) {
-  treatment_labs <- unique(meta.data$size_treat)[i]
-  treatment_vector <- unique(meta.data$REP_treat[grepl(treatment_labs, meta.data$REP_treat)])
+for (i in 1:length(meta.data_size_treat)) {
+  treatment_labs <- meta.data_size_treat[i]
+  treatment_vector <- unique(meta.data_REP_treat[grepl(treatment_labs, meta.data_REP_treat)])
   Cols[[i]] <- treatment_vector
   names(Cols)[i] <- treatment_labs
 }
