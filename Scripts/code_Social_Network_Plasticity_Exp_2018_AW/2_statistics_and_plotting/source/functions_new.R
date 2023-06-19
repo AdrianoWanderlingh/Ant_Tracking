@@ -1568,8 +1568,8 @@ individual_TWO_analysis <- function(data_path=data_path,which_individuals){
           ,
           "7 minus 8"=c(0,0,0,0,0,0,0,1,-1,0,0,0,0,0,1,-1)
         )
-        for (i in 1:length(level_names)){
-          rownames(contrast_matrix) <- gsub(i,level_names[i],rownames(contrast_matrix))
+        for (j in 1:length(level_names)){
+          rownames(contrast_matrix) <- gsub(j,level_names[j],rownames(contrast_matrix))
         }
         
       }else{print("TOO MANY TASK GROUP LEVELS _ CANNOT COPE")}
@@ -1706,12 +1706,12 @@ individual_TWO_analysis <- function(data_path=data_path,which_individuals){
     rm(list=ls()[which(grepl("p_interaction",ls()))])
     rm(list=ls()[which(grepl("posthoc_groups_",ls()))])
     
-    #plot
+    plot
     barplot_delta_period <- barplot_delta(dataset=data,predictor="treatment",post_hoc_outcomes=post_hoc_outcomes,stats_outcomes=stats_outcomes,i=i,type="individual",collective=F,plot_untransformed=T,diff_type="absolute_difference") #form_stat=NULL,
     print(barplot_delta_period)
-    
-    barplot_delta_period_list[[variable_list[i]]]        <- barplot_delta_period 
-    
+
+    barplot_delta_period_list[[variable_list[i]]]        <- barplot_delta_period
+
   }
   rownames(stats_outcomes) <- NULL
   
@@ -1754,19 +1754,8 @@ barplot_delta <-
           data = diff
         )
     }
-    
-    
-    
-    
-    as.formula(paste("variable ~ predictor + colony_size + colony + time",
-                            if (!collective) "+ task_group"))
-    
-    
-    
-    
-    
-    
-    
+
+
     #mean by colony (drop time_of_day)
     diff <-
       aggregate(
@@ -1818,7 +1807,9 @@ barplot_delta <-
     
     
     # if interaction period*treatment
-    if (all(names(post_hoc_outcomes[[variable_list[i]]]) == levels(dataset$treatment))) {
+    if (all(grepl(paste0(levels(dataset$treatment), collapse = "|"), names(post_hoc_outcomes[[variable_list[i]]])))
+      #all(names(post_hoc_outcomes[[variable_list[i]]]) == levels(dataset$treatment))
+      ) {
       print("period*treatment interaction significant")
       
       # Create the base ggplot object
@@ -1860,13 +1851,31 @@ barplot_delta <-
       
       # add posthoc letters
       if (variable_list[i] %in% names(post_hoc_outcomes)) {
+        # if there are two ants groups
+        if (any(grepl("task_group", stats_outcomes[which(stats_outcomes$variable == variable_list[i]),"predictor"])) ) {
+         reshaped_posthocs <- data.frame(predictor = names(post_hoc_outcomes[[variable_list[i]]]), letters = post_hoc_outcomes[[variable_list[i]]], stringsAsFactors = FALSE)
+          
+         reshaped_posthocs$task_group <-  sub(".*\\.(.*)", "\\1", reshaped_posthocs$predictor)
+         reshaped_posthocs$predictor <- sub("\\.[^.]*$", "", reshaped_posthocs$predictor)
+         
+         warning("FIX THIS, EITHER WITH SOME SOLUTION INHERITED FROM THE PAST OR GPT OR BY RETURNING AT THE INITIAL WAY AND ORDERING THE VECTOR AS NATHALIE DOES")
+         
+          additional_geoms <- list(geom_text(
+            aes(label = reshaped_posthocs, x = "predictor", y = max_mean_se, group  = "task_group"),
+            position = position_dodge2(width = 0.8, preserve = "single"),
+            vjust = -0.4
+          ))
+          plot_var <- plot_var + additional_geoms
+          #normal condition (4 groups)
+        }else{
         additional_geoms <- list(geom_text(
           aes(label = post_hoc_outcomes[[variable_list[i]]][predictor], y = max_mean_se),
           position = position_dodge2(width = 0.8, preserve = "single"),
           vjust = -0.4
         ))
         plot_var <- plot_var + additional_geoms
-      }
+        }
+         }
       
       # manage x axis labels
       if (predictor == "treatment") {
@@ -2371,12 +2380,168 @@ plot_qpcr <- function(experiments){
   if (exists("predicted_value")){return(predicted_value)}else{return(NULL)} 
 }
 
+plot_distribution <- function(experiments,desired_treatments){
+  par_mar_ori <- par()$mar
+  par(mar=par_mar_ori+c(0,0,0,0.5))
+  if (experiments=="all"){
+    experiments <- c("age_experiment","survival_experiment","main_experiment")
+  }
+  if (experiments =="both"){
+    experiments <- c("age_experiment","main_experiment")
+  }
+  transf <- function(x){
+    return(x^(1/2))
+  }
+  rev_transf <- function(x){
+    return(x^2)
+  }
+  xlabel <- substitute(sqrt ( xlabely),list(xlabely="Simulated load"))
+  ####read data
+  infection_data <- NULL
+  for (experiment in experiments){
+    setwd(paste(disk_path,experiment,"transmission_simulations/pre_vs_post_treatment/experimentally_exposed_seeds",sep="/"))
+    si_outcome <- read.table("individual_simulation_results_observed.txt",header=T,stringsAsFactors = T)
+    si_outcome["ant_id"] <- as.character(interaction(experiment,si_outcome$colony,si_outcome$tag))
+    
+    for (time_point in c("before","after")){
+      si_outcome_temp <- si_outcome[which(si_outcome$period==time_point),c("colony","treatment","tag","status","antid","simulated_load","transmission_rank")]
+      names(si_outcome_temp)[names(si_outcome_temp)%in%c("simulated_load","transmission_rank")] <- paste(names(si_outcome_temp)[names(si_outcome_temp)%in%c("simulated_load","transmission_rank")],time_point,sep="_")
+      assign(paste("si_outcome_",time_point,sep=""),si_outcome_temp)
+    }
+    si_outcome <- merge(si_outcome_before,si_outcome_after)
+    infection_data <- rbind(infection_data,data.frame(experiment=experiment,si_outcome,stringsAsFactors = F))
+  }
+  
+  ####fill in missing untreated and queen info
+  # infection_data[which(infection_data$tag==queenid),"tag"] <- "queen"
+  #infection_data <- infection_data[which(infection_data$task_group=="queen"),"tag"] <- "queen" # AW this line does not make sense
+  
+  ###read task group #AW
+  task_groups <-  read.table(paste(disk_path,"/",experiment,"/original_data/",task_group_file,sep=""),header=T,stringsAsFactors = F)
+  ### add task groups info to data #AW
+  infection_data <- merge(infection_data,task_groups,all.x=T,all.y=F)
 
+  ###modify data
+  infection_data[,"colony"] <- as.character(interaction(infection_data$experiment,infection_data$colony))
+  
+  ####make new datasets for further analyses######
+  infection_data$status <- as.character(infection_data$status)
+  infection_data <- infection_data[infection_data$status!="treated",]###contains queens and untreated workers
+  infection_data <- infection_data[infection_data$task_group!="queen",]###contains untreated workers
 
-
-
-
-
+  #####1. Make bins
+  xmin <- min(c(transf(infection_data$simulated_load_before),transf(infection_data$simulated_load_after)),na.rm=T)
+  xmin_bis <- min(
+    c(transf(infection_data$simulated_load_before),transf(infection_data$simulated_load_after))
+    [
+      c(transf(infection_data$simulated_load_before),transf(infection_data$simulated_load_after))
+      >0
+    ]
+    ,
+    na.rm=T
+  )
+  xmax <- max(c(transf(infection_data$simulated_load_before),transf(infection_data$simulated_load_after)),na.rm=T)
+  xmin <- min(c(floor((xmin)*100)/100))
+  xmax <- ceiling((xmax)*100)/100
+  breaks <- seq(from=xmin,to=xmax,length.out=23)
+  bw <- 0.09
+  xmax <- ceiling((xmax)*10)/10
+  
+  ###2. plot histograms plus densities
+  #infection_data <- infection_data[which(infection_data$treatment%in%desired_treatments),]
+  infection_data <- infection_data[grep(paste(desired_treatments, collapse = "|"), infection_data$treatment),] #AW
+  #infection_data <- infection_data[grep("small", infection_data$treatment),] #TEMP
+  
+  
+  afters_dens <- density(transf(infection_data$simulated_load_after),from=xmin,to=xmax,n=500,na.rm=T,bw=bw)
+  befores_dens <- density(transf(infection_data$simulated_load_before),from=xmin,to=xmax,n=500,na.rm=T,bw=bw)
+  
+  percolony_density <- NULL
+  for (colony in sort(unique(infection_data$colony[!is.na(infection_data$colony)]))){
+    if (colony!="age_experiment.colony021"){
+      subsett <- infection_data[which(infection_data$colony==colony),]
+      
+      afters <- density(transf(subsett$simulated_load_after),from=xmin,to=xmax,n=500,na.rm=T,bw=bw)
+      afters$y <- afters$y/sum(afters$y)
+      befores <- density(transf(subsett$simulated_load_before),from=xmin,to=xmax,n=500,na.rm=T,bw=bw)
+      befores$y <- befores$y/sum(befores$y)
+      percolony_density <- rbind(percolony_density,data.frame(colony=colony,xcoor=afters$x,density_after=afters$y,density_before=befores$y,density_diff=afters$y-befores$y))
+    }
+  }
+  
+  ####plot actual distributions
+  forplot <- data.frame(as.matrix(aggregate(cbind(density_after,density_before,density_diff)~xcoor,function(x)cbind(mean(x),std.error(x)),data=percolony_density)))
+  names(forplot) <- c("x","mean_after","std.error_after","mean_before","std.error_before","mean","std.error")
+  forplot["lower_y"] <- forplot$mean-forplot$std.error
+  forplot["top_y"] <- forplot$mean+forplot$std.error
+  forplot <- forplot[order(forplot$x),]
+  
+  xshade <- c(forplot$x,rev(forplot$x))
+  yshade <- c(forplot$lower_y,rev(forplot$top_y))
+  
+  ##get ylims for plots ####
+  ######first get an idea of how the density plots will be distributed
+  ymin_dens <- 2*min(forplot$lower_y)
+  ymax_dens <- max(c(forplot$mean_after,forplot$mean_before))+0.1*(max(c(forplot$mean_after,forplot$mean_before))-min(forplot$mean))
+  neg <- abs(ymin_dens)/abs(ymax_dens)
+  
+  
+  ######second get an idea of how the histogram will be distributed
+  afters <- hist(transf(infection_data$simulated_load_after),breaks=breaks,plot=F)
+  befores <- hist(transf(infection_data$simulated_load_before),breaks=breaks,plot=F)
+  ymax <- max(c(afters$density,befores$density))+0.1*max(c(afters$density,befores$density))
+  #####...and deduce ymin
+  ymin <- -neg*ymax
+  
+  ###then plot histograms; in frequency
+  befores <- hist(transf(infection_data$simulated_load_before),breaks=breaks,plot=T,col=alpha("blue",0.4),prob=T,ylim=c(ymin,ymax),xlim=c(min(0,xmin),xmax),xaxt="n",yaxt="n",xaxs="i",yaxs="i",main="",bty="l",cex.axis=min_cex,cex.lab=inter_cex,xlab="",lwd=line_min/10,border="black")
+  afters <- hist(transf(infection_data$simulated_load_after),breaks=breaks,col=alpha("red",0.3),add=T,plot=T,prob=T,lwd=line_min/10,border="black")
+  prospected_ats <- axisTicks(c(min(0,xmin),xmax),log=F)
+  prospected_ats <- c(prospected_ats,prospected_ats[length(prospected_ats)]+prospected_ats[length(prospected_ats)]-prospected_ats[-1+length(prospected_ats)])
+  axis(1,at=prospected_ats,cex.axis=min_cex,cex.lab=inter_cex)
+  axis(2,cex.axis=min_cex,cex.lab=inter_cex)
+  title(xlab=xlabel,cex.axis=min_cex,cex.lab=inter_cex,mgp=par()$mgp+c(0.2,0,0))
+  ###then add densities; with new axes
+  par(new=T)
+  #####get new ymin, ymax
+  plot(forplot$x,forplot$mean, type="n", axes=F, xlab=NA, ylab=NA, cex=1.2,col=statuses_colours[desired_treatments],ylim=c(ymin_dens,ymax_dens),xaxs="i",yaxs="i",main="",bty="l",cex.axis=min_cex,cex.lab=inter_cex,xlim=c(min(0,xmin),xmax))
+  polygon(xshade,yshade, border = alpha("yellow",0),col=alpha("yellow",0.6))
+  lines(forplot$x,forplot$mean,lwd=line_max,col="black")
+  
+  ####write legend
+  legend(x=par("usr")[2]+0.05*(par("usr")[2]-par("usr")[1]),y=par("usr")[4]-0.025*(par("usr")[4]-par("usr")[3]),xjust=1,yjust=1,legend=c("Pre-treatment","Post-treatment","Difference"),pt.bg=c(alpha("blue",0.4),alpha("red",0.3),alpha("yellow",0.6)),col=c("black","black",alpha("yellow",0)),bty='n',pch=22,lty=0,lwd=0,pt.lwd=1,pt.cex=1.5,text.col="white",cex=min_cex)
+  legend(x=par("usr")[2]+0.05*(par("usr")[2]-par("usr")[1]),y=par("usr")[4]-0.025*(par("usr")[4]-par("usr")[3]),xjust=1,yjust=1,legend=c("Pre-treatment","Post-treatment","Difference"),col=c(alpha("blue",0),alpha("red",0),"black"),bty='n',lty=c(0,0,1),lwd=c(0,0,1),cex=min_cex)
+  
+  
+  print("KS-test:")
+  ks_test <- ks.test(transf(infection_data$simulated_load_after),transf(infection_data$simulated_load_before))
+  print(ks_test)
+  p_value <- ks_test$p.value
+  
+  where_to_print_stat <- median(c(transf(infection_data$simulated_load_after),transf(infection_data$simulated_load_before)))
+  
+  par(xpd=T) 
+  mtext(full_statuses_names[desired_treatments],side=3,line=stat_line,adj=0.5,cex=par("cex") *inter_cex,font=2)
+  mtext(from_p_to_ptext(p_value),side=3,line=stat_line-1,adj=0.5,cex=par("cex") *max_cex,font=2,at=where_to_print_stat)
+  
+  # print("Thresholds at which after becomes lower than before")
+  forplot["positive"] <- forplot$mean>=0
+  change <- min(which(diff(forplot$positive)==-1))
+  threshold1 <- rev_transf(forplot[change,"x"])
+  threshold2 <- rev_transf(forplot[change+1,"x"])
+  if(!exists("threshold")){threshold <-round(((threshold1+threshold2)/2)*10000)/10000}
+  
+  par(xpd=F)
+  lines(x=c(transf(threshold),transf(threshold)),y=c(0,ymin_dens),col="springgreen3",lty=1,lwd=2*line_max)
+  ###Now write down "high level", "low_level"
+  arrows(x0=transf(threshold),y0=1.7*min(forplot$lower_y),x1=par("usr")[2],y1=1.7*min(forplot$lower_y),col="springgreen4",code=3,length=0.025)
+  text(x=mean(c(transf(threshold),par("usr")[2])),y=1.5*min(forplot$lower_y),labels="high load",adj=c(0.5,0),cex=min_cex,col="springgreen4",font=3)
+  xmin <-min(c(transf(infection_data$simulated_load_before),transf(infection_data$simulated_load_after)),na.rm=T)
+  arrows(x1=transf(threshold),y0=1.7*min(forplot$lower_y),x0=xmin_bis,y1=1.7*min(forplot$lower_y),col="springgreen2",code=3,length=0.025)
+  text(x=mean(c(transf(threshold),xmin)),y=1.5*min(forplot$lower_y),labels="low load",adj=c(0.5,0),cex=min_cex,col="springgreen2",font=3)
+  
+  par(mar=par_mar_ori)
+}
 
 
 
