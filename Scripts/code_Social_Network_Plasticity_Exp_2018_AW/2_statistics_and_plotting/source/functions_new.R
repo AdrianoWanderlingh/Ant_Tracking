@@ -167,6 +167,647 @@ from_p_to_ptext <- function(pvalue) {
   return(pvaluetext)
 }
 
+closest_match <- function(x,y){
+  return(min(which(abs(x-y)==min(abs(x-y))),na.rm=T))
+}
+
+plot_arrows <- function(means,plotx,plot_type,LWD,LENGTH,colz=NULL,direction="normal"){
+  options(warn=-1)
+  if (grepl("points",plot_type)){
+    LENGTH <- LENGTH*2
+  }
+  if (grepl("bars",plot_type)){
+    if (direction=="normal"){
+      arrows_low <- means$mean-1*as.numeric(sign(means$mean)<=0)*means$se
+      arrows_high <- means$mean+1*as.numeric(sign(means$mean)>=0)*means$se
+    }else{
+      arrows_low <- means$mean-1*as.numeric(sign(means$mean)>=0)*means$se
+      arrows_high <- means$mean+1*as.numeric(sign(means$mean)<=0)*means$se
+    }
+    code1 <- which(arrows_high==means$mean&arrows_low<means$mean)
+    code2 <- which(arrows_low==means$mean&arrows_high>means$mean)
+    code3 <- which(arrows_low==means$mean&arrows_high==means$mean)
+    
+    arrows (plotx[code1],arrows_low[code1],plotx[code1],arrows_high[code1],code=1,angle=90,col="black",lwd=LWD,length=LENGTH)
+    arrows (plotx[code2],arrows_low[code2],plotx[code2],arrows_high[code2],code=2,angle=90,col="black",lwd=LWD,length=LENGTH)
+    arrows (plotx[code3],arrows_low[code3],plotx[code3],arrows_high[code3],code=3,angle=90,col="black",lwd=LWD,length=LENGTH)
+  }else{
+    arrows_low <- means$mean-means$se
+    arrows_high <- means$mean+means$se
+    arrows (plotx,arrows_low,plotx,arrows_high,code=3,angle=90,col=colz,lwd=1.5*LWD,length=1.5*LENGTH)
+  }
+  options(warn=0)
+}
+
+
+VioPlot <- function (x, ..., range = 1.5, h = NULL, ylim = NULL, names = NULL, 
+                     horizontal = FALSE, col = "magenta", border = "black", lty = 1, 
+                     lwd = 1, rectCol = "black", colMed = "black", pchMed = 21, bgMed = "white",
+                     at, add = FALSE, wex = 1, drawRect = TRUE, mode="Median",cexMed=min_cex){
+  datas <- list(x, ...)
+  n <- length(datas)
+  if (missing(at)){ 
+    at <- 1:n
+  }
+  std_low <- vector(mode = "numeric", length = n)
+  std_high <- vector(mode = "numeric", length = n)
+  upper <- vector(mode = "numeric", length = n)
+  lower <- vector(mode = "numeric", length = n)
+  q1 <- vector(mode = "numeric", length = n)
+  q3 <- vector(mode = "numeric", length = n)
+  med <- vector(mode = "numeric", length = n)
+  meaN <- vector(mode = "numeric", length = n)
+  base <- vector(mode = "list", length = n)
+  height <- vector(mode = "list", length = n)
+  baserange <- c(Inf, -Inf)
+  args <- list(display = "none")
+  if (!(is.null(h))){
+    args <- c(args, h = h)
+  } 
+  for (i in 1:n) {
+    data <- datas[[i]]
+    data.min <- min(data)
+    data.max <- max(data)
+    q1[i] <- quantile(data, 0.25)
+    q3[i] <- quantile(data, 0.75)
+    med[i] <- median(data)
+    meaN[i] <- mean(data)
+    std <- std.error(data)
+    std_low[i] <- meaN[i]-std
+    std_high[i] <- meaN[i]+std
+    
+    iqd <- q3[i] - q1[i]
+    upper[i] <- min(q3[i] + range * iqd, data.max)
+    lower[i] <- max(q1[i] - range * iqd, data.min)
+    est.xlim <- c(min(lower[i], data.min), max(upper[i], 
+                                               data.max))
+    smout <- do.call("sm.density", c(list(data, xlim = est.xlim), 
+                                     args))
+    hscale <- 0.4/max(smout$estimate) * wex
+    base[[i]] <- smout$eval.points
+    height[[i]] <- smout$estimate * hscale
+    t <- range(base[[i]])
+    baserange[1] <- min(baserange[1], t[1])
+    baserange[2] <- max(baserange[2], t[2])
+  }
+  if (!add) {
+    xlim <- if (n == 1) 
+      at + c(-0.5, 0.5)
+    else range(at) + min(diff(at))/2 * c(-1, 1)
+    if (is.null(ylim)) {
+      ylim <- baserange
+    }
+  }
+  if (is.null(names)) {
+    label <- 1:n
+  }
+  else {
+    label <- names
+  }
+  boxwidth <- 0.05 * wex
+  if (!add) 
+    plot.new()
+  if (!horizontal) {
+    if (!add) {
+      plot.window(xlim = xlim, ylim = ylim)
+      axis(2)
+      axis(1, at = at, label = label)
+    }
+    box()
+    for (i in 1:n) {
+      polygon(c(at[i] - height[[i]], rev(at[i] + height[[i]])), 
+              c(base[[i]], rev(base[[i]])), col = col, border = border, 
+              lty = lty, lwd = lwd)
+      if (drawRect) {
+        if (mode=="Median"){
+          lines(at[c(i, i)], c(lower[i], upper[i]), lwd = lwd, 
+                lty = lty)
+          rect(at[i] - boxwidth/2, q1[i], at[i] + boxwidth/2, 
+               q3[i], col = rectCol)
+          points(at[i], med[i], pch = pchMed, col = colMed, bg=bgMed, cex=cexMed)
+        }else if (mode=="Mean"){
+          # rect(at[i] - boxwidth/2, std_low[i], at[i] + boxwidth/2, 
+          # std_high[i], col = rectCol)
+          plot_arrows(means=data.frame(mean=meaN[i],se=std),plotx=at[i],plot_type="violinplot",LWD=line_max,LENGTH=0.05,colz="black")
+          points(at[i], meaN[i], pch = pchMed, col = colMed, bg=bgMed, cex=cexMed)
+        }
+      }
+    }
+  }
+  else {
+    if (!add) {
+      plot.window(xlim = ylim, ylim = xlim)
+      axis(1)
+      axis(2, at = at, label = label)
+    }
+    box()
+    for (i in 1:n) {
+      polygon(c(base[[i]], rev(base[[i]])), c(at[i] - height[[i]], 
+                                              rev(at[i] + height[[i]])), col = col, border = border, 
+              lty = lty, lwd = lwd)
+      if (drawRect) {
+        lines(c(lower[i], upper[i]), at[c(i, i)], lwd = lwd, 
+              lty = lty)
+        rect(q1[i], at[i] - boxwidth/2, q3[i], at[i] + 
+               boxwidth/2, col = rectCol)
+        points(med[i], at[i], pch = pchMed, col = colMed)
+      }
+    }
+  }
+  invisible(list(upper = upper, lower = lower, median = med, 
+                 q1 = q1, q3 = q3))
+}
+
+scatterplot_violin_forpaper <- function(formula_stat,formula_plot,ylabel,xlabel,title,dat,ymin=NULL,ymax=NULL,xmin=NULL,xmax=NULL,sorting="status",time_point,IC=NULL,output=F,means=T,input_color=NULL,violin_params,point_cex=NULL,predict=NULL){
+  violin_params <- as.numeric(unlist(violin_params))
+  ##read violin param
+  range <- violin_params[1]
+  ylim_fac1 <- violin_params[2]
+  ylim_fac2 <- violin_params[3]
+  wex <- violin_params[4]
+  h <- violin_params[5]
+  
+  # if (all(dat$predictor==dat$colony_size)){
+  formula_stat <- update(formula_stat,~.-colony_size)
+  # }
+  dep_var <- row.names(attr(terms(formula_plot),"factors"))[1]
+  pf <- parent.frame()
+  dat["variable"] <- eval(parse(text=dep_var),dat,pf)
+  
+  ##########plotting########
+  if (is.numeric(dat$predictor)){
+    categories <- sort(unique(dat$predictor_plot))
+  }else{
+    categories <- unique(c(dat$predictor_plot))
+    categories <- categories[order(match(categories,status_order))]
+  }
+  if (is.null(input_color)){
+    if (sorting=="treatment"){
+      colour_pal <- NULL
+      for (category in categories){
+        colour_pal <- c(colour_pal,get(paste(category,"_colour",sep="")))
+      }
+    }else{
+      colour_pal <- rev(colorRampPalette(colour_palette_workers)(length(categories)))
+    }
+  }else{
+    colour_pal <- rev(colorRampPalette(input_color)(length(categories)))
+  }
+  
+  names(colour_pal) <- categories
+  dat["colour"] <-  colour_pal[match(dat$predictor_plot,names(colour_pal))]
+  forplot <- aggregate(na.rm=T,na.action="na.pass",colour~predictor_plot,FUN=unique,data=dat)
+  forplot_med <- aggregate(na.rm=T,na.action="na.pass",variable~predictor_plot,FUN=median,data=dat);names(forplot_med)[names(forplot_med)=="variable"] <- "median"
+  forplot_mean <- aggregate(na.rm=T,na.action="na.pass",variable~predictor_plot,FUN=mean,data=dat);names(forplot_mean)[names(forplot_mean)=="variable"] <- "mean"
+  forplot <- merge(merge(forplot,forplot_med),forplot_mean)
+  if (is.null(ymin)){
+    ymin <- min(dat$variable,na.rm=T) - ylim_fac1*(max(dat$variable,na.rm=T)-min(dat$variable,na.rm=T))
+    # ymin <- min(dat$variable,na.rm=T)
+  }
+  if (is.null(ymax)){
+    ymax <- max(dat$variable,na.rm=T) + ylim_fac2*(max(dat$variable,na.rm=T)-min(dat$variable,na.rm=T))
+    # ymax <- max(dat$variable,na.rm=T) 
+  }
+  
+  ###prepare plot shell
+  par_mar_ori <- par()$mar
+  if(is.character(dat$predictor)){
+    forplot ["pred"] <- as.numeric(factor(forplot$predictor_plot,levels=categories))/2
+    dat["pred"] <- as.numeric(factor(dat$predictor_plot,levels=categories))/2
+    par(bty="n",xaxt = "n")
+  }else{
+    forplot ["pred"] <- forplot$predictor_plot
+    dat["pred"] <- dat$predictor_plot
+    par(bty='l')
+  }
+  par(mar=par_mar_ori+c(0,0,0,0.5))
+  values <- sort(unique(forplot$pred))
+  if (is.null(xmin)){
+    xlim <- c(min(forplot$pred),max(forplot$pred))+mean(diff(values,lag=1))*c(-0.5,0.5)
+  }else{
+    xlim <- c(xmin,xmax)
+  }
+  
+  plot(dat$pred,dat$variable,xlab="",ylab="",xaxt="n",yaxt="n",cex.main=inter_cex,cex.lab=inter_cex,font.lab=1,cex.axis=min_cex,xlim=xlim,ylim=c(ymin,ymax),pch=21,type="n")
+  if (!all(!grepl("Log",xlabel))){
+    where <- axisTicks(c(par("usr")[1],par("usr")[2]),log=F)
+    where <- where[which(where==round(where))]
+    axis(1,at=where,labels=format(10^(where),scientific=T),cex.lab=inter_cex,cex.axis=min_cex)
+    xlab <- substr(gsub("Log\\(","",xlabel),1,-1+nchar(gsub("Log\\(","",xlabel)))
+    if (xlab=="Measured pathogen load"){
+      title(xlab=expression(paste("Measured pathogen load (ng/", mu, "L)")),cex.lab=inter_cex,mgp=par()$mgp+c(0.2,0,0))
+    }else{
+      title(xlab=xlab,cex.lab=inter_cex,mgp=par()$mgp+c(0.2,0,0))
+    }
+  }else{
+    axis(1,cex.lab=inter_cex,cex.axis=min_cex)
+    title(xlab=xlabel,cex.lab=inter_cex)
+  }
+  
+  if(all(!grepl("log",ylabel))){
+    axis(2,cex.lab=inter_cex,cex.axis=min_cex)
+    title(ylab=ylabel,cex.lab=inter_cex)
+  }else{
+    where <- axisTicks(c(par("usr")[3],par("usr")[4]),log=F)
+    where <- where[which(where==round(where))]
+    axis(2,at=where,labels=format(10^(where),scientific=T),cex.lab=inter_cex,cex.axis=min_cex)
+    ylab <- as.character(ylabel[2])
+    if (ylab=="Measured pathogen load"){
+      title(ylab=expression(paste("Measured pathogen load (ng/", mu, "L)")),cex.lab=inter_cex,mgp=par()$mgp+c(0.1,0,0))
+    }else{
+      title(ylab=ylab,cex.lab=inter_cex,mgp=par()$mgp+c(0.1,0,0))
+    }
+    
+    
+  }
+  
+  if(is.character(dat$predictor)){
+    par(xaxt = "s")
+    axis(side=1,at=sort(unique(forplot$pred)),labels=full_statuses_names[categories],tick=F,lty=0,cex.axis=inter_cex)
+    ###plus add grid lines
+    par(xpd=F)
+    # for (idx in 1:nrow(forplot)){
+    #   abline(h=forplot[idx,"median"],lwd=line_min,lty=3,col="black")
+    # }
+    abline(h=0,lwd=line_min,lty=3,col="black")
+  }
+  if(!is.null(title)){title(main=title,cex.main=inter_cex,line=2.5)}
+  ###if input, add 95%IC
+  if(!is.null(IC)){
+    polygon(c(par("usr")[c(1,2)],par("usr")[c(2,1)]),c(IC[1],IC[1],IC[2],IC[2]),border=NA,col=alpha("orange",0.1))
+  }
+  par_cex_ori <- par()$cex
+  par(cex=0.3)
+  if (is.null(point_cex)){
+    cexMed <- min_cex
+  }else{
+    cexMed <- point_cex
+  }
+  ###add violins
+  for (i in 1:nrow(forplot)){
+    subset <- dat[which(dat$pred==forplot[i,"pred"]),"variable"]
+    if (is.na(range)){
+      VioPlot(na.omit(subset),col=alpha(forplot[i,"colour"],0.7), horizontal=F, at=forplot[i,"pred"], add=TRUE,lty=1, rectCol="black",wex=wex,border=NA,lwd=line_min,mode="Median",cexMed=cexMed)
+    }else{
+      VioPlot(na.omit(subset),range=range, h=h,col=alpha(forplot[i,"colour"],0.7), horizontal=F, at=forplot[i,"pred"], add=TRUE,lty=1, rectCol="black",wex=wex,border=NA,lwd=line_min,mode="Median",cexMed=cexMed)
+    }
+  }
+  par(cex=par_cex_ori)
+  
+  
+  ##########stats############
+  ###initialise
+  to_plot <- data.frame(intercept=as.numeric(as.character()),slope=as.numeric(as.character()),colour=as.character(),stringsAsFactors=F)
+  to_mtext <- data.frame(effect=as.character(),pvalue=as.numeric(as.character()),stringsAsFactors=F)
+  pred<- attr(terms(formula_stat),"term.labels")
+  pred <- pred[!grepl("\\|",pred)]
+  
+  ###get final stats formula (step by step in case of a multiple terms model); i.e., reduce model
+  try(model_temp <- lmer(formula_stat,data=dat),silent=T)
+  if (exists("model_temp")){
+    coeff <- Anova(model_temp,type="III")
+    if ("Pr(>Chisq)"%in%colnames(coeff)){
+      ###first test if colony size is significant; if not remove it
+      if ("colony_size" %in%pred){
+        if (coeff["colony_size","Pr(>Chisq)"]>0.05){
+          formula_stat <- update(formula_stat,~.-colony_size)
+          model_temp <- lmer(formula_stat,data=dat)
+          coeff <- Anova(model_temp,type="III")
+        }#if (coeff["colony_size","Pr(>Chisq)"]>0.05)
+        ###and now that it is dealt with, remove it from pred
+        pred <- pred[pred!="colony_size"]
+      }#("colony_size" %in%pred)
+      
+      if (time_point=="comparison"){
+        for (effect in pred){
+          to_mtext <- rbind(to_mtext,data.frame(effect=effect,pvalue=coeff[effect,"Pr(>Chisq)"],stringsAsFactors=F))
+        }
+        interaction_effect <- pred[grepl("\\:",pred)]
+        p_interaction <- coeff[interaction_effect,"Pr(>Chisq)"]
+        if (p_interaction>0.05){
+          if (sorting=="status"){
+            formula_stat <- update(formula_stat,~.-predictor:status)
+          }
+          if (sorting=="period"){
+            formula_stat <- update(formula_stat,~.-predictor:period)
+          }
+          pred<- attr(terms(formula_stat),"term.labels")
+          pred <- pred[!grepl("\\|",pred)&!grepl("colony_size",pred)]
+          try(model_bis <- lmer(formula_stat,data=dat),silent=T)
+          if (exists("model_bis")){
+            coeff <- Anova(model_bis,type="III")
+            pvalue <-   coeff[pred[!grepl("predictor",pred)],"Pr(>Chisq)"]
+            to_mtext[to_mtext$effect==pred[!grepl("predictor",pred)],"pvalue"] <- pvalue
+            if (pvalue>0.05){
+              if (sorting=="status"){
+                formula_stat <- update(formula_stat,~.-status)
+              }
+              if (sorting=="period"){
+                formula_stat <- update(formula_stat,~.-period)
+              }
+              pred<- attr(terms(formula_stat),"term.labels")
+              pred <- pred[!grepl("\\|",pred)&!grepl("colony_size",pred)]
+            }
+          }
+        }#if (p_interaction>0.05)
+      }#if (time_point=="comparison")
+    }#if ("Pr(>Chisq)"%in%colnames(coeff))
+    
+    rm(list=c("model_temp"))
+  }#(exists("model_temp"))
+  
+  
+  ####get final pvalues based on final model
+  ########get names of the predictors in the table for extracting coefficients
+  formula_simple <- update(formula_stat,~.-(1|colony)-(1|antid_1)-(1|antid_2)-(1|antid))
+  pred2 <- Names(  formula_simple,dat);pred2 <- pred2[!grepl("Intercept",pred2)&!grepl("colony_size",pred2)];pred2 <- pred2[!grepl("\\|",pred2)]
+  try(model_final <- lmer(formula_stat,data=dat),silent=T)
+  #########testing normality of residuals
+  resids <- residuals(model_final)
+  test_norm(resids)
+  
+  if (exists("model_final")){
+    coeff <- Anova(model_final,type="III")
+    print(coeff)
+    coeff2 <- summary(model_final)$coefficients
+    if ("Pr(>Chisq)"%in%colnames(coeff)){
+      if (length(pred)==1){
+        pvalue <- coeff[pred,"Pr(>Chisq)"]
+        to_output <- list(coeff2[pred2,"Estimate"])
+        names(to_output) <- time_point
+        if (nrow(to_mtext)==0){
+          to_mtext <- rbind(to_mtext,data.frame(effect=pred,pvalue=pvalue,stringsAsFactors=F))
+        }else{
+          to_mtext[to_mtext$effect==pred,"pvalue"] <- pvalue
+        }
+        if ( is.numeric(dat$predictor)){
+          if (pvalue < 0.05){
+            if ("colony_size"%in%Names(formula_simple,dat)){
+              to_plot <- rbind(to_plot,data.frame(
+                intercept = coeff2["(Intercept)","Estimate"]+coeff2["colony_size","Estimate"]*mean(dat$colony_size),
+                slope = coeff2[pred2,"Estimate"],
+                #colour = statuses_colours[time_point],stringsAsFactors=F))
+                colour = "black",stringsAsFactors=F))
+              
+            }else{
+              to_plot <- rbind(to_plot,data.frame(intercept = coeff2["(Intercept)","Estimate"],slope = coeff2[pred2,"Estimate"],
+                                                  #colour = statuses_colours[time_point],stringsAsFactors=F))
+                                                  colour = "black",stringsAsFactors=F))
+            }
+          }#if (pvalue < 0.05)         
+        }
+      }#if (length(pred)==1)
+    }#if ("Pr(>Chisq)"%in%colnames(coeff))
+  }#if (exists("model_final"))
+  
+  ###plot ablines
+  if (!is.null(predict)){
+    predicted_value <- to_plot[1,"intercept"] + to_plot[1,"slope"]*predict
+    segments(x0=predict,y0=ymin-0.1*(ymax-ymin),y1=predicted_value,col="springgreen2",xpd=F,lty=2)
+    segments(x0=xlim[1]-0.1*(xlim[2]-xlim[1]),y0=predicted_value,x1=predict,col="red",xpd=F,lty=2)
+  }
+  par(xpd=F)
+  if (nrow(to_plot)>=1){
+    for (i in 1:nrow(to_plot)){
+      abline(a=to_plot[i,"intercept"],b=to_plot[i,"slope"],col=to_plot[i,"colour"],lwd=line_inter)
+    }# i
+  }#(nrow(to_plot)>=1)
+  ###plot mtext
+  if (nrow(to_mtext)>=1){
+    for (i in 1:nrow(to_mtext)){
+      pvalue <- to_mtext[i,"pvalue"];effect <- to_mtext[i,"effect"]
+      if(grepl("\\:",effect)){effect_ <- "Interaction: "}
+      if(!grepl(sorting,effect)){
+        effect_ <- paste(ylabel[1],": ",sep="")
+        if (nchar(effect_)>30){
+          effect_ <- "main: "
+        }
+      }
+      if (sorting=="status"){
+        if(!grepl("predictor",effect)){effect_ <- "treated vs. nestmates: "}
+      }
+      if (sorting=="period"){
+        if(!grepl("predictor",effect)){effect_ <- "before vs. after: "}
+      }
+      p_value <- from_p_to_ptext(pvalue)
+      if (pvalue>0.05){p_cex <- inter_cex}else{p_cex <- max_cex}
+      par(xpd=T)
+      if (nrow(to_mtext)==1){
+        title(main=p_value,cex.main=p_cex,font.main=2,line=stat_line-((i-1)*0.75),xpd=T)
+      }else{
+        title(main=paste(effect_,p_value,sep=""),cex.main=p_cex,font.main=2,line=stat_line-((i-1)*0.75),xpd=T)
+      }
+      par(xpd=T)
+    } # i
+  }#if (nrow(to_mtext)>=1)
+  if(output){return(to_output)}
+  
+  par(mar=par_mar_ori)
+  if(!is.null(predict)){return(predicted_value)}else{return(predict)}
+}#scatterplot_bubbles_qpcr
+
+plot_regression <- function(data,time_point,analysis,n_cat_horiz,n_cat_vertic,pool=F,prepare=F,status=NULL,collective=NULL,pool_plot=F,input_color=NULL,plot_untransformed=F,boldy=F,aligned=F,ymin=NULL,ymax=NULL,xmin=NULL,xmax=NULL,point_cex=NULL,adjust_title_line=0,predict=NULL){
+  adjust_title_line_ori <- adjust_title_line
+  data_ori <- data
+  #### plot regression for each desired combination of variable and predictor
+  for (i in 1:length(analysis[["variable_list"]])){
+    data <- data_ori
+    adjust_title_line <- adjust_title_line_ori
+    ####get variable and predictor
+    variable <- analysis[["variable_list"]][i]
+    
+    ####if necessary: convert pixels to mm
+    if (grepl("changetomm",names(variable))){
+      if (grepl("changetomm2",names(variable))){
+        data[,variable] <- data[,variable]*pix_to_mm_ratio*pix_to_mm_ratio
+        names(variable) <- gsub("_changetomm2","",names(variable))
+      }else{
+        data[,variable] <- data[,variable]*pix_to_mm_ratio
+        names(variable) <- gsub("_changetomm","",names(variable))
+      }
+    }
+    
+    print(variable)
+    
+    predictor <- analysis[["predictor_list"]][i]
+    transf_variable <- analysis[["transf_variable_list"]][i]
+    transf_predictor <- analysis[["transf_predictor_list"]][i]
+    pooli <- pool[i]
+    
+    ####if necessary: include queen and treated into predictor function
+    if (!is.null(predictor)){
+      if ((!collective&refine!=""&predictor!="")&("tag"%in%names(data))){
+        ####first change the content of predictor column 
+        data["predictor"] <- data[,predictor]
+        ###second add treated
+        data[which(data$status=="treated"),"predictor"] <- "treated"
+        ####fourth copy back into predictor column
+        data[,predictor] <- data[,"predictor"]
+        ####fifth if necessary remove queen
+        if (length(unique(data$predictor))>1){
+          if (!queen){
+            data <- data[which(data$task_group!="queen"),]
+          }
+          if (!treated){
+            data <- data[which(data$predictor!="treated"),]
+          }
+          if (!nurses){
+            data <- data[which(data$predictor!="nurse"),]
+          }
+          if (!foragers){
+            data <- data[which(data$predictor!="forager"),]
+          }
+        }
+      }else if (predictor!=""){
+        data["predictor"] <- data[,predictor]
+      }  
+    }
+    
+    ####if necessary: apply prepare dataset function
+    if (prepare){
+      data <- prepare_dataset(data,variable)
+    }else{
+      ####process variable
+      data["variable"] <- data[,variable]
+      data[which(!is.finite(data$variable)),"variable"] <- NA
+    }
+    data["untransformed_variable"] <- data$variable
+    ####transform variable
+    ylabel <- names(variable)
+    ylabel <- capitalize(ylabel)
+    if (transf_variable=="log"){
+      print("Logging variable...")
+      data[!is.na(data$variable),"variable"] <- log_transf(data[!is.na(data$variable),"variable"] )
+      if (!plot_untransformed){
+        
+        if(boldy){
+          ylabel <- substitute(paste(bold(ylabel),bolditalic(" (log)")),list(ylabel=ylabel))
+          adjust_title_line <- 0.17
+        }else{
+          ylabel <- substitute(paste(ylabel,italic(" (log)")),list(ylabel=ylabel))
+          adjust_title_line <- 0.17
+        }
+        
+      }
+    }else if (grepl("power",transf_variable)){
+      data[!is.na(data$variable),"variable"]  <- (data[!is.na(data$variable),"variable"] )^as.numeric(gsub("power","",transf_variable))
+      if (!plot_untransformed){
+        
+        if(boldy){
+          ylabel <- substitute(paste(bold(ylabel),bolditalic(" (") ^pow,bolditalic(")")),list(ylabel=ylabel,pow=as.numeric(gsub("power","",transf_variable))))
+          adjust_title_line <- 0
+        }else{
+          ylabel <- substitute(paste(ylabel,italic(" (") ^pow,italic(")")),list(ylabel=ylabel,pow=as.numeric(gsub("power","",transf_variable))))
+          adjust_title_line <- 0
+        }
+        
+      }
+    }else if (transf_variable=="sqrt"){
+      data[!is.na(data$variable),"variable"]  <- sqrt_transf(data[!is.na(data$variable),"variable"] )
+      if (!plot_untransformed){
+        
+        if (boldy){
+          ylabel <- substitute(paste(bold(ylabel),bolditalic(" ("),sqrt(bolditalic(")"))),list(ylabel=ylabel))
+          adjust_title_line <- 0.24
+        }else{
+          ylabel <- substitute(paste(ylabel,italic(" ("),sqrt(italic(")"))),list(ylabel=ylabel))
+          adjust_title_line <- 0.24
+        }
+      }
+      
+    }
+    ####for comparison: use perform_analysis_combined_function
+    if (time_point=="comparison"){
+      if ("randy"%in%names(data)){
+        case <- "case3"
+      }else{
+        
+        if (is.null(predictor)){
+          case <- "case1"
+        }else if (length(unique(data$predictor))==1){
+          case <- "case1"
+        }else if (!((!collective&refine!=""&predictor!=""))){
+          case <- "case1"
+        }else{
+          case <- "case2"
+        }
+        
+      }
+      if (case=="case1"){
+        perform_barplot_analysis(root_path=root_path,collective=collective,dataset=data,lab_title=ylabel,excluded=NULL,pool=pool,violin_params=analysis[["violin_plot_param"]][i],pool_plot=pool_plot,adjust_title_line=adjust_title_line)
+      }else if (case=="case2"){
+        perform_barplot_analysis_refined(root_path=root_path,collective=collective,dataset=data,lab_title=ylabel,excluded=NULL,pool=pool,violin_params=analysis[["violin_plot_param"]][i],pool_plot=pool_plot,plot_untransformed=plot_untransformed,aligned=aligned,adjust_title_line=adjust_title_line)
+      }else{
+        perform_barplot_analysis_simple(root_path=root_path,collective=collective,dataset=data,lab_title=ylabel,excluded=NULL,pool=pool,violin_params=analysis[["violin_plot_param"]][i],pool_plot=pool_plot,plot_untransformed=plot_untransformed,aligned=aligned,adjust_title_line=adjust_title_line)
+      }
+    }else{
+      ####process predictor
+      data["predictor"] <- data[,predictor]
+      if (is.numeric(data$predictor)){
+        data[which(!is.finite(data$predictor)),"predictor"] <- NA
+        if (transf_predictor=="log"){
+          if (!is.null(predict)){
+            transfi <- log_transf(c(data[!is.na(data$predictor),"predictor"] , predict))
+            predict <- transfi[length(transfi)]
+            data[!is.na(data$predictor),"predictor"]  <- transfi[1:(length(transfi)-1)]
+          }else{
+            data[!is.na(data$predictor),"predictor"]  <- log_transf(data[!is.na(data$predictor),"predictor"] )
+          }
+          xlabel<- paste("Log(", names(predictor),")",sep="")
+        }else if (transf_predictor=="power2"){
+          data[!is.na(data$predictor),"predictor"]  <- (data[!is.na(data$predictor),"predictor"] )^2
+          if (!is.null(predict)){predict <- predict^2}
+          xlabel <- substitute( xlabely ^2,list(xlabely=names(predictor)))
+        }else if (transf_predictor=="sqrt"){
+          if (!is.null(predict)){
+            transfi <- sqrt_transf(c(data[!is.na(data$predictor),"predictor"] , predict))
+            predict <- transfi[length(transfi)]
+            data[!is.na(data$predictor),"predictor"]  <- transfi[1:(length(transfi)-1)]
+          }else{
+            data[!is.na(data$predictor),"predictor"]  <- sqrt_transf(data[!is.na(data$predictor),"predictor"] )
+          }
+          xlabel <- substitute(sqrt ( xlabely),list(xlabely=names(predictor)))
+        }else{
+          xlabel <- names(predictor)
+        }
+      }else{
+        xlabel <- ""
+      }
+      
+      title <- ""
+      if(!"period"%in%names(data)){data["period"] <- data$time}
+      
+      ###process pool argument
+      if (pooli){
+        dat <- aggregate(na.rm=T,na.action="na.pass",variable~predictor+colony+antid+status+colony_size+period,FUN="mean",data=data)
+      }else{
+        dat <- data
+      }
+      
+      ###process horizontal bin argument
+      if (length(unique(dat[,"predictor"]))>n_cat_horiz){
+        dat[which(!is.na(dat[,"predictor"])),"predictor_plot"] <- as.numeric(gsub("\\(","",unlist(strsplit(as.character(cut(dat$predictor,n_cat_horiz,include_lowest=T)),split=","))[grepl("\\(",unlist(strsplit(as.character(cut(dat$predictor,n_cat_horiz,include_lowest=T)),split=",")))]))
+      }else{#if (length(unique(dat[,"predictor"]))>n_cat_horiz)
+        dat[,"predictor_plot"] <- dat[,"predictor"]
+      }##else
+      
+      ###define formula
+      formula_stat <- as.formula(paste("variable"," ~ ", paste(c("predictor","colony_size","(1|colony)","(1|antid)"), collapse= "+")))
+      if (length(unique(na.omit(aggregate(variable~antid,FUN=length,data=dat)$variable)))==1&unique(na.omit(aggregate(variable~antid,FUN=length,data=dat)$variable))[1]==1){
+        formula_stat <- update(formula_stat,~.-(1|antid))
+      }
+      formula_plot <- as.formula(paste("variable"," ~ ", paste(c("predictor_plot","period"), collapse= "+")))
+      ###plot
+      predicted_value <- scatterplot_violin_forpaper(formula_stat=formula_stat,formula_plot=formula_plot,ylabel=ylabel,xlabel=xlabel,title=title,dat=dat,sorting="period",time_point=time_point,output=F,violin_params = analysis[["violin_plot_param"]][i],input_color=input_color,xmin=xmin,xmax=xmax,ymin=ymin,ymax=ymax,point_cex=point_cex,predict=predict)
+      if (!is.null(predicted_value)){
+        predicted_value <- data[,variable][closest_match(predicted_value,data$variable) ]
+        return(predicted_value)
+      } 
+    }
+  }
+}
+
+
 
 #@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 #AW adapted Functions
@@ -387,7 +1028,7 @@ collective_analysis_rescal <- function(data_path=data_path){
   
   for (i in 1:length(variable_list)){
     # for (i in c(1)){
-    print(variable_list[i])
+    print(paste0("######## ",variable_list[i]," ########"))
     data <- data_ori
     
     ###create a variable column
@@ -558,7 +1199,7 @@ collective_analysis_rescal <- function(data_path=data_path){
   return(list(stats_outcomes=stats_outcomes,    post_hoc_outcomes=post_hoc_outcomes,  barplot_delta_period_list=barplot_delta_period_list))
 }
 
-individual_ONE_analysis_rescal <- function(data_path=data_path,which_individuals){
+individual_ONE_analysis <- function(data_path=data_path,which_individuals){
   # for ONE type of individuals (e.g. treated workers only, or queens only)
   
   ###1. read data
@@ -608,7 +1249,7 @@ individual_ONE_analysis_rescal <- function(data_path=data_path,which_individuals
   barplot_delta_period_list <- list()
   
   for (i in 1:length(variable_list)){
-    print(variable_list[i])
+    print(paste0("######## ",variable_list[i]," ########"))
     data <- data_ori
     
     ###create a variable column
@@ -625,7 +1266,7 @@ individual_ONE_analysis_rescal <- function(data_path=data_path,which_individuals
     }else if (transf_variable_list[i]=="none"){
       data$variable <- data$untransformed_variable
     }
-    
+    #hist(data$variable, breaks = 100)
     ###statistics
     ###make sure treatment, exposure, size and period are factors with levels in the desired order
     data$treatment <- factor(data$treatment , levels=treatment_order[which(treatment_order%in%data$treatment )])
@@ -776,7 +1417,7 @@ individual_ONE_analysis_rescal <- function(data_path=data_path,which_individuals
   
 }
 
-individual_TWO_analysis_rescal <- function(data_path=data_path,which_individuals){
+individual_TWO_analysis <- function(data_path=data_path,which_individuals){
   # for ONE type of individuals (e.g. treated workers only, or queens only)
   
   ###1. read data
@@ -828,7 +1469,7 @@ individual_TWO_analysis_rescal <- function(data_path=data_path,which_individuals
   barplot_delta_period_list <- list()
   
   for (i in 1:length(variable_list)){
-    print(variable_list[i])
+    print(paste0("######## ",variable_list[i]," ########"))
     data <- data_ori
     
     ###create a variable column
@@ -1081,7 +1722,7 @@ individual_TWO_analysis_rescal <- function(data_path=data_path,which_individuals
 
 
 barplot_delta <-
-  function(dataset = data,
+  function(dataset,
            predictor,
            post_hoc_outcomes,
            stats_outcomes,
@@ -1108,11 +1749,22 @@ barplot_delta <-
         aggregate(
           na.rm = T,
           na.action = "na.pass",
-          variable ~ predictor + colony_size + colony + time + tag,
+          variable ~ predictor + colony_size + colony + time + tag + task_group,
           FUN = mean,
           data = diff
         )
     }
+    
+    
+    
+    
+    as.formula(paste("variable ~ predictor + colony_size + colony + time",
+                            if (!collective) "+ task_group"))
+    
+    
+    
+    
+    
     
     
     #mean by colony (drop time_of_day)
@@ -1120,7 +1772,8 @@ barplot_delta <-
       aggregate(
         na.rm = T,
         na.action = "na.pass",
-        variable ~ predictor + colony_size + colony + time,
+        as.formula(paste("variable ~ predictor + colony_size + colony + time",
+                         if (!collective) "+ task_group")),
         FUN = mean,
         data = diff
       )
@@ -1129,7 +1782,8 @@ barplot_delta <-
       aggregate(
         na.rm = T,
         na.action = "na.pass",
-        variable ~ time + predictor,
+        as.formula(paste("variable ~ time + predictor",
+                         if (!collective) "+ task_group")),
         FUN = "mean",
         data = diff
       )
@@ -1137,7 +1791,8 @@ barplot_delta <-
       aggregate(
         na.rm = T,
         na.action = "na.pass",
-        variable ~ time + predictor,
+        as.formula(paste("variable ~ time + predictor",
+                         if (!collective) "+ task_group")),
         FUN = "std.error",
         data = diff
       )
@@ -1170,15 +1825,40 @@ barplot_delta <-
       plot_var <-
         ggplot(means,
                aes_string(x = "predictor", y = "mean", fill = "predictor")) +
-        geom_errorbar(
-          aes_string(ymin = paste0("mean - se"), ymax = paste0("mean + se")),
-          position = position_dodge2(width = 0.8, preserve = "single")
-        ) +
-        geom_col(position = position_dodge2(width = 0.8, preserve = "single")) +
         STYLE +
         colFill_treatment +
         labs(y = paste("\u0394", names(variable_list[i]), sep = " "), x = predictor)
       
+      
+      # if there are two ants groups
+      if (any(grepl("task_group", stats_outcomes[which(stats_outcomes$variable == variable_list[i]),"predictor"])) ) {
+
+        col_geom <-         list( 
+          geom_errorbar(
+          aes_string(ymin = paste0("mean - se"), ymax = paste0("mean + se"),group="task_group"),
+          position = position_dodge2(width = 0.8, preserve = "single"),
+          color="black"
+        ) ,
+          geom_col(position = position_dodge2(width = 0.8, preserve = "single"), aes_string(col = "task_group"), size = 0.8
+                   ),
+        scale_color_manual(values = c("#00FFFF", "#FF00FF"))
+        )
+
+        plot_var <- plot_var + col_geom
+      } else {
+        
+        col_geom <- list(
+          geom_errorbar(
+          aes_string(ymin = paste0("mean - se"), ymax = paste0("mean + se")),
+          position = position_dodge2(width = 0.8, preserve = "single")
+        ) ,
+          geom_col(position = position_dodge2(width = 0.8, preserve = "single"))
+        )
+        plot_var <- plot_var + col_geom
+      }
+      
+      
+      # add posthoc letters
       if (variable_list[i] %in% names(post_hoc_outcomes)) {
         additional_geoms <- list(geom_text(
           aes(label = post_hoc_outcomes[[variable_list[i]]][predictor], y = max_mean_se),
@@ -1188,6 +1868,7 @@ barplot_delta <-
         plot_var <- plot_var + additional_geoms
       }
       
+      # manage x axis labels
       if (predictor == "treatment") {
         scale_geom <- list(scale_x_discrete(
           labels = function(x)
@@ -1202,7 +1883,6 @@ barplot_delta <-
         ))
         plot_var <- plot_var + scale_geom
       }
-      
       
       
     } else if (all(names(post_hoc_outcomes[[variable_list[i]]]) == levels(dataset$size))) {
@@ -1231,6 +1911,7 @@ barplot_delta <-
         labs(y = paste("\u0394", names(variable_list[i]), sep = " "), x = predictor) +
         theme(axis.text.x = element_text())
       
+      # manage x axis labels
       if (predictor == "treatment") {
         scale_geom <- list(scale_x_continuous(
           labels = function(x)
@@ -1248,7 +1929,8 @@ barplot_delta <-
       }
       
       
-      # Add geom_segment and geom_text if the condition is true (for more than 1 element in the ggplot if statement, there is the error: Error in `+.gg`:! Cannot add ggproto objects together )
+      # Add bar with significant stars 
+      # (for more than 1 element in the ggplot if statement, there is the error: Error in `+.gg`:! Cannot add ggproto objects together )
       if (variable_list[i] %in% names(post_hoc_outcomes)) {
         additional_geoms <- list(geom_segment(
           aes(
@@ -1298,6 +1980,7 @@ barplot_delta <-
         labs(y = paste("\u0394", names(variable_list[i]), sep = " "), x = predictor) +
         theme(axis.text.x = element_text())
       
+      # manage x axis labels
       if (predictor == "treatment") {
         scale_geom <- list(scale_x_continuous(
           labels = function(x)
@@ -1314,7 +1997,8 @@ barplot_delta <-
         plot_var <- plot_var + scale_geom
       }
       
-      # Add geom_segment and geom_text if the condition is true (for more than 1 element in the ggplot if statement, there is the error: Error in `+.gg`:! Cannot add ggproto objects together )
+      # Add bar with significant stars
+      # for more than 1 element in the ggplot if statement, there is the error: Error in `+.gg`:! Cannot add ggproto objects together )
       if (variable_list[i] %in% names(post_hoc_outcomes)) {
         additional_geoms <- list(geom_segment(
           aes(
@@ -1348,7 +2032,7 @@ barplot_delta <-
     }
     
     #remove legend?
-    plot_var <- plot_var + theme(legend.position = "none")   
+    plot_var <- plot_var + guides(fill = "none")   # remove treatment legend
     
     return(plot_var)
   }
@@ -1390,6 +2074,8 @@ create_diff <-
       #   afters <- aggregate(na.rm=T,na.action="na.pass",variable_after~colony_size+colony+predictor+treatment+antid+time_of_day,FUN=mean,data=afters)
       # }else{
       # if (!grepl("age",root_path)){
+      
+
       if (collective | type != "individual") {
         befores <-
           aggregate(
@@ -1412,7 +2098,7 @@ create_diff <-
           aggregate(
             na.rm = T,
             na.action = "na.pass",
-            variable_before ~ colony_size + colony + predictor + size + tag + time_of_day,
+            variable_before ~ colony_size + colony + predictor + size + tag + time_of_day + task_group,
             FUN = mean,
             data = befores
           )
@@ -1420,7 +2106,7 @@ create_diff <-
           aggregate(
             na.rm = T,
             na.action = "na.pass",
-            variable_after ~ colony_size + colony + predictor + size + tag + time_of_day,
+            variable_after ~ colony_size + colony + predictor + size + tag + time_of_day + task_group,
             FUN = mean,
             data = afters
           )
@@ -1486,6 +2172,211 @@ create_diff <-
       return(diff)
     }
   }
+
+plot_qpcr <- function(experiments){
+  plot1 <- function(data,experiment,ylim=ylim){
+    par_mari <- par("mar")
+    par(mar=par_mari-c(0,0.35,0,par_mari[4]))
+    
+    ###Plot (load)=f(caste)
+    data["variable"] <- data$measured_load_ng_per_uL;data["predictor"] <- data$task_group
+    replac_val <- min(data$variable[data$variable!=0],na.rm=T)/sqrt(2)
+    
+    ####transform 
+    data <- aggregate(na.action=na.pass,na.rm=T,log10(variable+replac_val)~predictor+colony,FUN=mean,data=data)
+    names(data)[grepl("variable",names(data))] <-"variable"
+    
+    means <- aggregate(na.rm=T,na.action="na.pass",variable~predictor,FUN="mean",data=data);ses <- aggregate(na.rm=T,na.action="na.pass",variable~predictor,FUN="std.error",data=data);
+    
+    names(means)[grepl("variable",names(means))] <- "mean";names(ses)[grepl("variable",names(ses))] <- "se";means <- merge(means,ses)
+    means <- means[order(match(means$predictor,status_order)),]
+    
+    means[is.na(means$se),"se"] <- 0
+    if (is.null(ylim)){
+      ymin <- min(c(means$mean-means$se),na.rm=T);ymax<- max(c(means$mean+means$se),na.rm=T)
+      ymin <- floor(ymin)
+      ymax <- ceiling(ymax)
+      rangy <- ymax-ymin
+      ymax <- ymax+0.1*rangy
+      yrange <- c(ymin,ymax)
+    }else{
+      ymin <- ylim[1]
+      ymax <- ylim[2]
+      yrange <- ymax-ymin
+      yrange <- c(ymin-0.04*yrange,ymax+0.04*yrange)
+    }
+    
+    barwidth <- 0.5; barwidth_fac_within <- 0.5; barwidth_fac_between <- 2
+    barspace <- c(barwidth_fac_between,barwidth_fac_within,barwidth_fac_within)
+    
+    plotx <- barplot(means$mean,plot=F,width=barwidth,space=barspace)
+    ####empty plot
+    plot(plotx,means$mean,ylim=yrange,xlim=c(min(plotx)- 0.6*(barwidth_fac_between*barwidth/2+barwidth/2),max(plotx)+ 0.6*(barwidth_fac_between*barwidth/2+barwidth/2)),xlab="",ylab=expression(paste("Mean measured pathogen load (ng/", mu, "L)")),bty="n",xaxs="i",yaxs="i",type="n",cex.axis=min_cex,cex.lab=inter_cex,lwd=line_min,xaxt="n",yaxt="n")
+    ####arrows
+    plot_arrows(means=means,plotx=plotx,plot_type="means",LWD=line_max,LENGTH=0.025,colz=statuses_colours[as.character(means$predictor)])
+    ####points
+    points(plotx,means$mean,col=statuses_colours[as.character(means$predictor)],pch=16,cex=max_cex*0.8,lwd=line_min)
+    ####Y-axis
+    axis(2,at=ymin:floor(ymax),labels=format(10^(ymin:floor(ymax)),scientific=T),cex.axis=min_cex,cex.lab=inter_cex,lwd=0,lwd.ticks=1)
+    
+    par(xpd=T)
+    labses <- full_statuses_names[as.character(means$predictor)]
+    labses <- c(labses[1],rep("",length(labses)-1))
+    axis(1,at=plotx,labels=labses,tick=F,cex.axis=inter_cex,las=1,mgp=c(0.8,0.8,0))
+    
+    for (labse in 2:length(labses)){
+      print(par("mgp")[2] + (labse-1)*1)
+      if (labse/2==round(labse/2)){
+        mtext(full_statuses_names[as.character(means$predictor)][labse],side=1,at=plotx[labse],line=0+par("mgp")[1] + 1,cex=par("cex")*inter_cex)
+      }else{
+        mtext(full_statuses_names[as.character(means$predictor)][labse],side=1,at=plotx[labse],line=0+par("mgp")[1] ,cex=par("cex")*inter_cex)
+      }
+    }
+    
+    segments(x0=min(plotx)- 0.6*(barwidth_fac_between*barwidth/2+barwidth/2),y0=yrange[1],x1=max(plotx)+ 0.6*(barwidth_fac_between*barwidth/2+barwidth/2),lwd=line_max)
+    segments(x0=min(plotx)- 0.6*(barwidth_fac_between*barwidth/2+barwidth/2),y0=yrange[1],y1=yrange[2],lwd=line_max)
+    par(xpd=F)
+    
+    
+    data$predictor <- factor(data$predictor,levels=means$predictor)
+    
+    model_lmer <- lmer(variable~predictor+(1|colony),data=data)
+    test_norm(residuals(model_lmer))
+    pvalue <- Anova(model_lmer)["predictor","Pr(>Chisq)"]
+    print(Anova(model_lmer))
+    # title(ylab=lab_title,cex.lab=1.5,mgp=c(5,1,0))
+    par(xpd=F)
+    abline(h=0)
+    if (pvalue>0.05){p_cex <- inter_cex}else{p_cex <- max_cex}
+    title(main=from_p_to_ptext(pvalue),cex.main=p_cex,font.main=2,line=stat_line,xpd=T)
+    
+    post_hoc <- summary(glht(model_lmer,linfct = mcp(predictor="Tukey")),test=adjusted("BH"))
+    print(post_hoc)
+    post_hoc_groups <- cld(post_hoc)$mcletters$Letters
+    for (idx in 1:length(post_hoc_groups)){
+      group <- post_hoc_groups[as.character(means[idx,"predictor"])]
+      text(x=plotx[idx],y=ymax-0.1*(ymax-ymin),adj=c(0.5,0),labels=as.character(group),xpd=T,cex=inter_cex)
+    }
+    par(mar=par_mari)
+  }
+  
+  all_qpcr_data <- NULL
+  data_for_plot <- NULL
+  for (experiment in experiments){
+    ###read qpcr data
+    warning("rename file qPCR_results.txt instead of qPCR_file.txt")
+    data <- read.table(paste(disk_path,"/",experiment,"/original_data/qPCR/qPCR_results.txt",sep=""),header=T,stringsAsFactors = F)
+    ###keep only ants
+    data <- data[which(!is.na(as.numeric(data$tag))),]
+    ###remove workers that died before the end
+    data <- data[which(data$alive_at_sampling_time),]
+    
+    ###read task group
+    task_groups <-  read.table(paste(disk_path,"/",experiment,"/original_data/",task_group_file,sep=""),header=T,stringsAsFactors = F)
+    ### add task groups info to data
+    data <- merge(data,task_groups,all.x=T,all.y=F)
+    
+    ###keep only pathogen treatments
+    data <- data[grep("pathogen", data$treatment),] #AW
+    
+    ###add metadata
+    data <- data.frame(experiment=experiment,data,stringsAsFactors = F)
+    data$period <- "after"
+    ####list desired variables and transformations
+    data$antid <- as.character(data$colony,data$tag)
+    all_qpcr_data <- rbind(all_qpcr_data,data)
+    data$colony <- as.character(interaction(data$experiment,data$colony))
+    
+    ###remove treated workers
+    data <- data[which(data$status!="treated"),]
+    data_for_plot <- rbind(data_for_plot,data)
+  }
+  
+  all_sim_data <- NULL
+  for (experiment in experiments){
+    data <-read.table(paste(disk_path,experiment,"transmission_simulations/pre_vs_post_treatment/experimentally_exposed_seeds","individual_simulation_results_observed.txt",sep="/"),header=T,stringsAsFactors=F) #AW # in stroeymeyt script there is no trace on how the "calibration/individual_simulation_results.dat" is generated
+    all_sim_data <- rbind(all_sim_data,data.frame(experiment=experiment,data[names(data)!="age"],stringsAsFactors = F))
+  
+    #AW select (as reported in paper figure 2A) load received by untreated ants in post-treatment simulation ("Simulationswere run over the posttreatment networks using experimentally treated foragers as disease origin")
+    all_sim_data <- all_sim_data[grep("pathogen", all_sim_data$treatment),]
+    all_sim_data <- all_sim_data[grep("untreated", all_sim_data$status),]
+    all_sim_data <- all_sim_data[grep("after", all_sim_data$period),]
+    }
+  
+  ###Now join qPCR and simulation data into single data frame
+  all_qpcr_data <- all_qpcr_data[which(!is.na(as.numeric(all_qpcr_data$tag))),]
+  all_qpcr_data <- all_qpcr_data[which(all_qpcr_data$alive_at_sampling_time),]
+  
+  all_sim_qpcr_data <- merge(all_qpcr_data[c("experiment","colony","treatment","tag","status","task_group","age","measured_load_ng_per_uL")],all_sim_data[c("experiment","colony","tag","simulated_load")])
+  
+  ###remove treated individuals
+  all_sim_qpcr_data <- all_sim_qpcr_data[which(all_sim_qpcr_data$status!="treated"),]
+  all_sim_qpcr_data["antid"] <- as.character(interaction(all_sim_qpcr_data$experiment,all_sim_qpcr_data$colony,all_sim_qpcr_data$tag))
+  
+  varb <- "simulated_load"
+  variable_list <- c("measured_load_ng_per_uL")
+  names(variable_list) <-  c("Measured pathogen load")
+  predictor_list <- c( "simulated_load")
+  names(predictor_list) <- c("Simulated pathogen load")
+  transf_variable_list <- c("log") #AW c("log")
+  transf_predictor_list <- c("log") #AW c("log")
+  
+  ymin <- floor(log10(min(all_sim_qpcr_data$measured_load_ng_per_uL[all_sim_qpcr_data$measured_load_ng_per_uL!=0])/sqrt(2)))
+  ymax <- ceiling(log10(max(all_sim_qpcr_data$measured_load_ng_per_uL)))
+  xmin <- floor(log10(min(all_sim_qpcr_data[all_sim_qpcr_data[,varb]!=0,varb])/sqrt(2)))
+  xmax <- ceiling(log10(max(all_sim_qpcr_data[,varb])))
+  
+  analysis <- list(variable_list=variable_list,
+                   predictor_list=predictor_list,
+                   transf_variable_list=transf_variable_list,
+                   transf_predictor_list=transf_predictor_list,
+                   violin_plot_param = list(c(1,0,-0.025,0.2,0.2)))
+  
+  ###
+  # all_sim_qpcr_data_big <- all_sim_qpcr_data[grep("big", all_sim_qpcr_data$treatment),]
+  # all_sim_qpcr_data_small <- all_sim_qpcr_data[grep("small", all_sim_qpcr_data$treatment),]
+  # 
+  # hist(all_sim_qpcr_data_small[,c("measured_load_ng_per_uL","simulated_load")],breaks = 100)
+  # hist(all_sim_qpcr_data_big[,c("measured_load_ng_per_uL","simulated_load")],breaks = 100)
+  
+ #  # Plotting the variables by treatment
+ # print( ggplot(all_sim_qpcr_data, aes(x = measured_load_ng_per_uL, fill = treatment)) +
+ #          geom_histogram(bins = 30, alpha = 0.7) +
+ #          labs(x = "Measured Load (ng/uL)", y = "Frequency") +
+ #          ggtitle("Frequency Histogram of Measured Load by Treatment")
+ # )
+ # 
+ # print(
+ #   ggplot(all_sim_qpcr_data, aes(x = simulated_load, fill = treatment)) +
+ #     geom_histogram(bins = 30, alpha = 0.7) +
+ #     labs(x = "Simulated Load", y = "Frequency") +
+ #     ggtitle("Frequency Histogram of Simulated Load by Treatment")
+ # )
+  
+  predicted_value <- plot_regression(data=all_sim_qpcr_data,time_point="after",analysis=analysis,n_cat_horiz=20,n_cat_vertic=11,pool=c(F,F),collective=T,input_color=colour_palette_age,xmin=xmin,xmax=xmax,ymin=ymin,ymax=ymax,point_cex=1.5,predict=high_threshold)
+  par(xpd=NA)
+  if (varb =="simulated_load"){
+    title(sub=expression(italic("(Prop. exposure dose)")),cex.sub=min_cex,font.sub=1,mgp=c(1,0.1,0))
+  }else if (varb =="predicted_measured_load_ng_per_uL_SI"){
+    title(sub=expression(paste("(ng/", mu, "L)")),cex.sub=min_cex,font.sub=1,mgp=c(1,0.1,0))
+  }
+  par(xpd=F)
+  
+  if (!exists("ymin")){
+    ylim <- NULL
+  }else{
+    ylim <- c(ymin,ymax)
+  }
+  plot1(data=data_for_plot,experiment="both",ylim=NULL)
+  if (exists("predicted_value")){return(predicted_value)}else{return(NULL)} 
+}
+
+
+
+
+
+
+
 
 
 

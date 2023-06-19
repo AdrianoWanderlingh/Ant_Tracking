@@ -13,7 +13,7 @@ source(paste(source_path,"/functions.R",sep=""))
 source(paste(source_path,"/analysis_parameters.R",sep=""))
 
 # ############## Figure 1##############
-# #########Define parameters for Figure 1 
+# #########Define parameters for Figure 1
 # figure_height <- page_height/1.8
 # #####at the top of figure 1 we will have 2 images. I now give their height in inches 
 # image_height <- 1.75

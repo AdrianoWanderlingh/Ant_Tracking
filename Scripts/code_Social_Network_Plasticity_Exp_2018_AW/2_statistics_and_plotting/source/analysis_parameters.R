@@ -44,7 +44,7 @@ names(treatment_colours) <- treatments
 
 statuses <- c("treated","untreated","queen"
               ,
-              "forager","occasional_forager","nurse","queen"
+              "nurse","occasional_forager","forager","queen"
               ,
               "worker","queen"
               ,
@@ -79,7 +79,7 @@ names(statuses_colours) <- statuses
 statuses_colours <- statuses_colours[!duplicated(names(statuses_colours))]
 full_statuses_names <- c("Treated\nnurses","Untreated\nworkers","Queen\n"
                          ,
-                         "Untreated\nforagers","Occasional\nforagers","Nurses\n","Queen\n"
+                         "Untreated\nnurses","Occasional\nforagers","Foragers\n","Queen\n"
                          ,
                          "Workers","Queen\n"
                          ,
