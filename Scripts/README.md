@@ -2,7 +2,7 @@
 
 This file will help you to run the analyses on the tracking data from start to finish. The pre-processing steps have been written for tracking data produced by Bristol's new tracking system, the post-processing has been adapted from [Stroeymeyt et al., 2018](https://www.science.org/doi/epdf/10.1126/science.aat4793).
 
-**Disclaimer**: Most of the stuff you will be looking for is in `PhD-Ant_Colonies_Tracking_Analysis/scriptsR/EXP1_base_analysis/` for example: create metadata files, define ant tasks, etc. This pipeline is currently quite messy, but at least it exists and is mostly correct. All the needed scripts are present but some paths may need to be changed. I never had the time to polish it but please, feel free to do it if you have the guts!
+**Disclaimer**: Most of the stuff you will be looking for is in [here](https://github.com/AdrianoWanderlingh/PhD-Ant_Colonies_Tracking_Analysis/tree/main/scriptsR/EXP1_base_analysis), for example: create metadata files, define ant tasks, etc. This pipeline is currently quite messy, but at least it exists and is mostly correct. All the needed scripts are present but some paths may need to be changed. I never had the time to polish it but please, feel free to do it if you have the guts!
 
 **Disclaimer 2**: Please read the available guides and the comments in the scripts to understand how things work. Always check where things are stored before running scripts blindly. If there is no guide, write one! 📜
 
