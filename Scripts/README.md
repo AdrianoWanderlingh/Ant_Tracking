@@ -6,9 +6,11 @@ This file will help you to run the analyses on the tracking data from start to f
 
 **Disclaimer 2**: Please read the available guides and the comments in the scripts to understand how things work. Always check where things are stored before running scripts blindly. If there is no guide, write one! 📜
 
+:octocat: To download the content of a git subfolder instead of a full Repository, either use [gitdir](https://github.com/sdushantha/gitdir) (linux terminal) or this [easy web tool](https://download-directory.github.io/).
+
 ## A. Pre-processing
 
-- Follow the `pre-processing_Adriano_June2022` guide (find it in the AEL sharepoint)
+- Follow the [pre-processing_Adriano_June2022](https://uob.sharepoint.com/:w:/r/teams/grp-AntsEpidemiologyLab/_layouts/15/Doc.aspx?sourcedoc=%7B2562631B-A6E5-4289-907F-89502F6C27E6%7D&file=pre-processing_Adriano_June2022.docx&action=default&mobileredirect=true&DefaultItemOpen=1) guide. Please update this file as it is in a terrible state. 
 - Example files are in `Seagate\ Portable\ Disk` or in `DISK4` (Ask Adriano)
 
 1. Create myrmidon files and create the ants
@@ -16,6 +18,8 @@ This file will help you to run the analyses on the tracking data from start to f
    **Source**: [Define_Ant_Identifications_standalone.R](https://github.com/AdrianoWanderlingh/PhD-Ant_Colonies_Tracking_Analysis/tree/main/scriptsR)
 
 2. Auto-orient, assign capsules
+
+- the capsules defined by Adriano are in either in `Seagate\ Portable\ Disk` or `DISK4` `/ADRIANO/EXPERIMENT_DATA/CURRENT_CAPS_DEF_BASE_FILES_MAN_ORIENTED`. The .myrmidon files need to be moved at the same folder level as their relative tracking data, in this case either `/ADRIANO/EXPERIMENT_DATA` `/REP3` or `/REP9`. The currently present capsules are for the general definition of interactions for all analytical purposes (CapsuleDef2018) or specifically designed to test the Ant Behaviours Classifier (CapsuleDef 3 to 12).
 
    **Source**: [Data_preparation_after_postprocessing](https://github.com/AdrianoWanderlingh/PhD-Ant_Colonies_Tracking_Analysis/tree/main/scriptsR/EXP1_base_analysis/Data_preparation_after_postprocessing)
 
