@@ -173,7 +173,6 @@ SE.diff <- function(var.pool, n1, n2) {
 
 
 
-LoadOriData <- FALSE
 
 
 
@@ -198,86 +197,84 @@ IMMUNITY_DATA <- paste0("/media/",usr,"/DISK4/EXP1_base_analysis/Personal_Immuni
 WORKDIR <- paste(data_path,"molecular_bio_analysis/", sep ="/")
 
 
-#############################################################################################
-#############################################################################################
-
-
-if (LoadOriData) {
-  ###################################################################
-  ##### FIRST TEST (AUGUST) OUTPUTS - WITH PLOT #####################
-
-  Florent_output <- read.csv(paste0(IMMUNITY_DATA, "/221219-Adriano-DNA-220809-newplate_Analysis.csv"), header = T, stringsAsFactors = F, sep = ",")
-  colnames(Florent_output)[which(colnames(Florent_output) == "CT.19.12")] <- "Ct1"
-  colnames(Florent_output)[which(colnames(Florent_output) == "Mbru.DNA.19.12")] <- "MbruDNA"
-  Florent_output$CT.09.08 <- NULL
-  Florent_output$Mbru.DNA.09.08 <- NULL
-  names(Florent_output)[names(Florent_output) == "Well"] <- "Sample_Well"
-
-  info_ants <- read.table(paste0(IMMUNITY_DATA, "/Select_Exposed_nurses_for_qPCR_8-08-22_ANNOTATED.txt"), header = T, stringsAsFactors = F, sep = ",")
-
-  # format well name with 0 after letter
-  info_ants$Sample_Well <- gsub(
-    "^(.{1})(.*)$", # Apply gsub
-    "\\10\\2",
-    info_ants$NEW_position
-  )
-  info_ants$NEW_position <- NULL
-
-  ### merge
-  Meta_all_combs <- list(info_ants, Florent_output)
-  Meta_all_combs <- Reduce(function(x, y) merge(x, y, all = TRUE), Meta_all_combs)
-
-  # Meta_all_combs[which(Meta_all_combs$MbruDNA == "#DIV/0!"),] <- NA
-  # Non detected values manually set to 0.000001
-  No_CT_value <- 0.000001
-  Meta_all_combs[which(Meta_all_combs$MbruDNA == "#DIV/0!"), "NOTE"] <- paste(Meta_all_combs[which(Meta_all_combs$MbruDNA == "#DIV/0!"), "NOTE"], "No CT is either no DNA or issue in extraction", sep = ".")
-  Meta_all_combs[which(Meta_all_combs$MbruDNA == "#DIV/0!"), "MbruDNA"] <- No_CT_value # No CT (either no DNA or issue in extraction)
-
-  Meta_all_combs <- Meta_all_combs[which(Meta_all_combs$MbruDNA != "No sample"), ]
-
-  Meta_all_combs$Treatment <- RIGHT(Meta_all_combs$REP_treat, 2)
-
-  # save output!
-  write.table(Meta_all_combs, file = "/home/cf19810/Documents/scriptsR/EXP1_base_analysis/Personal_Immunity/Pathogen_Quantification_Data/220809-Adriano-MetIS2-colony-checkup_Analysis_with_Identities.txt", append = F, col.names = T, row.names = F, quote = T, sep = ",")
-
-  # Rename by name
-  Meta_all_combs$Treatment <- as.factor(Meta_all_combs$Treatment)
-  levels(Meta_all_combs$Treatment)[levels(Meta_all_combs$Treatment) == "BS"] <- "Big Sham"
-  levels(Meta_all_combs$Treatment)[levels(Meta_all_combs$Treatment) == "BP"] <- "Big Pathogen"
-  levels(Meta_all_combs$Treatment)[levels(Meta_all_combs$Treatment) == "SS"] <- "Small Sham"
-  levels(Meta_all_combs$Treatment)[levels(Meta_all_combs$Treatment) == "SP"] <- "Small Pathogen"
-
-  Meta_all_combs$MbruDNA <- as.numeric(Meta_all_combs$MbruDNA)
-
-  No_CT_REPs <- toString(Meta_all_combs[which(Meta_all_combs$MbruDNA == No_CT_value), "REP_treat"])
-
-  ggplot(
-    Meta_all_combs,
-    aes(x = Treatment, y = MbruDNA, group = Treatment, color = Treatment, label = REP_treat)
-  ) +
-    # geom_jitter(position = position_jitter(seed = 1)) +
-    # geom_text(position = position_jitter(seed = 5),fontface = "bold") +
-    geom_text(position = position_jitter(seed = 5), fontface = "bold", aes(alpha = ifelse(MbruDNA == No_CT_value, 0.5, 1))) +
-    STYLE +
-    theme(legend.position = "none") +
-    labs(
-      title = "Pathogen Quantification Adriano",
-      subtitle = "2 ants per large colony, 1 per small colony",
-      y = " quantification ng/µL",
-      caption = paste("Threshold cycle (Ct) missing for", No_CT_REPs)
-    ) #+
-  # facet_wrap(~ PERIOD) #, labeller = as_labeller(time_of_day,text.add)
-}
-
-# check if there are overlapping rows between two datasets using an indicator
-# info_test$included_FIRST <- TRUE
-# metadata_Selected$included_SECOND <- TRUE
-# res <- merge(info_test, metadata_Selected, all=TRUE)
-
 #######################################################################################################
 ### DATA PREP: FULL PATHOGEN EXPOSED DATASET ##########################################################
 #######################################################################################################
 
+if (!file.exists(paste(WORKDIR, "Adriano_qPCR_pathogen_load_MASTER_REPORT.csv", sep = "/"))) {
+  LoadOriData <- FALSE
+  if (LoadOriData) {
+    ###################################################################
+    ##### FIRST TEST (AUGUST) OUTPUTS - WITH PLOT #####################
+    
+    Florent_output <- read.csv(paste0(IMMUNITY_DATA, "/221219-Adriano-DNA-220809-newplate_Analysis.csv"), header = T, stringsAsFactors = F, sep = ",")
+    colnames(Florent_output)[which(colnames(Florent_output) == "CT.19.12")] <- "Ct1"
+    colnames(Florent_output)[which(colnames(Florent_output) == "Mbru.DNA.19.12")] <- "MbruDNA"
+    Florent_output$CT.09.08 <- NULL
+    Florent_output$Mbru.DNA.09.08 <- NULL
+    names(Florent_output)[names(Florent_output) == "Well"] <- "Sample_Well"
+    
+    info_ants <- read.table(paste0(IMMUNITY_DATA, "/Select_Exposed_nurses_for_qPCR_8-08-22_ANNOTATED.txt"), header = T, stringsAsFactors = F, sep = ",")
+    
+    # format well name with 0 after letter
+    info_ants$Sample_Well <- gsub(
+      "^(.{1})(.*)$", # Apply gsub
+      "\\10\\2",
+      info_ants$NEW_position
+    )
+    info_ants$NEW_position <- NULL
+    
+    ### merge
+    Meta_all_combs <- list(info_ants, Florent_output)
+    Meta_all_combs <- Reduce(function(x, y) merge(x, y, all = TRUE), Meta_all_combs)
+    
+    # Meta_all_combs[which(Meta_all_combs$MbruDNA == "#DIV/0!"),] <- NA
+    # Non detected values manually set to 0.000001
+    No_CT_value <- 0.000001
+    Meta_all_combs[which(Meta_all_combs$MbruDNA == "#DIV/0!"), "NOTE"] <- paste(Meta_all_combs[which(Meta_all_combs$MbruDNA == "#DIV/0!"), "NOTE"], "No CT is either no DNA or issue in extraction", sep = ".")
+    Meta_all_combs[which(Meta_all_combs$MbruDNA == "#DIV/0!"), "MbruDNA"] <- No_CT_value # No CT (either no DNA or issue in extraction)
+    
+    Meta_all_combs <- Meta_all_combs[which(Meta_all_combs$MbruDNA != "No sample"), ]
+    
+    Meta_all_combs$Treatment <- RIGHT(Meta_all_combs$REP_treat, 2)
+    
+    # save output!
+    write.table(Meta_all_combs, file = "/home/cf19810/Documents/scriptsR/EXP1_base_analysis/Personal_Immunity/Pathogen_Quantification_Data/220809-Adriano-MetIS2-colony-checkup_Analysis_with_Identities.txt", append = F, col.names = T, row.names = F, quote = T, sep = ",")
+    
+    # Rename by name
+    Meta_all_combs$Treatment <- as.factor(Meta_all_combs$Treatment)
+    levels(Meta_all_combs$Treatment)[levels(Meta_all_combs$Treatment) == "BS"] <- "Big Sham"
+    levels(Meta_all_combs$Treatment)[levels(Meta_all_combs$Treatment) == "BP"] <- "Big Pathogen"
+    levels(Meta_all_combs$Treatment)[levels(Meta_all_combs$Treatment) == "SS"] <- "Small Sham"
+    levels(Meta_all_combs$Treatment)[levels(Meta_all_combs$Treatment) == "SP"] <- "Small Pathogen"
+    
+    Meta_all_combs$MbruDNA <- as.numeric(Meta_all_combs$MbruDNA)
+    
+    No_CT_REPs <- toString(Meta_all_combs[which(Meta_all_combs$MbruDNA == No_CT_value), "REP_treat"])
+    
+    ggplot(
+      Meta_all_combs,
+      aes(x = Treatment, y = MbruDNA, group = Treatment, color = Treatment, label = REP_treat)
+    ) +
+      # geom_jitter(position = position_jitter(seed = 1)) +
+      # geom_text(position = position_jitter(seed = 5),fontface = "bold") +
+      geom_text(position = position_jitter(seed = 5), fontface = "bold", aes(alpha = ifelse(MbruDNA == No_CT_value, 0.5, 1))) +
+      STYLE +
+      theme(legend.position = "none") +
+      labs(
+        title = "Pathogen Quantification Adriano",
+        subtitle = "2 ants per large colony, 1 per small colony",
+        y = " quantification ng/µL",
+        caption = paste("Threshold cycle (Ct) missing for", No_CT_REPs)
+      ) #+
+    # facet_wrap(~ PERIOD) #, labeller = as_labeller(time_of_day,text.add)
+  }
+  # check if there are overlapping rows between two datasets using an indicator
+  # info_test$included_FIRST <- TRUE
+  # metadata_Selected$included_SECOND <- TRUE
+  # res <- merge(info_test, metadata_Selected, all=TRUE)
+  
+  
 # read csv
 ##############################
 # The file contains the data for the first run (09/08/22) with 2 ants per colony + half of the pathogen colonies (up to the 3/11/22)
@@ -415,11 +412,14 @@ write.csv(Meta_all_combs, file = "/home/cf19810/Documents/scriptsR/EXP1_base_ana
 
 ### remove samples above threshold
 DNA_Results_annotated <- DNA_Results_annotated[which(DNA_Results_annotated$above_detection_threshold =="T"), ]
-
+}
 
 #####################################################################################
 ##################              STATS & PLOTS        ################################
 #####################################################################################
+
+DNA_Results_annotated <- read.csv(paste(WORKDIR, "Adriano_qPCR_pathogen_load_MASTER_REPORT.csv", sep = "/"))
+
 
 ### HIST OF ANTS THAT RECEIVED A LOAD BY TASK
 ggplot(DNA_Results_annotated, aes(x = log(MbruDNA), fill = Exposed)) +
@@ -429,7 +429,7 @@ ggplot(DNA_Results_annotated, aes(x = log(MbruDNA), fill = Exposed)) +
 # scale_fill_discrete(labels=c('untreated', 'treated'))
 
 # create constant to make zeros a small number
-constant <- min(DNA_Results_annotated$MbruDNA[which(DNA_Results_annotated$MbruDNA != 0)], na.rm = T) / 10
+constant <- min(DNA_Results_annotated$MbruDNA[which(DNA_Results_annotated$MbruDNA != 0)], na.rm = T) / 2
 
 #####################################################################################
 ##### TEST DIFFERENCE OF MbruDNA.LOAD BETWEEN SIZES FOR EACH Ant_status (ANTTASK*TREATMENT CONDITION)
