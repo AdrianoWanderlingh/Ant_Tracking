@@ -1,6 +1,6 @@
 # Tracking Analysis Scripts Order 📊
 
-This file will help you to run the analyses on the tracking data from start to finish. The pre-processing steps have been written for tracking data produced by Bristol's new tracking system, the post-processing has been adapted from [Stroeymeyt et al., 2018](https://www.science.org/doi/epdf/10.1126/science.aat4793).
+This file will help you to run the analyses on the tracking data from start to finish. The pre-processing steps have been written for tracking data produced by Bristol's new tracking system, the post-processing has been adapted from [Stroeymeyt et al., 2018](https://www.science.org/doi/epdf/10.1126/science.aat4793). The final analysis step 
 
 **Disclaimer**: Most of the stuff you will be looking for is in [here](https://github.com/AdrianoWanderlingh/PhD-Ant_Colonies_Tracking_Analysis/tree/main/scriptsR/EXP1_base_analysis), for example: create metadata files, define ant tasks, etc. This pipeline is currently quite messy, but at least it exists and is mostly correct. All the needed scripts are present but some paths may need to be changed. I never had the time to polish it but please, feel free to do it if you have the guts!
 
@@ -39,7 +39,7 @@ These scripts use the `interaction_detection` produced for the Ant Behaviours Cl
 
 _Note: I'm currently moving to a new, clean, GitHub repo so part of the code is found in `/Ant_Tracking`_
 
-## C. Adapt Outputs to Plug it into Nathalie Stroeymeyt Modified Post-processing and Analysis Pipeline 🔌
+## C. Adapt Outputs to Plug it into Stroeymeyt et al., 2018 Modified Pipeline 🔌
 
 - Example files are in `Seagate\ Portable\ Disk` or in `DISK4` (Ask Adriano) or, for the original files, in `New Passport` (Ask Nathalie)
 
