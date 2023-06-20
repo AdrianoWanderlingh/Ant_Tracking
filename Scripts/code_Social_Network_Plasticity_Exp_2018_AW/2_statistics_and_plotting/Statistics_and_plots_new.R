@@ -167,7 +167,7 @@ variable_list <-        c("mean_aggregated_distance_to_treated")
 names(variable_list) <- c("mean aggregated distance to treated")
 transf_variable_list <- c("power0.01")  ######"none", "sqrt" "log","power2"
 
-warning("Error in get(which_levels) : object 'level_names' not found")
+warning("Error in get(which_levels) : object 'level_names' not found. Not retained in memory?")
 ind_TWO_net <- individual_TWO_analysis(data_path,which_individuals= c("nurse","forager")) ## "treated","queen","nurse","forager"
 
 
@@ -179,7 +179,6 @@ variable_list <-        c("prop_time_outside","inter_caste_contact_duration","du
 names(variable_list) <- c("prop time outside","inter caste contact duration","duration of contact with treated min")
 transf_variable_list <- c("power0.01"        , "power0.01"                       , "power0.01"            )   ######"none", "sqrt" "log","power2"
 
-warning("Error in get(which_levels) : object 'level_names' not found WHEN inter_caste_contact_duration and duration_of_contact_with_treated_min are transformed")
 ind_TWO_beh <- individual_TWO_analysis(data_path,which_individuals= c("nurse","forager")) ## "treated","queen","nurse","forager"
 # to fix: double letters assigned when cols are split by task
 
@@ -196,7 +195,6 @@ variable_list <-        c("duration_grooming_given_to_treated_min")
 names(variable_list) <- c("duration grooming given to treated min")
 transf_variable_list <- c("none"        )   ######"none", "sqrt" "log","power2"
 
-warning("Error in get(which_levels) : object 'level_names' not found")
 ind_TWO_beh <- individual_TWO_analysis(data_path,which_individuals= c("nurse","forager")) ## "treated","queen","nurse","forager"
 
 

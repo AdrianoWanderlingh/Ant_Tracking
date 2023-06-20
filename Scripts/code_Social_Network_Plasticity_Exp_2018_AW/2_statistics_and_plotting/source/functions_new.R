@@ -1706,7 +1706,7 @@ individual_TWO_analysis <- function(data_path=data_path,which_individuals){
     rm(list=ls()[which(grepl("p_interaction",ls()))])
     rm(list=ls()[which(grepl("posthoc_groups_",ls()))])
     
-    plot
+  
     barplot_delta_period <- barplot_delta(dataset=data,predictor="treatment",post_hoc_outcomes=post_hoc_outcomes,stats_outcomes=stats_outcomes,i=i,type="individual",collective=F,plot_untransformed=T,diff_type="absolute_difference") #form_stat=NULL,
     print(barplot_delta_period)
 
@@ -1852,20 +1852,25 @@ barplot_delta <-
       # add posthoc letters
       if (variable_list[i] %in% names(post_hoc_outcomes)) {
         # if there are two ants groups
-        if (any(grepl("task_group", stats_outcomes[which(stats_outcomes$variable == variable_list[i]),"predictor"])) ) {
+        # first if: check if task_group appears in the predictors
+        # second if: return true if stats_outcomes$pval is lower than 0.05 for row that grep "task" in stats_outcomes$predictor
+        if (any(grepl("task_group", stats_outcomes[which(stats_outcomes$variable == variable_list[i]),"predictor"])
+            &  ifelse(grepl("task_group", stats_outcomes$predictor) & stats_outcomes$pval < 0.05, TRUE, FALSE))
+            ) {
+
          reshaped_posthocs <- data.frame(predictor = names(post_hoc_outcomes[[variable_list[i]]]), letters = post_hoc_outcomes[[variable_list[i]]], stringsAsFactors = FALSE)
           
          reshaped_posthocs$task_group <-  sub(".*\\.(.*)", "\\1", reshaped_posthocs$predictor)
          reshaped_posthocs$predictor <- sub("\\.[^.]*$", "", reshaped_posthocs$predictor)
          
-         warning("FIX THIS, EITHER WITH SOME SOLUTION INHERITED FROM THE PAST OR GPT OR BY RETURNING AT THE INITIAL WAY AND ORDERING THE VECTOR AS NATHALIE DOES")
-         
-          additional_geoms <- list(geom_text(
-            aes(label = reshaped_posthocs, x = "predictor", y = max_mean_se, group  = "task_group"),
+         warning("geom_text faulty, as it shows letters inverted in each treatment. temporary fix: coloured the letters to help readability")
+          additional_geoms <- list(geom_text(data = reshaped_posthocs,
+            aes(label = letters, x = predictor, y = max_mean_se, col  = task_group, group= task_group),
             position = position_dodge2(width = 0.8, preserve = "single"),
             vjust = -0.4
           ))
           plot_var <- plot_var + additional_geoms
+
           #normal condition (4 groups)
         }else{
         additional_geoms <- list(geom_text(
