@@ -1,8 +1,10 @@
 # Tracking Analysis Scripts Order 📊
 
+This file will help you to run the analyses on the tracking data from start to finish. The pre-processing steps have been written for tracking data produced by Bristol's new tracking system, the post-processing has been adapted from [Stroeymeyt et al., 2018](https://www.science.org/doi/epdf/10.1126/science.aat4793).
+
 **Disclaimer**: Most of the stuff you will be looking for is in `PhD-Ant_Colonies_Tracking_Analysis/scriptsR/EXP1_base_analysis/` for example: create metadata files, define ant tasks, etc. This pipeline is currently quite messy, but at least it exists and is mostly correct. All the needed scripts are present but some paths may need to be changed. I never had the time to polish it but please, feel free to do it if you have the guts!
 
-**Disclaimer 2**: Please read the available guides and the comments in the scripts to understand how things work. If there is no guide, write one! 📜
+**Disclaimer 2**: Please read the available guides and the comments in the scripts to understand how things work. Always check where things are stored before running scripts blindly. If there is no guide, write one! 📜
 
 ## A. Pre-processing
 
@@ -18,6 +20,8 @@
    **Source**: [Data_preparation_after_postprocessing](https://github.com/AdrianoWanderlingh/PhD-Ant_Colonies_Tracking_Analysis/tree/main/scriptsR/EXP1_base_analysis/Data_preparation_after_postprocessing)
 
 ## B. Extract the Interactions and Space Use
+
+- To ensure that the outputs of this step are stored correctly and in the same format as Stroeymeyt et al. (2018) for the following analyses, it is necessary to use the same folder structure. I created  the [folder structure](https://github.com/AdrianoWanderlingh/Ant_Tracking/blob/main/Scripts/code_Social_Network_Plasticity_Exp_2018_AW/dirs.txt) with `find . -type d > dirs.txt` and you can recreate it in your destination of choice with `xargs mkdir -p < dirs.txt` (in the linux terminal).
 
 **Source**: [EXP1_base_analysis.R](https://github.com/AdrianoWanderlingh/PhD-Ant_Colonies_Tracking_Analysis/tree/main/scriptsR/EXP1_base_analysis)
 
