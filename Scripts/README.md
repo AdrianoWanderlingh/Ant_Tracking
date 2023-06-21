@@ -1,8 +1,8 @@
 # Tracking Analysis Scripts Order 📊
 
-This file will help you to run the analyses on the tracking data from start to finish. The pre-processing steps have been written for tracking data produced by Bristol's new tracking system, the post-processing has been adapted from [Stroeymeyt et al., 2018](https://www.science.org/doi/epdf/10.1126/science.aat4793). The final analysis step 
+This file will help you to run the analyses on the tracking data from start to finish. The pre-processing steps have been written for tracking data produced by Bristol's new tracking system, the post-processing has been adapted from [Stroeymeyt et al., 2018](https://www.science.org/doi/epdf/10.1126/science.aat4793). The final statistical analysis steps will change according to your experiment structure and, currently, they are designed to fit Adriano's data (2 size treatments x 2 exposure treatments).
 
-**Disclaimer**: Most of the stuff you will be looking for is in [here](https://github.com/AdrianoWanderlingh/PhD-Ant_Colonies_Tracking_Analysis/tree/main/scriptsR/EXP1_base_analysis), for example: create metadata files, define ant tasks, etc. This pipeline is currently quite messy, but at least it exists and is mostly correct. All the needed scripts are present but some paths may need to be changed. I never had the time to polish it but please, feel free to do it if you have the guts!
+**Disclaimer**: Most of the base stuff you will be looking for is in [here](https://github.com/AdrianoWanderlingh/PhD-Ant_Colonies_Tracking_Analysis/tree/main/scriptsR/EXP1_base_analysis), for example: create metadata files, define ant tasks, etc. This pipeline is currently quite messy, but at least it exists and is mostly correct. All the needed scripts are present but some paths may need to be changed. I never had the time to polish it but please, feel free to do it if you have the guts!
 
 **Disclaimer 2**: Please read the available guides and the comments in the scripts to understand how things work. Always check where things are stored before running scripts blindly. If there is no guide, write one! 📜
 
@@ -19,13 +19,13 @@ This file will help you to run the analyses on the tracking data from start to f
 
 2. Auto-orient, assign capsules
 
-- the capsules defined by Adriano are in either in `Seagate\ Portable\ Disk` or `DISK4` `/ADRIANO/EXPERIMENT_DATA/CURRENT_CAPS_DEF_BASE_FILES_MAN_ORIENTED`. The .myrmidon files need to be moved at the same folder level as their relative tracking data, in this case either `/ADRIANO/EXPERIMENT_DATA` `/REP3` or `/REP9`. The currently present capsules are for the general definition of interactions for all analytical purposes (CapsuleDef2018) or specifically designed to test the Ant Behaviours Classifier (CapsuleDef 3 to 12).
+ The capsules defined by Adriano are in either in `Seagate\ Portable\ Disk` or `DISK4` `/ADRIANO/EXPERIMENT_DATA/CURRENT_CAPS_DEF_BASE_FILES_MAN_ORIENTED`. The .myrmidon files need to be moved at the same folder level as their relative tracking data, in this case either `/ADRIANO/EXPERIMENT_DATA` `/REP3` or `/REP9`. The currently present capsules are for the general definition of interactions for all analytical purposes (CapsuleDef2018) or specifically designed to test the Ant Behaviours Classifier (CapsuleDef 3 to 12).
 
    **Source**: [Data_preparation_after_postprocessing](https://github.com/AdrianoWanderlingh/PhD-Ant_Colonies_Tracking_Analysis/tree/main/scriptsR/EXP1_base_analysis/Data_preparation_after_postprocessing)
 
 ## B. Extract the Interactions and Space Use
 
-- To ensure that the outputs of this step are stored correctly and in the same format as Stroeymeyt et al. (2018) for the following analyses, it is necessary to use the same folder structure. I created  the [folder structure](https://github.com/AdrianoWanderlingh/Ant_Tracking/blob/main/Scripts/code_Social_Network_Plasticity_Exp_2018_AW/dirs.txt) with `find . -type d > dirs.txt` and you can recreate it in your destination of choice with `xargs mkdir -p < dirs.txt` (in the linux terminal).
+ To ensure that the outputs of this step are stored correctly and in the same format as Stroeymeyt et al. (2018) for the following analyses, it is necessary to use the same folder structure. I created  the [folder structure](https://github.com/AdrianoWanderlingh/Ant_Tracking/blob/main/Scripts/code_Social_Network_Plasticity_Exp_2018_AW/dirs.txt) with `find . -type d > dirs.txt` and you can recreate it in your destination of choice with `xargs mkdir -p < dirs.txt` (in the linux terminal).
 
 **Source**: [EXP1_base_analysis.R](https://github.com/AdrianoWanderlingh/PhD-Ant_Colonies_Tracking_Analysis/tree/main/scriptsR/EXP1_base_analysis)
 
@@ -52,6 +52,7 @@ _Note: I'm currently moving to a new, clean, GitHub repo so part of the code is 
 
 [Code_Social_Network_Plasticity_Exp_2018_AW](https://github.com/AdrianoWanderlingh/Ant_Tracking/tree/main/Scripts/code_Social_Network_Plasticity_Exp_2018_AW)
 
+
 ### Processing Time ⏲️
 
 Sample processing time for Adriano's Experiment (44 colonies, 48h of tracking data per colony):
@@ -66,45 +67,52 @@ Sample processing time for Adriano's Experiment (44 colonies, 48h of tracking da
 | 13_network_analysis                       | Estimated: 20 hours (15 mins if performed only on observed) |
 | 14_summarise_interactions.R               | Estimated: 40 hours (15 mins if performed only on observed) |
 
+
+
+
 ### Log of differences of the code/files from Science2018 Data Analysis Pipeline
 
 #### General
 
 - The pipeline now includes some adjustments and extra measures to handle grooming data
-- The reported "Tag1","tag2" are the new tracking system's "antID1","antID2" (which are used to identify an individual even after retag). I did not report my TagIDs.
+- Following the naming convention of Science2018, the reported "Tag" is Bristol's tracking system's "antID" (which are used to identify an individual even after retag). I did not report my TagIDs.
 - Changed colony naming convention, from “001” to “01B” to describe my R1BS, retaining the colony size information in the filename. This is the only way of preventing that size colonies Big and Small subject to the same treatment will overwrite each other.
 - In the METADATA FILES, treatment is not just pathogen or control but "pathogen.big", "pathogen.small","control.big","control.small"
 
-#### Interactions
+#### _Files produced by EXP1_base_analysis.R_
+
+##### Interactions
 
 - Extra Interaction files columns not present in Science files: (added at the end of the file output)
   - "REP_treat": unique replicate*colonySize*treatment identifier
   - "period": "pre", "post"
-  - "ant1.zones": nest zone (nest=1,foraging=2) at the time of the interaction, should be always equal to ant2.zones
+  - "ant1.zones": nest zone (nest=1,foraging=2) for AntID1 (now: Tag1) at the time of the interaction between a pair of ants, will always equal to ant2.zones
   - "ant2.zones": see above
   - "duration": interaction duration
 
-#### Task_groups.txt
+#### _Files produced by Tables_to_Match_Stroeymeyt2018_Pipeline.R_
+
+##### Task_groups.txt
 
 - Added extra column "treatment" to identify colony, as the colony code alone is not enough. Added REP_treat
 
-#### Treated_worker_list.txt
+##### Treated_worker_list.txt
 
 - Added "treatment" and "REP_treat"
 
-#### Info.txt
+##### Info.txt
 
 - Added "REP_treat"
 - Set as NA: Ynestmin, Ynestmax, nb_larvae, nb_pupae, colony_age
 
-#### QPCR_file.txt
+##### QPCR_file.txt
 
 - Added "REP_treat"
 - Set as NA: age
 
-#### Individual_behavioural_data.txt
+##### Individual_behavioural_data.txt
 
-- Tab separated instead of space separated
+- Tab-separated instead of space separated
 
 
 
