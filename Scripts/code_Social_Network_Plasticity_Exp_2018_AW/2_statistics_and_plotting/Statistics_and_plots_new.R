@@ -132,9 +132,9 @@ ind_treated_net <- individual_ONE_analysis(data_path,which_individuals="treated"
 root_path <- paste(disk_path,"/main_experiment",sep="") # root_path <- paste(disk_path,"/main_experiment_grooming",sep="")
 data_path=paste(root_path,"/processed_data/individual_behaviour/pre_vs_post_treatment",sep="")
 pattern="individual_behavioural_data"
-variable_list <-        c("prop_time_outside","proportion_time_active", "average_bout_speed_pixpersec" ,"total_distance_travelled_pix") #inter_caste_contact_duration?
-names(variable_list) <- c("prop. time outside","prop. time active", "average bout speed pixpersec" ,"total distance travelled pix")
-transf_variable_list <- c("power0.01"        ,"none"                  ,"log"                          ,"log"                        )  ######"none", "sqrt" "log","power2"
+variable_list <-        c("prop_time_outside","proportion_time_active", "average_bout_speed_pixpersec" ,"total_distance_travelled_pix", "inter_caste_contact_duration") #inter_caste_contact_duration?
+names(variable_list) <- c("prop. time outside","prop. time active", "average bout speed pixpersec" ,"total distance travelled pix", "inter caste contact duration")
+transf_variable_list <- c("power0.01"        ,"none"                  ,"log"                          ,"log"                      ,"sqrt"                   )  ######"none", "sqrt" "log","power2"
 
 ind_treated_beh <- individual_ONE_analysis(data_path,which_individuals="treated") # "treated","queen","nurse","forager"
 
@@ -163,9 +163,9 @@ ind_treated_grooming <- individual_ONE_analysis(data_path,which_individuals="tre
 root_path <- paste(disk_path,"/main_experiment",sep="") # root_path <- paste(disk_path,"/main_experiment_grooming",sep="")
 data_path=paste(root_path,"/processed_data/network_properties/pre_vs_post_treatment/all_workers",sep="")
 pattern="individual_data"
-variable_list <-        c("mean_aggregated_distance_to_treated")
-names(variable_list) <- c("mean aggregated distance to treated")
-transf_variable_list <- c("power0.01")  ######"none", "sqrt" "log","power2"
+variable_list <-        c("degree", "mean_aggregated_distance_to_treated")
+names(variable_list) <- c("degree","mean aggregated distance to treated")
+transf_variable_list <- c("none","power0.01")  ######"none", "sqrt" "log","power2"
 
 warning("Error in get(which_levels) : object 'level_names' not found. Not retained in memory?")
 ind_TWO_net <- individual_TWO_analysis(data_path,which_individuals= c("nurse","forager")) ## "treated","queen","nurse","forager"

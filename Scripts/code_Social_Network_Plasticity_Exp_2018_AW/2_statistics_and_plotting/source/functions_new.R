@@ -1019,6 +1019,7 @@ collective_analysis_rescal <- function(data_path=data_path){
   data$exposure <- unlist(lapply( data$treatment, function(x)  unlist(strsplit(x,split="\\.") )[1]  ))
   data$size     <- unlist(lapply( data$treatment, function(x)  unlist(strsplit(x,split="\\.") )[2]  ))
   
+  print(names(data))
   
   ###2. Loop over variables
   data_ori <- data
@@ -1212,6 +1213,9 @@ individual_ONE_analysis <- function(data_path=data_path,which_individuals){
   }
   ##remove any duplicated line
   data <- data[which(!duplicated(data)),]
+  
+  print(names(data))
+  
   
   ##2a. Extract exposure and size from treatment column
   data$exposure <- unlist(lapply( data$treatment, function(x)  unlist(strsplit(x,split="\\.") )[1]  ))
@@ -1430,6 +1434,8 @@ individual_TWO_analysis <- function(data_path=data_path,which_individuals){
   }
   ##remove any duplicated line
   data <- data[which(!duplicated(data)),]
+  
+  print(names(data))
   
   ##2a. Extract exposure and size from treatment column
   data$exposure <- unlist(lapply( data$treatment, function(x)  unlist(strsplit(x,split="\\.") )[1]  ))
