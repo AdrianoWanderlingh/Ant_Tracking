@@ -59,6 +59,9 @@ _Note: I'm currently moving to a new, clean, GitHub repo so part of the code is 
 - Tables_to_Match_Stroeymeyt2018_Pipeline.R
 - Convert_grooming_to_Match_Stroeymeyt2018_Pipeline.R _(note: needed only if you used the Ant Behaviours Classifier)_
 
+### C.1 
+{include qPCR stuff as it is called in Tables_to_Match_Stroeymeyt2018_Pipeline.R?}
+
 ## D. Run Post-processing and Analysis Pipeline
 
 [Code_Social_Network_Plasticity_Exp_2018_AW](https://github.com/AdrianoWanderlingh/Ant_Tracking/tree/main/Scripts/code_Social_Network_Plasticity_Exp_2018_AW)
