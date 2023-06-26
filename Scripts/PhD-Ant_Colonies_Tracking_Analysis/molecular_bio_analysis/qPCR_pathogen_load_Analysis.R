@@ -445,6 +445,10 @@ output_lmer(m1)
 ## IMPROVE: HOW TO SAVE IN posthoc_list WITHOUT EXPLICITLY CALLING IT?
 posthoc_list <- compute_posthocs(m1)
 
+m2 <-  lmer(log10(MbruDNA + constant) ~ Treatment + Ant_status + (1 | Colony), data = DNA_Results_annotated[which(DNA_Results_annotated$Ant_status!="treated nurse"),])
+anova(m2)
+
+
 ### NOTE: No need for post-hocs if there is no significant interaction
 
 ############
@@ -554,9 +558,12 @@ for (STATUS in c("treated nurse")) { # "untreated forager","untreated nurse"  ,
 ##### MbruDNA.LOAD AS BINARY FACTOR (1 = POSITIVE = non-zero load)
 DNA_Results_annotated$positive <- 1
 DNA_Results_annotated[which(DNA_Results_annotated$above_detection_threshold == F), "positive"] <- 0
-m2 <- glmer(positive ~ Treatment * Ant_status + (1 | Colony), data = DNA_Results_annotated, family = binomial) # the "/" is for the nesting #  + (1|time_of_day)
+m2 <- glmer(positive ~ Treatment * Ant_status + (1 | Colony), data = DNA_Results_annotated[which(DNA_Results_annotated$Ant_status!="treated nurse"&DNA_Results_annotated$Ant_status!="untreated queen"),], family = binomial) # the "/" is for the nesting #  + (1|time_of_day)
 output_lmer(m2)
+Anova(m2)
 
+m3 <- glmer(positive ~ Treatment + Ant_status + (1 | Colony), data = DNA_Results_annotated[which(DNA_Results_annotated$Ant_status!="treated nurse"&DNA_Results_annotated$Ant_status!="untreated queen"),], family = binomial) # the "/" is for the nesting #  + (1|time_of_day)
+Anova(m3)
 # binomial model diagnostics with DHARMa
 simulationOutput <- simulateResiduals(fittedModel = m2)
 # Main plot function from DHARMa, which gives

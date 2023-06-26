@@ -100,9 +100,9 @@ coll_no_rescal_net <- collective_analysis_no_rescal(data_path)
 root_path <- paste(disk_path,"/main_experiment/processed_data",sep="") # root_path <- paste(disk_path,"/main_experiment_grooming/processed_data",sep="")
 data_path <- paste(root_path,"/network_properties/pre_vs_post_treatment/all_workers",sep="")
 pattern="colony_data.txt"
-variable_list <- c("modularity","clustering","task_assortativity","efficiency","degree_mean","degree_maximum","density","diameter")
-names(variable_list) <- c("modularity","clustering","task assortativity","efficiency","mean degree","degree maximum","density","diameter")
-transf_variable_list <- c("log"       ,"sqrt"      ,"none"              ,"log"       ,"power0.01"        ,"log"           ,"log"   ,"power0.01")   ######"none", "sqrt" "log","power2"
+variable_list <- c("modularity","clustering","task_assortativity","efficiency","degree_mean","density") #,"degree_maximum","diameter"
+names(variable_list) <- c("modularity","clustering","task assortativity","efficiency","mean degree","density") # ,"degree maximum","diameter"
+transf_variable_list <- c("log"       ,"sqrt"      ,"none"              ,"log"       ,"power0.01"        ,"log" ) # ,"log"   ,"power0.01"  ######"none", "sqrt" "log","power2"
 # TRANSFORMATION NOTE: task_assortativity is hard to normalise (no transformation has the best result)
 
 coll_rescal_net <- collective_analysis_rescal(data_path)
@@ -114,15 +114,17 @@ coll_rescal_net <- collective_analysis_rescal(data_path)
 ###III - individual analysis - for ONE type of individuals (e.g. treated workers only, or queens only) ############################
 ###################################################################################################################################
 
+################    FOR TREATED INDIVIDUALS   ################
+
 #### ALL INTERACTIONS ####
 
 ### network properties
 root_path <- paste(disk_path,"/main_experiment",sep="") # root_path <- paste(disk_path,"/main_experiment_grooming",sep="")
 data_path=paste(root_path,"/processed_data/network_properties/pre_vs_post_treatment/all_workers",sep="")
 pattern="individual_data"
-variable_list <-        c("degree","aggregated_distance_to_queen") 
-names(variable_list) <- c("degree","aggregated distance to queen")
-transf_variable_list <- c("none"  ,"log")  ######"none", "sqrt" "log","power2"
+variable_list <-        c("degree")#,"aggregated_distance_to_queen") 
+names(variable_list) <- c("degree")#,"aggregated distance to queen")
+transf_variable_list <- c("none"  )#,"log")  ######"none", "sqrt" "log","power2"
 
 
 ind_treated_net <- individual_ONE_analysis(data_path,which_individuals="treated") # "treated","queen","nurse","forager"
@@ -132,12 +134,13 @@ ind_treated_net <- individual_ONE_analysis(data_path,which_individuals="treated"
 root_path <- paste(disk_path,"/main_experiment",sep="") # root_path <- paste(disk_path,"/main_experiment_grooming",sep="")
 data_path=paste(root_path,"/processed_data/individual_behaviour/pre_vs_post_treatment",sep="")
 pattern="individual_behavioural_data"
-variable_list <-        c("prop_time_outside","proportion_time_active", "average_bout_speed_pixpersec" ,"total_distance_travelled_pix", "inter_caste_contact_duration") #inter_caste_contact_duration?
-names(variable_list) <- c("prop. time outside","prop. time active", "average bout speed pixpersec" ,"total distance travelled pix", "inter caste contact duration")
-transf_variable_list <- c("power0.01"        ,"none"                  ,"log"                          ,"log"                      ,"sqrt"                   )  ######"none", "sqrt" "log","power2"
+variable_list <-        c("prop_time_outside") #,"proportion_time_active", "average_bout_speed_pixpersec" ,"total_distance_travelled_pix", "inter_caste_contact_duration") #inter_caste_contact_duration?
+names(variable_list) <- c("prop. time outside") # ,"prop. time active", "average bout speed pixpersec" ,"total distance travelled pix", "inter caste contact duration")
+transf_variable_list <- c("power0.01"        )#,"none"                  ,"log"                          ,"log"                      ,"sqrt"                   )  ######"none", "sqrt" "log","power2"
 
 ind_treated_beh <- individual_ONE_analysis(data_path,which_individuals="treated") # "treated","queen","nurse","forager"
 
+line_plot(data_path,which_individuals="treated")
 
 
 #### GROOMING INTERACTIONS ####
@@ -151,11 +154,10 @@ transf_variable_list <- c("none"                          ,"log"                
 
 ind_treated_grooming <- individual_ONE_analysis(data_path,which_individuals="treated") # "treated","queen","nurse","forager"
 
+line_plot(data_path,which_individuals="treated")
 
+################    FOR UNTREATED INDIVIDUALS    ################    
 
-###################################################################################################################################
-###IV - individual analysis - for TWO types of individuals (e.g. nurses and foragers; or "untreated" and "treated") ###############
-###################################################################################################################################
 
 #### ALL INTERACTIONS ####
 
@@ -163,12 +165,13 @@ ind_treated_grooming <- individual_ONE_analysis(data_path,which_individuals="tre
 root_path <- paste(disk_path,"/main_experiment",sep="") # root_path <- paste(disk_path,"/main_experiment_grooming",sep="")
 data_path=paste(root_path,"/processed_data/network_properties/pre_vs_post_treatment/all_workers",sep="")
 pattern="individual_data"
-variable_list <-        c("degree", "mean_aggregated_distance_to_treated")
-names(variable_list) <- c("degree","mean aggregated distance to treated")
-transf_variable_list <- c("none","power0.01")  ######"none", "sqrt" "log","power2"
+variable_list <-        c("degree")#, "mean_aggregated_distance_to_treated")
+names(variable_list) <- c("degree")#,"mean aggregated distance to treated")
+transf_variable_list <- c("none")#,"power0.01")  ######"none", "sqrt" "log","power2"
 
-warning("Error in get(which_levels) : object 'level_names' not found. Not retained in memory?")
-ind_TWO_net <- individual_TWO_analysis(data_path,which_individuals= c("nurse","forager")) ## "treated","queen","nurse","forager"
+ind_untreated_net_nurse <- individual_ONE_analysis(data_path,which_individuals="nurse") ## "treated","queen","nurse","forager"
+ind_untreated_net_forag <- individual_ONE_analysis(data_path,which_individuals="forager") ## "treated","queen","nurse","forager"
+
 
 
 ### behavioural data
@@ -179,12 +182,8 @@ variable_list <-        c("prop_time_outside","inter_caste_contact_duration","du
 names(variable_list) <- c("prop time outside","inter caste contact duration","duration of contact with treated min")
 transf_variable_list <- c("power0.01"        , "power0.01"                       , "power0.01"            )   ######"none", "sqrt" "log","power2"
 
-ind_TWO_beh <- individual_TWO_analysis(data_path,which_individuals= c("nurse","forager")) ## "treated","queen","nurse","forager"
-# to fix: double letters assigned when cols are split by task
-
-# data: main_experiment/network_properties/individual_data
-# Mean distance to treated
-
+ind_untreated_beh_nurse <- individual_ONE_analysis(data_path,which_individuals="nurse") ## "treated","queen","nurse","forager"
+ind_untreated_beh_forag <- individual_ONE_analysis(data_path,which_individuals="forager") ## "treated","queen","nurse","forager"
 
 
 #### GROOMING INTERACTIONS ####
@@ -195,8 +194,108 @@ variable_list <-        c("duration_grooming_given_to_treated_min")
 names(variable_list) <- c("duration grooming given to treated min")
 transf_variable_list <- c("none"        )   ######"none", "sqrt" "log","power2"
 
-ind_TWO_beh <- individual_TWO_analysis(data_path,which_individuals= c("nurse","forager")) ## "treated","queen","nurse","forager"
+ind_untreated_grooming_nurse <- individual_ONE_analysis(data_path,which_individuals="nurse") ## "treated","queen","nurse","forager"
+ind_untreated_grooming_forag <- individual_ONE_analysis(data_path,which_individuals="forager") ## "treated","queen","nurse","forager"
 
+
+###################################################################################################################################
+###IV - individual analysis - for TWO types of individuals (e.g. nurses and foragers; or "untreated" and "treated") ###############
+###################################################################################################################################
+
+# #### ALL INTERACTIONS ####
+# 
+# ### network properties
+# root_path <- paste(disk_path,"/main_experiment",sep="") # root_path <- paste(disk_path,"/main_experiment_grooming",sep="")
+# data_path=paste(root_path,"/processed_data/network_properties/pre_vs_post_treatment/all_workers",sep="")
+# pattern="individual_data"
+# variable_list <-        c("degree")#, "mean_aggregated_distance_to_treated")
+# names(variable_list) <- c("degree")#,"mean aggregated distance to treated")
+# transf_variable_list <- c("none")#,"power0.01")  ######"none", "sqrt" "log","power2"
+# 
+# ind_TWO_net <- individual_TWO_analysis(data_path,which_individuals= c("nurse","forager")) ## "treated","queen","nurse","forager"
+# 
+# 
+# ### behavioural data
+# root_path <- paste(disk_path,"/main_experiment",sep="")
+# data_path=paste(root_path,"/processed_data/individual_behaviour/pre_vs_post_treatment",sep="")
+# pattern="individual_behavioural_data"
+# variable_list <-        c("prop_time_outside","inter_caste_contact_duration","duration_of_contact_with_treated_min")
+# names(variable_list) <- c("prop time outside","inter caste contact duration","duration of contact with treated min")
+# transf_variable_list <- c("power0.01"        , "power0.01"                       , "power0.01"            )   ######"none", "sqrt" "log","power2"
+# 
+# ind_TWO_beh <- individual_TWO_analysis(data_path,which_individuals= c("nurse","forager")) ## "treated","queen","nurse","forager"
+# # to fix: double letters assigned when cols are split by task
+# 
+# 
+# #### GROOMING INTERACTIONS ####
+# root_path <- paste(disk_path,"/main_experiment_grooming",sep="")
+# data_path=paste(root_path,"/processed_data/individual_behaviour/pre_vs_post_treatment",sep="")
+# pattern="individual_behavioural_data"
+# variable_list <-        c("duration_grooming_given_to_treated_min")
+# names(variable_list) <- c("duration grooming given to treated min")
+# transf_variable_list <- c("none"        )   ######"none", "sqrt" "log","power2"
+# 
+# ind_TWO_beh <- individual_TWO_analysis(data_path,which_individuals= c("nurse","forager")) ## "treated","queen","nurse","forager"
+# 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+warning("REDUCE N OF LABELS IN THE PLOTS, CHECK OTHER PAPERS FOR HOW TO DO IT.
+        \n- ALSO, POSTHCOC LETTERS ARE CUT, SOLVE
+        \n- ONCE PLOTS GROUPING IS DECIDED, UPDATE THEHIGHT  OF THE LETTERS TO MATCH" )
+#### PLOT GRIDS 
+
+
+
+
+
+### ind_net_properties
+
+# Set the same y-axis limits for all plots
+y_limits <- c(min(
+  ggplot_build(ind_treated_net$barplot_delta_period_list$degree)$data[[1]]$ymin,
+  ggplot_build(ind_untreated_net_nurse$barplot_delta_period_list$degree)$data[[1]]$ymin,
+  ggplot_build(ind_untreated_net_forag$barplot_delta_period_list$degree)$data[[1]]$ymin
+), 
+              max(
+  ggplot_build(ind_treated_net$barplot_delta_period_list$degree)$data[[1]]$ymax,
+  ggplot_build(ind_untreated_net_nurse$barplot_delta_period_list$degree)$data[[1]]$ymax,
+  ggplot_build(ind_untreated_net_forag$barplot_delta_period_list$degree)$data[[1]]$ymax
+) + 4
+)
+
+ind_net_properties <- cowplot::plot_grid(
+ind_treated_net$barplot_delta_period_list$degree         + ylim(y_limits) + ggtitle("treated nurses"),
+ind_untreated_net_nurse$barplot_delta_period_list$degree + ylim(y_limits) + ggtitle("untreated nurses"),
+ind_untreated_net_forag$barplot_delta_period_list$degree + ylim(y_limits) + ggtitle("untreated foragers"),
+labels=c("", "",""), nrow = 1)
+
+
+
+
+### collective_net_properties
+collective_net_properties <- cowplot::plot_grid(
+  coll_rescal_net$barplot_delta_period_list$modularity,
+  coll_rescal_net$barplot_delta_period_list$clustering,
+  coll_rescal_net$barplot_delta_period_list$task_assortativity,
+  coll_rescal_net$barplot_delta_period_list$density,
+  coll_rescal_net$barplot_delta_period_list$efficiency,
+  coll_rescal_net$barplot_delta_period_list$degree_mean,
+  labels=c("", "","",""), nrow = 2)
+
+
+collective_net_properties
 
 
 

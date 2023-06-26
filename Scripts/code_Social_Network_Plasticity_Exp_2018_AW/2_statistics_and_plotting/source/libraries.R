@@ -37,3 +37,4 @@ require(extrafont)
 library(showtext)
 font_add_google("Crimson Text", "crimson", db_cache = FALSE)
 showtext_auto()#must be called to indicate that showtext is going to be automatically invoked to draw text whenever a plot is created.
+require(dplyr)

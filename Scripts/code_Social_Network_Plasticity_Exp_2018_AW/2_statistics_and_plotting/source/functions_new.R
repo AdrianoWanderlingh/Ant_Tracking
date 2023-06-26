@@ -15,7 +15,8 @@ get_posthoc_groups <-
   function(model,
            contrast_matrix,
            which_levels,
-           dataset) {
+           dataset,
+           level_names=NULL) {
     levels <- get(which_levels)
     if (is.null(names(levels))) {
       names(levels) <- paste("Delta_", levels, sep = "")
@@ -1581,7 +1582,7 @@ individual_TWO_analysis <- function(data_path=data_path,which_individuals){
       }else{print("TOO MANY TASK GROUP LEVELS _ CANNOT COPE")}
       
       
-      posthoc_groups_treatment_task_groups        <- list(get_posthoc_groups(model=model,contrast_matrix=contrast_matrix,which_levels="level_names",dataset=data))
+      posthoc_groups_treatment_task_groups        <- list(get_posthoc_groups(model=model,contrast_matrix=contrast_matrix,which_levels="level_names",dataset=data, level_names=level_names))
       names(posthoc_groups_treatment_task_groups) <- variable_list[i]
       post_hoc_outcomes                           <- c(post_hoc_outcomes,posthoc_groups_treatment_task_groups)
       
@@ -1726,6 +1727,126 @@ individual_TWO_analysis <- function(data_path=data_path,which_individuals){
   
 }
 
+
+line_plot <- function(data_path, which_individuals){
+  
+  ###1. read data
+  setwd(data_path)
+  file_list <- list.files(pattern=pattern)
+  print(file_list)
+  warning("this function is not well generalised")
+  data <- NULL
+  for (file in file_list){
+    data <- rbind(data,read.table(file,header=T,stringsAsFactors = F))  
+  }
+  ##remove any duplicated line
+  data <- data[which(!duplicated(data)),]
+
+  
+  ##2a. Extract exposure and size from treatment column
+  data$exposure <- unlist(lapply( data$treatment, function(x)  unlist(strsplit(x,split="\\.") )[1]  ))
+  data$size     <- unlist(lapply( data$treatment, function(x)  unlist(strsplit(x,split="\\.") )[2]  ))
+  
+  ##2b. add information on task group
+  if (pattern=="individual_behavioural_data") {
+    task_groups <- read.table(paste(root_path,"original_data",task_group_file,sep="/"),header=T,stringsAsFactors = F)
+    task_groups <- task_groups[which(!duplicated(task_groups)),]
+    data        <- merge(data,task_groups[c("colony","tag","task_group")],all.x=T,all.y=F)
+    
+  } else if (pattern=="individual_data") {
+    #make sure that the task_group is named correctly
+    data$task_group <- data$status 
+    data$status     <- NULL
+    treated_worker_list <- read.table(paste(root_path,"original_data","treated_worker_list.txt",sep="/"),header=T,stringsAsFactors = F)
+    treated_worker_list <- treated_worker_list[which(!duplicated(treated_worker_list)),]
+    treated_worker_list$status <- "treated"
+    data        <- merge(data,treated_worker_list[c("colony","tag","status")],all.x=T,all.y=F) 
+    data[which(is.na(data$status)),"status"] <- "untreated"
+  } 
+  
+  data[which(data$status=="treated"),"task_group"] <- "treated"
+  
+  ##2c. keep only target individuals
+  data <- data[which(data$task_group%in%which_individuals),]
+  
+  ##2d.  ###add a unique antid column
+  data <- within(data,antID <- paste(colony,tag,sep="_"))
+  
+  ###2. Loop over variables
+  data_ori <- data
+  
+  for (i in 1:length(variable_list)){
+    print(paste0("######## ",variable_list[i]," ########"))
+    data <- data_ori
+    
+    
+    # ###create a variable column
+    data$untransformed_variable <- data[,variable_list[i]]
+    # 
+    # ###transform variable
+    # if (transf_variable_list[i]=="log"){
+    #   print("Logging variable...")
+    #   data[!is.na(data$untransformed_variable),"variable"] <- log_transf(data[!is.na(data$untransformed_variable),"untransformed_variable"] )
+    # }else if (grepl("power",transf_variable_list[i])){
+    #   data[!is.na(data$untransformed_variable),"variable"]  <- (data[!is.na(data$untransformed_variable),"untransformed_variable"] )^as.numeric(gsub("power","",transf_variable_list[i]))
+    # }else if (transf_variable_list[i]=="sqrt"){
+    #   data[!is.na(data$untransformed_variable),"variable"]  <- sqrt_transf(data[!is.na(data$untransformed_variable),"untransformed_variable"] )
+    # }else if (transf_variable_list[i]=="none"){
+    #   data$variable <- data$untransformed_variable
+    # }
+    #hist(data$variable, breaks = 100)
+    ###statistics
+    ###make sure treatment, exposure, size and period are factors with levels in the desired order
+    data$treatment <- factor(data$treatment , levels=treatment_order[which(treatment_order%in%data$treatment )])
+    data$size      <- factor(data$size    , levels=size_order   [which(size_order%in%data$size )])
+    data$exposure  <- factor(data$exposure , levels=exposure_order[which(exposure_order%in%data$exposure )])
+    data$period    <- factor(data$period    , levels=period_order   [which(period_order%in%data$period )])
+    data$antID     <- factor( data$antID )
+    
+    
+  
+  # 1. Calculate the mean of the untransformed_variable by tag
+  mean_data <- aggregate(untransformed_variable ~ period + time_hours + treatment + colony, 
+                         FUN = mean, na.rm = T, na.action = na.pass, data)
+  
+  # 2. Calculate the grand mean and standard error dropping the colony factor
+  grand_mean_data <- mean_data %>%
+    group_by(period, time_hours, treatment) %>%
+    summarise(grand_mean = mean(untransformed_variable),
+              standard_error = sd(untransformed_variable) / sqrt(n()))
+  
+  # Add NA values at time_hours == -3
+  unique_treatments <- unique(grand_mean_data$treatment)
+  unique_periods <- unique(grand_mean_data$period)
+  na_rows <- expand.grid(period = unique_periods,
+                         time_hours = -3,
+                         treatment = unique_treatments,
+                         grand_mean = NA,
+                         standard_error = NA)
+  
+  grand_mean_data <- rbind(grand_mean_data, na_rows) %>%
+    arrange(treatment, period, time_hours)
+  
+  # 3. Create a ggplot geom_line with geom_ribbon for the untransformed_variable
+  line_plot_obj <- ggplot(grand_mean_data, aes(x = time_hours, y = grand_mean, color = treatment, group = treatment)) +
+    geom_line() +
+    geom_ribbon(aes(ymin = grand_mean - standard_error, ymax = grand_mean + standard_error, fill = treatment), alpha = 0.2) +
+    labs(#title = "Prop Time Outside by Time Hours and Treatment",
+         x = "Time Hours since treatment exposure",
+         y = names(variable_list[i])
+         ) +
+    STYLE +
+    colFill_treatment +
+    colScale_treatment
+    
+  print(line_plot_obj)
+
+  }
+  
+}
+  
+  
+  
 
 barplot_delta <-
   function(dataset,
@@ -3027,12 +3148,12 @@ for (group in names(Cols)) {
 #   theme(axis.text.y=element_text(angle=0, hjust=1)) +
 #   facet_wrap(~Treatment, scales = "free_y")
 
-
-
+##OVERWRITE THE COLOUR SHADING AS I NEVER USE THE INDIVIDUAL DATA POINTS ANYMORE
+myColors_Treatment <- scales::viridis_pal(option = "D")(4)
 
 myColors_Colony <- colour_palette$Shades
 names(myColors_Colony) <- colour_palette$Cols
-myColors_Treatment <- Treat_colors$Shades
+#myColors_Treatment <- Treat_colors$Shades
 names(myColors_Treatment) <- Treat_colors$Treatment
 # PERIOD
 myColors_period <- rev(hue_pal()(2))
