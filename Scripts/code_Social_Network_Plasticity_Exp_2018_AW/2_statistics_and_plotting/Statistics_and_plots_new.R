@@ -180,7 +180,7 @@ data_path=paste(root_path,"/processed_data/individual_behaviour/pre_vs_post_trea
 pattern="individual_behavioural_data"
 variable_list <-        c("prop_time_outside","inter_caste_contact_duration","duration_of_contact_with_treated_min")
 names(variable_list) <- c("prop time outside","inter caste contact duration","duration of contact with treated min")
-transf_variable_list <- c("power0.01"        , "power0.01"                       , "power0.01"            )   ######"none", "sqrt" "log","power2"
+transf_variable_list <- c("power0.01"        , "power0.001"                       , "power0.001"            )   ######"none", "sqrt" "log","power2"
 
 ind_untreated_beh_nurse <- individual_ONE_analysis(data_path,which_individuals="nurse") ## "treated","queen","nurse","forager"
 ind_untreated_beh_forag <- individual_ONE_analysis(data_path,which_individuals="forager") ## "treated","queen","nurse","forager"
@@ -256,11 +256,15 @@ warning("REDUCE N OF LABELS IN THE PLOTS, CHECK OTHER PAPERS FOR HOW TO DO IT.
         \n- ONCE PLOTS GROUPING IS DECIDED, UPDATE THEHIGHT  OF THE LETTERS TO MATCH" )
 #### PLOT GRIDS 
 
+## general
+remove_y_labs <-  list(theme(axis.title.y = element_blank(),
+      axis.text.y = element_blank(),
+      axis.ticks.y = element_blank()))
+
+fixed_aspect_theme <- theme(aspect.ratio = 2)
 
 
-
-
-### ind_net_properties
+### ind_net_properties ### 
 
 # Set the same y-axis limits for all plots
 y_limits <- c(min(
@@ -268,7 +272,7 @@ y_limits <- c(min(
   ggplot_build(ind_untreated_net_nurse$barplot_delta_period_list$degree)$data[[1]]$ymin,
   ggplot_build(ind_untreated_net_forag$barplot_delta_period_list$degree)$data[[1]]$ymin
 ), 
-              max(
+max(
   ggplot_build(ind_treated_net$barplot_delta_period_list$degree)$data[[1]]$ymax,
   ggplot_build(ind_untreated_net_nurse$barplot_delta_period_list$degree)$data[[1]]$ymax,
   ggplot_build(ind_untreated_net_forag$barplot_delta_period_list$degree)$data[[1]]$ymax
@@ -277,14 +281,42 @@ y_limits <- c(min(
 
 ind_net_properties <- cowplot::plot_grid(
 ind_treated_net$barplot_delta_period_list$degree         + ylim(y_limits) + ggtitle("treated nurses"),
-ind_untreated_net_nurse$barplot_delta_period_list$degree + ylim(y_limits) + ggtitle("untreated nurses"),
-ind_untreated_net_forag$barplot_delta_period_list$degree + ylim(y_limits) + ggtitle("untreated foragers"),
+ind_untreated_net_nurse$barplot_delta_period_list$degree + ylim(y_limits) + ggtitle("untreated nurses")  + remove_y_labs,
+ind_untreated_net_forag$barplot_delta_period_list$degree + ylim(y_limits) + ggtitle("untreated foragers")+ remove_y_labs,
 labels=c("", "",""), nrow = 1)
 
+ind_net_properties
+
+
+### ind_beh_measures ###
+
+# Set the same y-axis limits for all plots
+y_limits <- c(min(
+  ggplot_build(ind_treated_beh$barplot_delta_period_list$prop_time_outside)$data[[1]]$ymin,
+  ggplot_build(ind_untreated_beh_nurse$barplot_delta_period_list$prop_time_outside)$data[[1]]$ymin,
+  ggplot_build(ind_untreated_beh_forag$barplot_delta_period_list$prop_time_outside)$data[[1]]$ymin
+), 
+max(
+  ggplot_build(ind_treated_beh$barplot_delta_period_list$prop_time_outside)$data[[1]]$ymax,
+  ggplot_build(ind_untreated_beh_nurse$barplot_delta_period_list$prop_time_outside)$data[[1]]$ymax,
+  ggplot_build(ind_untreated_beh_forag$barplot_delta_period_list$prop_time_outside)$data[[1]]$ymax
+) + 0.06
+)
+
+
+ind_beh_measures <- cowplot::plot_grid(
+  ind_treated_beh$barplot_delta_period_list$prop_time_outside         + ylim(y_limits) + ggtitle("treated nurses")    + fixed_aspect_theme,
+  ind_untreated_beh_nurse$barplot_delta_period_list$prop_time_outside + ylim(y_limits) + ggtitle("untreated nurses")  + fixed_aspect_theme  + remove_y_labs,
+  ind_untreated_beh_forag$barplot_delta_period_list$prop_time_outside + ylim(y_limits) + ggtitle("untreated foragers")+ fixed_aspect_theme  + remove_y_labs,
+  labels=c("", "",""), nrow = 1, rel_widths = c(1, 1, 1))
+
+ind_beh_measures
 
 
 
-### collective_net_properties
+
+
+### collective_net_properties ### 
 collective_net_properties <- cowplot::plot_grid(
   coll_rescal_net$barplot_delta_period_list$modularity,
   coll_rescal_net$barplot_delta_period_list$clustering,
