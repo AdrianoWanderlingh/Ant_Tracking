@@ -2,9 +2,9 @@
 
 This file will help you to run the analyses on the tracking data from start to finish. The pre-processing steps have been written for tracking data produced by Bristol's new tracking system, the post-processing has been adapted from [Stroeymeyt et al., 2018](https://www.science.org/doi/epdf/10.1126/science.aat4793). The final statistical analysis steps will change according to your experiment structure and, currently, they are designed to fit Adriano's data (2 size treatments x 2 exposure treatments).
 
-**Disclaimer**: Most of the base stuff you will be looking for is in [here](https://github.com/AdrianoWanderlingh/PhD-Ant_Colonies_Tracking_Analysis/tree/main/scriptsR/EXP1_base_analysis), for example: create metadata files, define ant tasks, etc. This pipeline is currently quite messy, but at least it exists and is mostly correct. All the needed scripts are present but some paths may need to be changed. I never had the time to polish it but please, feel free to do it if you have the guts!
+  **Disclaimer**: Most of the base stuff you will be looking for is in [here](https://github.com/AdrianoWanderlingh/PhD-Ant_Colonies_Tracking_Analysis/tree/main/scriptsR/EXP1_base_analysis), for example: create metadata files, define ant tasks, etc. This pipeline is currently quite messy, but at least it exists and is mostly correct. All the needed scripts are present but some paths may need to be changed. I never had the time to polish it but please, feel free to do it if you have the guts!
 
-**Disclaimer 2**: Please read the available guides and the comments in the scripts to understand how things work. Always check where things are stored before running scripts blindly. If there is no guide, write one! 📜
+  **Disclaimer 2**: Please read the available guides and the comments in the scripts to understand how things work. Always check where things are stored before running scripts blindly. If there is no guide, write one! 📜
 
 :octocat: To download the content of a git subfolder instead of a full Repository, either use [gitdir](https://github.com/sdushantha/gitdir) (linux terminal) or this [easy web tool](https://download-directory.github.io/).
 
@@ -19,15 +19,18 @@ This file will help you to run the analyses on the tracking data from start to f
 
 2. Auto-orient, assign capsules
 
+   **Source**: [Data_preparation_after_postprocessing](https://github.com/AdrianoWanderlingh/PhD-Ant_Colonies_Tracking_Analysis/tree/main/scriptsR/EXP1_base_analysis/Data_preparation_after_postprocessing)
+
+    **Files needed**: Capsule files
+
  The capsules defined by Adriano are in either in `Seagate\ Portable\ Disk` or `DISK4` `/ADRIANO/EXPERIMENT_DATA/CURRENT_CAPS_DEF_BASE_FILES_MAN_ORIENTED`. The .myrmidon files need to be moved at the same folder level as their relative tracking data, in this case either `/ADRIANO/EXPERIMENT_DATA` `/REP3` or `/REP9`. The currently present capsules are for the general definition of interactions for all analytical purposes (CapsuleDef2018) or specifically designed to test the Ant Behaviours Classifier (CapsuleDef 3 to 12).
 
-   **Source**: [Data_preparation_after_postprocessing](https://github.com/AdrianoWanderlingh/PhD-Ant_Colonies_Tracking_Analysis/tree/main/scriptsR/EXP1_base_analysis/Data_preparation_after_postprocessing)
 
 ## B. Extract the Interactions and Space Use
 
  To ensure that the outputs of this step are stored correctly and in the same format as Stroeymeyt et al. (2018) for the following analyses, it is necessary to use the same folder structure. I created  the [folder structure](https://github.com/AdrianoWanderlingh/Ant_Tracking/blob/main/Scripts/code_Social_Network_Plasticity_Exp_2018_AW/dirs.txt) with `find . -type d > dirs.txt` and you can recreate it in your destination of choice with `xargs mkdir -p < dirs.txt` (in the linux terminal).
 
-**Source**: [EXP1_base_analysis.R](https://github.com/AdrianoWanderlingh/PhD-Ant_Colonies_Tracking_Analysis/tree/main/scriptsR/EXP1_base_analysis)
+  **Source**: [EXP1_base_analysis.R](https://github.com/AdrianoWanderlingh/PhD-Ant_Colonies_Tracking_Analysis/tree/main/scriptsR/EXP1_base_analysis)
 
 Dependencies, in the same folder:
 - SpaceUse_v082.R
@@ -35,15 +38,23 @@ Dependencies, in the same folder:
 
 These scripts use the `interaction_detection` produced for the Ant Behaviours Classifier.
 
-**Source**: [Automated_Behavioural_Inference](https://github.com/AdrianoWanderlingh/Ant_Tracking/tree/main/Scripts/PhD-Ant_Colonies_Tracking_Analysis/Automated_Behavioural_Inference)
+  **Source**: [Automated_Behavioural_Inference](https://github.com/AdrianoWanderlingh/Ant_Tracking/tree/main/Scripts/PhD-Ant_Colonies_Tracking_Analysis/Automated_Behavioural_Inference)
 
 _Note: I'm currently moving to a new, clean, GitHub repo so part of the code is found in `/Ant_Tracking`_
+
+
+   **Files needed**
+   | File | Source |
+|------|--------|
+| [Metadata summary file](https://github.com/AdrianoWanderlingh/PhD-Ant_Colonies_Tracking_Analysis/blob/main/EXP_summary_data/Metadata_Exp1_2021_2023-02-27.txt) | [metadata extraction script](https://github.com/AdrianoWanderlingh/PhD-Ant_Colonies_Tracking_Analysis/blob/main/scriptsR/EXP1_base_analysis/Extract_Metadata_v082.R) |
+| [Mean ant lenght per TS](https://github.com/AdrianoWanderlingh/PhD-Ant_Colonies_Tracking_Analysis/blob/main/EXP_summary_data/Mean_ant_length_per_TrackingSystem.txt) | [Mean ant length script](https://github.com/AdrianoWanderlingh/PhD-Ant_Colonies_Tracking_Analysis/blob/main/scriptsR/EXP1_base_analysis/Data_preparation_after_postprocessing/MOD_OF_DataPrep2_FOR_Mean_ant_length_per_TrackingSystem_v082.R) |
+| [Return times after treatment](https://github.com/AdrianoWanderlingh/PhD-Ant_Colonies_Tracking_Analysis/blob/main/EXP_summary_data/Grooming_Classifier_CrossVal_RETURN_EXP_TIME_ZULU_All_colonies.csv) | Compile to have, at least, the columns REP_treat and ReturnExposed_time |
 
 ## C. Adapt Outputs to Plug it into Stroeymeyt et al., 2018 Modified Pipeline 🔌
 
 - Example files are in `Seagate\ Portable\ Disk` or in `DISK4` (Ask Adriano) or, for the original files, in `New Passport` (Ask Nathalie)
 
-**Source**: [EXP1_base_analysis](https://github.com/AdrianoWanderlingh/PhD-Ant_Colonies_Tracking_Analysis/blob/main/scriptsR/EXP1_base_analysis/)
+  **Source**: [EXP1_base_analysis](https://github.com/AdrianoWanderlingh/PhD-Ant_Colonies_Tracking_Analysis/blob/main/scriptsR/EXP1_base_analysis/)
 
 - Tables_to_Match_Stroeymeyt2018_Pipeline.R
 - Convert_grooming_to_Match_Stroeymeyt2018_Pipeline.R _(note: needed only if you used the Ant Behaviours Classifier)_
