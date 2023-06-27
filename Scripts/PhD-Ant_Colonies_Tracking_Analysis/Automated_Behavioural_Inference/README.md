@@ -1,5 +1,5 @@
 # Ant Behaviours Classifier
-## Automated_Behavioural_Inference
+### Automated_Behavioural_Inference
 
 The Automated_Behavioural_Inference project is a comprehensive suite of scripts and functions for analyzing and inferring behaviours from tracking data of ant colonies. It provides functionalities for extracting movement variables, detecting and filtering interactions, predicting grooming behaviour, and evaluating the performance of machine learning classifiers. The project aims to automate the analysis process and provide insights into ant behaviours, improving efficiency and accuracy in studying ant colonies.
 
