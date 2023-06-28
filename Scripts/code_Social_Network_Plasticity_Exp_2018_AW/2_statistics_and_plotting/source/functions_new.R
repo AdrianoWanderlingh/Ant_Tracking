@@ -124,6 +124,27 @@ sqrt_transf <- function(x) {
   return(sqrt(x + replac_val))
 }
 
+
+#Box-cox transformation
+Box_Cox <- function(x) {
+  if (all(x > 0)) {
+    replac_val <- 0
+  } else if (all(x >= 0)) {
+    replac_val <- (min(x[x != 0], na.rm = T)) / sqrt(2)
+  } else{
+    replac_val_1 <- -min(x, na.rm = T)
+    y <- x + replac_val_1
+    replac_val <- replac_val_1 + (min(y[y != 0], na.rm = T)) / sqrt(2)
+  }
+  X <- x + replac_val
+  
+  bc <- MASS::boxcox(X ~ 1,plotit = FALSE)
+  #computes the log-likelihood for a range of lambda values and returns the lambda that maximizes the log-likelihood
+  lambda <- bc$x[which.max(bc$y)]
+  (X^lambda - 1) / lambda
+
+  }
+
 test_norm <- function(resids) {
   print("Testing normality")
   if (length(resids) <= 300) {
@@ -852,9 +873,12 @@ collective_analysis_no_rescal <- function(data_path=data_path){
       data[!is.na(data$untransformed_variable),"variable"]  <- (data[!is.na(data$untransformed_variable),"untransformed_variable"] )^as.numeric(gsub("power","",transf_variable_list[i]))
     }else if (transf_variable_list[i]=="sqrt"){
       data[!is.na(data$untransformed_variable),"variable"]  <- sqrt_transf(data[!is.na(data$untransformed_variable),"untransformed_variable"] )
+    }else if (transf_variable_list[i]=="Box_Cox"){
+      data[!is.na(data$untransformed_variable),"variable"]  <- Box_Cox(data[!is.na(data$untransformed_variable),"untransformed_variable"] )
     }else if (transf_variable_list[i]=="none"){
       data$variable <- data$untransformed_variable
     }
+    
     
     ###statistics
     ###make sure treatment, exposure, size and period are factors with levels in the desired order
@@ -1051,6 +1075,8 @@ collective_analysis_rescal <- function(data_path=data_path){
       data[!is.na(data$untransformed_variable),"variable"]  <- (data[!is.na(data$untransformed_variable),"untransformed_variable"] )^as.numeric(gsub("power","",transf_variable_list[i]))
     }else if (transf_variable_list[i]=="sqrt"){
       data[!is.na(data$untransformed_variable),"variable"]  <- sqrt_transf(data[!is.na(data$untransformed_variable),"untransformed_variable"] )
+    }else if (transf_variable_list[i]=="Box_Cox"){
+      data[!is.na(data$untransformed_variable),"variable"]  <- Box_Cox(data[!is.na(data$untransformed_variable),"untransformed_variable"] )
     }else if (transf_variable_list[i]=="none"){
       data$variable <- data$untransformed_variable
     }
@@ -1268,9 +1294,12 @@ individual_ONE_analysis <- function(data_path=data_path,which_individuals){
       data[!is.na(data$untransformed_variable),"variable"]  <- (data[!is.na(data$untransformed_variable),"untransformed_variable"] )^as.numeric(gsub("power","",transf_variable_list[i]))
     }else if (transf_variable_list[i]=="sqrt"){
       data[!is.na(data$untransformed_variable),"variable"]  <- sqrt_transf(data[!is.na(data$untransformed_variable),"untransformed_variable"] )
+    }else if (transf_variable_list[i]=="Box_Cox"){
+      data[!is.na(data$untransformed_variable),"variable"]  <- Box_Cox(data[!is.na(data$untransformed_variable),"untransformed_variable"] )
     }else if (transf_variable_list[i]=="none"){
       data$variable <- data$untransformed_variable
     }
+    
     #hist(data$variable, breaks = 100)
     ###statistics
     ###make sure treatment, exposure, size and period are factors with levels in the desired order
@@ -1490,6 +1519,8 @@ individual_TWO_analysis <- function(data_path=data_path,which_individuals){
       data[!is.na(data$untransformed_variable),"variable"]  <- (data[!is.na(data$untransformed_variable),"untransformed_variable"] )^as.numeric(gsub("power","",transf_variable_list[i]))
     }else if (transf_variable_list[i]=="sqrt"){
       data[!is.na(data$untransformed_variable),"variable"]  <- sqrt_transf(data[!is.na(data$untransformed_variable),"untransformed_variable"] )
+    }else if (transf_variable_list[i]=="Box_Cox"){
+      data[!is.na(data$untransformed_variable),"variable"]  <- Box_Cox(data[!is.na(data$untransformed_variable),"untransformed_variable"] )
     }else if (transf_variable_list[i]=="none"){
       data$variable <- data$untransformed_variable
     }
@@ -1928,7 +1959,7 @@ barplot_delta <-
     
     ##### PLOT
     # significant letters/stars position
-    max_mean_se <- 2 * max(means$mean + means$se)
+    max_mean_se <- 1.5 * max(means$mean + means$se)
     # rename vars
     
     
@@ -2000,11 +2031,27 @@ barplot_delta <-
 
           #normal condition (4 groups)
         }else{
-        additional_geoms <- list(geom_text(
-          aes(label = post_hoc_outcomes[[variable_list[i]]][predictor], y = max_mean_se),
-          position = position_dodge2(width = 0.8, preserve = "single"),
-          vjust = -0.4
+          
+          reshaped_posthocs <- data.frame(predictor = names(post_hoc_outcomes[[variable_list[i]]]), letters = post_hoc_outcomes[[variable_list[i]]], stringsAsFactors = FALSE)
+          reshaped_posthocs <- merge(reshaped_posthocs,means)
+          
+          # adjust position of letters if vals are negative
+          reshaped_posthocs$se <- ifelse(reshaped_posthocs$mean+reshaped_posthocs$se<0,
+                                         0,
+                                         reshaped_posthocs$se)
+          reshaped_posthocs$mean <- ifelse(reshaped_posthocs$mean<0,0,reshaped_posthocs$mean)
+          
+        additional_geoms <- list(geom_text(data = reshaped_posthocs,
+                                           aes(label = letters, x = predictor, y = mean+se),
+                                           position = position_dodge2(width = 0.8, preserve = "single"),
+                                           vjust = -0.4
         ))
+          
+        #   list(geom_text(
+        #   aes(label = post_hoc_outcomes[[variable_list[i]]][predictor], y = max_mean_se),
+        #   position = position_dodge2(width = 0.8, preserve = "single"),
+        #   vjust = -0.4
+        # ))
         plot_var <- plot_var + additional_geoms
         }
          }
@@ -2077,14 +2124,14 @@ barplot_delta <-
           aes(
             x = sum(means$x_axis[means$group == "small"]) / 2,
             xend = sum(means$x_axis[means$group == "big"]) / 2,
-            y = max_mean_se,
-            yend = max_mean_se
+            y = abs(max_mean_se),
+            yend = abs(max_mean_se)
           )
         ),
         geom_text(
           aes(
             x = mean(means$x_axis),
-            y = max_mean_se + 1 / 3 * (max_mean_se),
+            y = abs(max_mean_se + 1 / 2 * (max_mean_se)),
             label = from_p_to_ptext(stats_outcomes[which(
               stats_outcomes$variable == variable_list[i] &
                 stats_outcomes$predictor == "period:size"
@@ -2141,18 +2188,21 @@ barplot_delta <-
       # Add bar with significant stars
       # for more than 1 element in the ggplot if statement, there is the error: Error in `+.gg`:! Cannot add ggproto objects together )
       if (variable_list[i] %in% names(post_hoc_outcomes)) {
-        additional_geoms <- list(geom_segment(
+        
+        
+         additional_geoms <- list(geom_segment(
           aes(
             x = sum(means$x_axis[means$group == "control"]) / 2,
             xend = sum(means$x_axis[means$group == "pathogen"]) / 2,
-            y = max_mean_se,
-            yend = max_mean_se
+            y = abs(max_mean_se),
+            yend = abs(max_mean_se)
           )
         ),
+        
         geom_text(
           aes(
             x = mean(means$x_axis),
-            y = max_mean_se + 1 / 3 * (max_mean_se),
+            y = abs(max_mean_se + 1 / 2 * (max_mean_se)),
             label = from_p_to_ptext(stats_outcomes[which(
               stats_outcomes$variable == variable_list[i] &
                 stats_outcomes$predictor == "period:size"
@@ -2161,19 +2211,13 @@ barplot_delta <-
         ))
         plot_var <- plot_var + additional_geoms
       }
-      
-      
-      
-      
-      
-      
-      
-      
-      
+
+    }else{
+      plot_var <- plot_var + geom_text(aes(label = '')) #add empty label
     }
     
     #remove legend?
-    plot_var <- plot_var + guides(fill = "none")   # remove treatment legend
+    #plot_var <- plot_var + guides(fill = "none")   # remove treatment legend
     
     return(plot_var)
   }
@@ -2866,29 +2910,6 @@ add_star <- function(p) {
   }
 }
 
-#Box-cox transformation
-Box_Cox <- function(x) {
-  require(MASS)
-  bc <- boxcox(x ~ 1, plotit = FALSE)
-  #computes the log-likelihood for a range of lambda values and returns the lambda that maximizes the log-likelihood
-  lambda <- bc$x[which.max(bc$y)]
-  (x^lambda - 1) / lambda
-}
-
-
-# Define transformations
-transformations <- list(
-  "Original" = function(x) x,
-  "Log" = function(x) log(x - min(x) + 1),
-  "Square_Root" = function(x) sqrt(x - min(x)),
-  "Box_Cox" = function(x) {
-    require(MASS)
-    bc <- boxcox(x ~ 1, plotit = FALSE)
-    lambda <- bc$x[which.max(bc$y)]
-    (x^lambda - 1) / lambda
-  }
-)
-
 
 
 
@@ -2948,7 +2969,34 @@ SavePrint_plot <- function(plot_obj, plot_name, dataset_name, save_dir, plot_siz
 }
 
 
-#@@@@@@@ STYLING FUNCTIONS @@@@@@@#
+######### STYLING FUNCTIONS ###########
+
+## general
+remove_y_labs <-  list(theme(axis.title.y = element_blank(),
+                             axis.text.y = element_blank(),
+                             axis.ticks.y = element_blank()))
+
+remove_x_labs <-  list(theme(axis.title.x = element_blank(),
+                             axis.text.x = element_blank(),
+                             axis.ticks.x = element_blank()))
+
+fixed_aspect_theme <- theme(aspect.ratio = 2)
+
+
+multi_plot_comps <- function(plot_list,ylim_extra){
+  
+  # Set the same y-axis limits for all plots
+  y_limits <- c(min(sapply(plot_list, function(x) ggplot_build(x)$data[[1]]$ymin)), 
+                max(sapply(plot_list, function(x) ggplot_build(x)$data[[1]]$ymax)) + ylim_extra)
+  
+  leg <-cowplot::get_legend(plot_list[[1]] + theme(legend.direction="horizontal"))
+  
+  multi_plot_comps_list <- list(y_limits=y_limits,leg=leg)
+  
+  return(multi_plot_comps_list)
+}
+
+
 
 
 # Import system fonts
