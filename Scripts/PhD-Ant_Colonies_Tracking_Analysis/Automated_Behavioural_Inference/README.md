@@ -20,7 +20,7 @@ This script performs behaviour analysis on ant interactions. It includes functio
 
 ### STEP2_evaluating_classifiers.R
 
-This script reads quality score files, filters the data based on specified parameters, evaluates the best parameter values using statistical modelling and Tukey posthoc comparisons, and selects the best-performing methods based on specified measures. The script is designed to assist in selecting the best methods for machine learning based on quality scores.
+This script reads quality score files, filters the data based on specified parameters, evaluates the best parameter values using statistical modelling and Tukey post-hoc comparisons, and selects the best-performing methods based on specified measures. The script is designed to assist in selecting the best methods for machine learning based on quality scores.
 
 ### STEP2b_Final_Classifier_Validation.R
 
@@ -42,7 +42,7 @@ This script contains several functions related to detecting and filtering intera
 
 ### BEH_PCA_fort081_FUNCTIONS.R
 
-This script contains functions for performing classification analysis on a dataset, predicting class labels, and calculating quality metrics.
+This script contains functions for performing classification analysis on a dataset, predicting class labels, and calculating quality metrics. Its core is the function "fit_classifiers" that performs classification analysis on a dataset. It first removes variables with a high percentage of missing data and normalizes the remaining variables. Then, it applies the Relief algorithm to select relevant variables and performs data sampling techniques to balance the dataset. Finally, it fits several classification models including Quadratic Discriminant Analysis, Random Forest, and Support Vector Machine. The function returns the fitted models and a list of selected variables. Another function called "predict_class" is also provided to predict the class labels using the fitted models and the selected variables. Additionally, there is a function called "quality_scores" to calculate quality metrics such as CSI, Fbeta score, precision, and sensitivity.
 
 ### trajectory_extraction.R
 
