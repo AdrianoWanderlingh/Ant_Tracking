@@ -9,10 +9,10 @@ Ant Tracking
 <p align="center">
 <img src="https://img.shields.io/badge/R-276DC3.svg?style&logo=R&logoColor=white" alt="R" />
 <img src="https://img.shields.io/badge/C++-00599C?style=flat-square&logo=C%2B%2B&logoColor=white" alt="C++" />
-<img src="https://img.shields.io/badge/FORmicidae%20Tracker-8A2BE2" alt="formicidae-tracker" />
+<!--- <img src="https://img.shields.io/badge/FORmicidae%20Tracker-8A2BE2" alt="formicidae-tracker" /> --->
 </p>
 
-
+[![formicidae-tracker](https://img.shields.io/badge/FORmicidae%20Tracker-8A2BE2)](https://github.com/formicidae-tracker/myrmidon)
 
 
 ![GitHub top language](https://img.shields.io/github/languages/top/AdrianoWanderlingh/Ant_Tracking?style&color=5D6D7E)
@@ -31,8 +31,9 @@ Ant Tracking
 
 
 ## 📍 Overview
- :ant: 🦠
-Code used for Adriano Wanderlingh's Lasius niger Colony Maturation Experiment. Testing Social Immunity role in disease hindering dynamics in societies, using ant colonies interaction networks and behaviour | experimental epidemiology.
+Code used for Adriano Wanderlingh's Lasius niger Colony Maturation Experiment.  :ant: 🦠
+
+Testing Social Immunity role in disease hindering dynamics in societies, using ant colonies interaction networks and behaviour | experimental epidemiology.
 
 
 
@@ -84,18 +85,21 @@ The repository is organized into two main folders: `Scripts` and `Data`. The `Sc
 
 ### PhD-Ant_Colonies_Tracking_Analysis
 
-#### Automated_Behavioural_Inference
-
-For more information, read the folder [README](https://github.com/AdrianoWanderlingh/Ant_Tracking/tree/main/Scripts/PhD-Ant_Colonies_Tracking_Analysis/Automated_Behavioural_Inference)
-
 
 #### Data_preparation_after_postprocessing
 
 For more information, read the folder [README](https://github.com/AdrianoWanderlingh/Ant_Tracking/tree/main/Scripts) and the [pre-processing_Adriano_June2022](https://uob.sharepoint.com/:w:/r/teams/grp-AntsEpidemiologyLab/_layouts/15/Doc.aspx?sourcedoc=%7B2562631B-A6E5-4289-907F-89502F6C27E6%7D&file=pre-processing_Adriano_June2022.docx&action=default&mobileredirect=true&DefaultItemOpen=1) guide.
 
+
+#### Automated_Behavioural_Inference
+
+For more information, read the folder [README](https://github.com/AdrianoWanderlingh/Ant_Tracking/tree/main/Scripts/PhD-Ant_Colonies_Tracking_Analysis/Automated_Behavioural_Inference)
+
+
 #### molecular_bio_analysis
 
 This folder contains scripts for molecular biology analysis, including qPCR and RT-qPCR analysis.
+
 
 ### code_Social_Network_Plasticity_Exp_2018_AW
 
