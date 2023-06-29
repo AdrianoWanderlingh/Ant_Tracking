@@ -834,7 +834,7 @@ plot_regression <- function(data,time_point,analysis,n_cat_horiz,n_cat_vertic,po
 #@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 #AW adapted Functions
 
-collective_analysis_no_rescal <- function(data_path=data_path){
+collective_analysis_no_rescal <- function(data_path=data_path,showPlot=T){
   
   ###1. read data
   setwd(data_path)
@@ -1017,8 +1017,7 @@ collective_analysis_no_rescal <- function(data_path=data_path){
     
     #plot
     barplot_delta_period <- barplot_delta(dataset=data,predictor="treatment",post_hoc_outcomes=post_hoc_outcomes,stats_outcomes=stats_outcomes,i=i,type="collective",collective=T,plot_untransformed=T,diff_type="") #form_stat=NULL,
-    print(barplot_delta_period) 
-    
+    if (showPlot) {print(barplot_delta_period)}
     barplot_delta_period_list[[variable_list[i]]]        <- barplot_delta_period
     #names(barplot_delta_period_list[[i]]) <- variable_list[i]
   }
@@ -1027,7 +1026,7 @@ collective_analysis_no_rescal <- function(data_path=data_path){
   return(list(stats_outcomes=stats_outcomes,    post_hoc_outcomes=post_hoc_outcomes,  barplot_delta_period_list=barplot_delta_period_list))
 }
 
-collective_analysis_rescal <- function(data_path=data_path){
+collective_analysis_rescal <- function(data_path=data_path,showPlot=T){
   
   ###1. read data
   setwd(data_path)
@@ -1219,15 +1218,14 @@ collective_analysis_rescal <- function(data_path=data_path){
     
     #plot
     barplot_delta_period <- barplot_delta(dataset=data,predictor="treatment",post_hoc_outcomes=post_hoc_outcomes,stats_outcomes=stats_outcomes,i=i,type="collective",collective=T,plot_untransformed=T,diff_type="") #form_stat=NULL,
-    print(barplot_delta_period)
-    
+    if (showPlot) {print(barplot_delta_period)}
     barplot_delta_period_list[[variable_list[i]]]        <- barplot_delta_period
   }
   rownames(stats_outcomes) <- NULL
   return(list(stats_outcomes=stats_outcomes,    post_hoc_outcomes=post_hoc_outcomes,  barplot_delta_period_list=barplot_delta_period_list))
 }
 
-individual_ONE_analysis <- function(data_path=data_path,which_individuals){
+individual_ONE_analysis <- function(data_path=data_path,which_individuals,showPlot=T){
   # for ONE type of individuals (e.g. treated workers only, or queens only)
   
   ###1. read data
@@ -1269,6 +1267,8 @@ individual_ONE_analysis <- function(data_path=data_path,which_individuals){
 
   ##2c. keep only target individuals
   data <- data[which(data$task_group%in%which_individuals),]
+  
+  print(paste("",which_individuals,"",sep=" xxxxxxxxxx "))
   
   ##2d.  ###add a unique antid column
   data <- within(data,antID <- paste(colony,tag,sep="_"))
@@ -1439,7 +1439,7 @@ individual_ONE_analysis <- function(data_path=data_path,which_individuals){
     
     #plot
     barplot_delta_period <- barplot_delta(dataset=data,predictor="treatment",post_hoc_outcomes=post_hoc_outcomes,stats_outcomes=stats_outcomes,i=i,type="individual",collective=F,plot_untransformed=T,diff_type="absolute_difference") #form_stat=NULL,
-    print(barplot_delta_period)
+    if (showPlot) {print(barplot_delta_period)}
     
     barplot_delta_period_list[[variable_list[i]]]        <- barplot_delta_period 
     #ADD SAVING OF THE PLOT on single pdf file as done in plot_grooming file
@@ -1451,7 +1451,7 @@ individual_ONE_analysis <- function(data_path=data_path,which_individuals){
   
 }
 
-individual_TWO_analysis <- function(data_path=data_path,which_individuals){
+individual_TWO_analysis <- function(data_path=data_path,which_individuals,showPlot=T){
   # for ONE type of individuals (e.g. treated workers only, or queens only)
   
   ###1. read data
@@ -1746,8 +1746,8 @@ individual_TWO_analysis <- function(data_path=data_path,which_individuals){
     
   
     barplot_delta_period <- barplot_delta(dataset=data,predictor="treatment",post_hoc_outcomes=post_hoc_outcomes,stats_outcomes=stats_outcomes,i=i,type="individual",collective=F,plot_untransformed=T,diff_type="absolute_difference") #form_stat=NULL,
-    print(barplot_delta_period)
-
+    if (showPlot) {print(barplot_delta_period)}
+    
     barplot_delta_period_list[[variable_list[i]]]        <- barplot_delta_period
 
   }
@@ -1759,7 +1759,7 @@ individual_TWO_analysis <- function(data_path=data_path,which_individuals){
 }
 
 
-line_plot <- function(data_path, which_individuals){
+line_plot <- function(data_path, which_individuals,showPlot=T){
   
   ###1. read data
   setwd(data_path)
@@ -1805,6 +1805,8 @@ line_plot <- function(data_path, which_individuals){
   
   ###2. Loop over variables
   data_ori <- data
+  
+  line_plot_obj_list <- list()
   
   for (i in 1:length(variable_list)){
     print(paste0("######## ",variable_list[i]," ########"))
@@ -1870,14 +1872,12 @@ line_plot <- function(data_path, which_individuals){
     colFill_treatment +
     colScale_treatment
     
-  print(line_plot_obj)
-
+  if (showPlot) {print(line_plot_obj)}
+  line_plot_obj_list[[variable_list[i]]]        <- line_plot_obj
   }
-  
+  return(line_plot_obj_list)
 }
-  
-  
-  
+
 
 barplot_delta <-
   function(dataset,
@@ -1959,7 +1959,7 @@ barplot_delta <-
     
     ##### PLOT
     # significant letters/stars position
-    max_mean_se <- 1.5 * max(means$mean + means$se)
+    max_mean_se <- 1.2 * max(means$mean + means$se)
     # rename vars
     
     
@@ -2205,7 +2205,7 @@ barplot_delta <-
             y = abs(max_mean_se + 1 / 2 * (max_mean_se)),
             label = from_p_to_ptext(stats_outcomes[which(
               stats_outcomes$variable == variable_list[i] &
-                stats_outcomes$predictor == "period:size"
+                stats_outcomes$predictor == "period:exposure"
             ), "pval"])
           )
         ))
@@ -2216,8 +2216,12 @@ barplot_delta <-
       plot_var <- plot_var + geom_text(aes(label = '')) #add empty label
     }
     
-    #remove legend?
-    #plot_var <- plot_var + guides(fill = "none")   # remove treatment legend
+    
+    #legend modifiers (2 rows and changed labs)
+    plot_var <- plot_var +
+    guides(fill = guide_legend(nrow = 2))
+    # +guides(fill = "none")   # remove treatment legend
+
     
     return(plot_var)
   }
@@ -2357,6 +2361,79 @@ create_diff <-
       return(diff)
     }
   }
+
+
+read_data <- function(data_path, which_individuals){
+  
+  ###1. read data
+  setwd(data_path)
+  file_list <- list.files(pattern=pattern)
+  print(file_list)
+  warning("this function is not well generalised")
+  data <- NULL
+  for (file in file_list){
+    data <- rbind(data,read.table(file,header=T,stringsAsFactors = F))  
+  }
+  ##remove any duplicated line
+  data <- data[which(!duplicated(data)),]
+  
+  
+  ##2a. Extract exposure and size from treatment column
+  data$exposure <- unlist(lapply( data$treatment, function(x)  unlist(strsplit(x,split="\\.") )[1]  ))
+  data$size     <- unlist(lapply( data$treatment, function(x)  unlist(strsplit(x,split="\\.") )[2]  ))
+  
+  ##2b. add information on task group
+  if (pattern=="individual_behavioural_data") {
+    task_groups <- read.table(paste(root_path,"original_data",task_group_file,sep="/"),header=T,stringsAsFactors = F)
+    task_groups <- task_groups[which(!duplicated(task_groups)),]
+    data        <- merge(data,task_groups[c("colony","tag","task_group")],all.x=T,all.y=F)
+    
+  } else if (pattern=="individual_data") {
+    #make sure that the task_group is named correctly
+    data$task_group <- data$status 
+    data$status     <- NULL
+    treated_worker_list <- read.table(paste(root_path,"original_data","treated_worker_list.txt",sep="/"),header=T,stringsAsFactors = F)
+    treated_worker_list <- treated_worker_list[which(!duplicated(treated_worker_list)),]
+    treated_worker_list$status <- "treated"
+    data        <- merge(data,treated_worker_list[c("colony","tag","status")],all.x=T,all.y=F) 
+    data[which(is.na(data$status)),"status"] <- "untreated"
+  } 
+  
+  data[which(data$status=="treated"),"task_group"] <- "treated"
+  
+  ##2c. keep only target individuals
+  data <- data[which(data$task_group%in%which_individuals),]
+  
+  ##2d.  ###add a unique antid column
+  data <- within(data,antID <- paste(colony,tag,sep="_"))
+  
+  ###2. Loop over variables
+  data_ori <- data
+  
+  data_list <- list()
+  
+  # for (i in 1:length(variable_list)){
+  #   print(paste0("######## ",variable_list[i]," ########"))
+  #   data <- data_ori
+  #   
+  #   
+  #   # ###create a variable column
+  #   data$untransformed_variable <- data[,variable_list[i]]
+  #   
+  ###statistics
+  ###make sure treatment, exposure, size and period are factors with levels in the desired order
+  data$treatment <- factor(data$treatment , levels=treatment_order[which(treatment_order%in%data$treatment )])
+  data$size      <- factor(data$size    , levels=size_order   [which(size_order%in%data$size )])
+  data$exposure  <- factor(data$exposure , levels=exposure_order[which(exposure_order%in%data$exposure )])
+  data$period    <- factor(data$period    , levels=period_order   [which(period_order%in%data$period )])
+  data$antID     <- factor( data$antID )
+  
+  
+  # data_list[[variable_list[i]]] <- data
+  
+  #}
+  return(data)
+}
 
 plot_qpcr <- function(experiments){
   plot1 <- function(data,experiment,ylim=ylim){
@@ -2726,10 +2803,6 @@ plot_distribution <- function(experiments,desired_treatments){
 # inherited from FUNCTIONS_Analysis_and_Styling.R
 
 ########## STATS FUNCTIONS ###############
-require(report)
-require(sjPlot)
-require(lme4)
-require(car)
 
 # function to test normality of residuals
 test_norm <- function(resids) {
@@ -2757,7 +2830,8 @@ output_lmer <- function(model,show_report = F) {
   print("------------SUMMARY------------")
   print(summary(model))
   print("------------ANOVA------------")
-  print(Anova(model))
+  print(anova(model)) 
+  warning("this uses Type III Analysis of variance, for when there are interactions")
   print("------------RSQUARED------------")
   print(r.squaredGLMM(model))
   print("------------REPORT------------")
@@ -2947,7 +3021,6 @@ assign_CTDiff_15PipErr <- function(mean_Ct) {
 ####################################################
 
 ###########    PLOT SAVING    ###############
-require(ggplot2)
 SavePrint_plot <- function(plot_obj, plot_name, dataset_name, save_dir, plot_size = c(7, 4), dpi = 300, font_size = 30) {
   # Create the directory if it doesn't exist
   if (!dir.exists(save_dir_plots)) {
@@ -2980,7 +3053,13 @@ remove_x_labs <-  list(theme(axis.title.x = element_blank(),
                              axis.text.x = element_blank(),
                              axis.ticks.x = element_blank()))
 
-fixed_aspect_theme <- theme(aspect.ratio = 2)
+
+# Function to split text into two lines
+split_title <- function(title) {
+  words <- str_split(title, " ")[[1]]
+  half <- length(words) %/% 2
+  paste(paste(words[1:half], collapse = " "), "\n", paste(words[(half+1):length(words)], collapse = " "), sep = "")
+}
 
 
 multi_plot_comps <- function(plot_list,ylim_extra){
@@ -3231,16 +3310,17 @@ colFill_Colony <-
 #new_scale_fill() +
 # geom_line(aes(color = Sample)) +
 colFill_Treatment <-
-  scale_fill_manual(name = "Treatment", values = myColors_Treatment) #for lines
+  scale_fill_manual(name = "Treatment", values = myColors_Treatment,labels = function(x) str_to_title(gsub("big", "large", gsub("\\.", " ", x)))) #for lines
 colFill_treatment <-
-  scale_fill_manual(name = "treatment", values = myColors_Treatment) #for lines
+  scale_fill_manual(name = "treatment", values = myColors_Treatment,labels = function(x) str_to_title(gsub("big", "large", gsub("\\.", " ", x)))) #for lines
 
 colScale_period <-
   scale_colour_manual(name = "period",
                       values = myColors_period,
-                      drop = TRUE)
+                      drop = TRUE,
+                      labels = function(x) str_to_title(x))
 colFill_period  <-
-  scale_fill_manual(name = "period", values = myColors_period) #for lines
+  scale_fill_manual(name = "period", values = myColors_period,labels = function(x) str_to_title(x)) #for lines
 
 
 #### DEFINE REMAINING PLOT STYLE
@@ -3249,7 +3329,7 @@ STYLE <- list(#colScale, fillScale,
   theme_bw(),
   theme(
     panel.grid.minor = element_blank(),
-    text = element_text(family = "Liberation Serif")
+    text = element_text(family = "Liberation Serif") 
   ))#,
   #scale_x_discrete(labels = function(x) str_wrap(x, width = 4)) # wrap lables when long)
   

@@ -105,7 +105,7 @@ names(variable_list) <- c("modularity","clustering","task assortativity","effici
 transf_variable_list <- c("log"       ,"sqrt"      ,"Box_Cox"              ,"log"       ,"power0.01"        ,"log" ) # ,"log"   ,"power0.01"  ######"none", "sqrt" "log","power2"
 # TRANSFORMATION NOTE: task_assortativity is hard to normalise (no transformation has the best result) - used Box_Cox
 
-coll_rescal_net <- collective_analysis_rescal(data_path)
+coll_rescal_net <- collective_analysis_rescal(data_path,showPlot=F)
 
 # Reshape the data
 #stats_outcomes_reshaped <- reshape(stats_outcomes[,which(names(stats_outcomes)!="df")], idvar = "predictor", timevar = "variable", direction = "wide")
@@ -127,7 +127,7 @@ names(variable_list) <- c("degree")#,"aggregated distance to queen")
 transf_variable_list <- c("none"  )#,"log")  ######"none", "sqrt" "log","power2"
 
 
-ind_treated_net <- individual_ONE_analysis(data_path,which_individuals="treated") # "treated","queen","nurse","forager"
+ind_treated_net <- individual_ONE_analysis(data_path,which_individuals="treated",showPlot=F) # "treated","queen","nurse","forager"
 
 
 ### behavioural data
@@ -138,9 +138,9 @@ variable_list <-        c("prop_time_outside") #,"proportion_time_active", "aver
 names(variable_list) <- c("prop. time outside") # ,"prop. time active", "average bout speed pixpersec" ,"total distance travelled pix", "inter caste contact duration")
 transf_variable_list <- c("power0.01"        )#,"none"                  ,"log"                          ,"log"                      ,"sqrt"                   )  ######"none", "sqrt" "log","power2"
 
-ind_treated_beh <- individual_ONE_analysis(data_path,which_individuals="treated") # "treated","queen","nurse","forager"
+ind_treated_beh <- individual_ONE_analysis(data_path,which_individuals="treated",showPlot=F) # "treated","queen","nurse","forager"
 
-line_plot(data_path,which_individuals="treated")
+ind_treated_beh_lineplot <- line_plot(data_path,which_individuals="treated",showPlot=F)
 
 
 #### GROOMING INTERACTIONS ####
@@ -148,13 +148,13 @@ root_path <- paste(disk_path,"/main_experiment_grooming",sep="") # root_path <- 
 data_path=paste(root_path,"/processed_data/individual_behaviour/pre_vs_post_treatment",sep="")
 pattern="individual_behavioural_data"
 variable_list <-        c("duration_grooming_received_min", "inter_caste_contact_duration","prop_duration_grooming_received_outside_min") #GROOMING  ouside is negligibile as only 58/6016 events happen outside , "prop_duration_grooming_received_outside_min","duration_grooming_received_min_zone2"
-names(variable_list) <- c("duration grooming received min", "inter caste grooming duration","prop duration grooming received outside_min") # , "prop duration grooming received outside min","duration grooming received outside min"
+names(variable_list) <- c("duration grooming received min", "inter caste grooming duration","prop. duration grooming received outside_min") # , "prop duration grooming received outside min","duration grooming received outside min"
 transf_variable_list <- c("log"                          ,"log"                         , "Box_Cox")   ######"none", "sqrt" "log","power2"
 
 
-ind_treated_grooming <- individual_ONE_analysis(data_path,which_individuals="treated") # "treated","queen","nurse","forager"
+ind_treated_grooming <- individual_ONE_analysis(data_path,which_individuals="treated",showPlot=F) # "treated","queen","nurse","forager"
 
-line_plot(data_path,which_individuals="treated")
+ind_treated_grooming_lineplot <- line_plot(data_path,which_individuals="treated",showPlot=F)
 
 ################    FOR UNTREATED INDIVIDUALS    ################    
 
@@ -169,8 +169,8 @@ variable_list <-        c("degree")#, "mean_aggregated_distance_to_treated")
 names(variable_list) <- c("degree")#,"mean aggregated distance to treated")
 transf_variable_list <- c("none")#,"power0.01")  ######"none", "sqrt" "log","power2"
 
-ind_untreated_net_nurse <- individual_ONE_analysis(data_path,which_individuals="nurse") ## "treated","queen","nurse","forager"
-ind_untreated_net_forag <- individual_ONE_analysis(data_path,which_individuals="forager") ## "treated","queen","nurse","forager"
+ind_untreated_net_nurse <- individual_ONE_analysis(data_path,which_individuals="nurse",showPlot=F) ## "treated","queen","nurse","forager"
+ind_untreated_net_forag <- individual_ONE_analysis(data_path,which_individuals="forager",showPlot=F) ## "treated","queen","nurse","forager"
 
 
 
@@ -179,11 +179,11 @@ root_path <- paste(disk_path,"/main_experiment",sep="")
 data_path=paste(root_path,"/processed_data/individual_behaviour/pre_vs_post_treatment",sep="")
 pattern="individual_behavioural_data"
 variable_list <-        c("prop_time_outside","inter_caste_contact_duration","duration_of_contact_with_treated_min")
-names(variable_list) <- c("prop time outside","inter caste contact duration","duration of contact with treated min")
+names(variable_list) <- c("prop. time outside","inter caste contact duration","duration of contact with treated min")
 transf_variable_list <- c("power0.01"        , "Box_Cox"                    , "Box_Cox"            )   ######"none", "sqrt" "log","power2"
 
-ind_untreated_beh_nurse <- individual_ONE_analysis(data_path,which_individuals="nurse") ## "treated","queen","nurse","forager"
-ind_untreated_beh_forag <- individual_ONE_analysis(data_path,which_individuals="forager") ## "treated","queen","nurse","forager"
+ind_untreated_beh_nurse <- individual_ONE_analysis(data_path,which_individuals="nurse",showPlot=F) ## "treated","queen","nurse","forager"
+ind_untreated_beh_forag <- individual_ONE_analysis(data_path,which_individuals="forager",showPlot=F) ## "treated","queen","nurse","forager"
 
 
 #### GROOMING INTERACTIONS ####
@@ -194,8 +194,8 @@ variable_list <-        c("duration_grooming_given_to_treated_min")
 names(variable_list) <- c("duration grooming given to treated min")
 transf_variable_list <- c("log"        )   ######"none", "sqrt" "log","power2"
 
-ind_untreated_grooming_nurse <- individual_ONE_analysis(data_path,which_individuals="nurse") ## "treated","queen","nurse","forager"
-ind_untreated_grooming_forag <- individual_ONE_analysis(data_path,which_individuals="forager") ## "treated","queen","nurse","forager"
+ind_untreated_grooming_nurse <- individual_ONE_analysis(data_path,which_individuals="nurse",showPlot=F) ## "treated","queen","nurse","forager"
+ind_untreated_grooming_forag <- individual_ONE_analysis(data_path,which_individuals="forager",showPlot=F) ## "treated","queen","nurse","forager"
 
 
 ###################################################################################################################################
@@ -220,7 +220,7 @@ ind_untreated_grooming_forag <- individual_ONE_analysis(data_path,which_individu
 # data_path=paste(root_path,"/processed_data/individual_behaviour/pre_vs_post_treatment",sep="")
 # pattern="individual_behavioural_data"
 # variable_list <-        c("prop_time_outside","inter_caste_contact_duration","duration_of_contact_with_treated_min")
-# names(variable_list) <- c("prop time outside","inter caste contact duration","duration of contact with treated min")
+# names(variable_list) <- c("prop. time outside","inter caste contact duration","duration of contact with treated min")
 # transf_variable_list <- c("power0.01"        , "power0.01"                       , "power0.01"            )   ######"none", "sqrt" "log","power2"
 # 
 # ind_TWO_beh <- individual_TWO_analysis(data_path,which_individuals= c("nurse","forager")) ## "treated","queen","nurse","forager"
@@ -238,7 +238,112 @@ ind_untreated_grooming_forag <- individual_ONE_analysis(data_path,which_individu
 # ind_TWO_beh <- individual_TWO_analysis(data_path,which_individuals= c("nurse","forager")) ## "treated","queen","nurse","forager"
 # 
 
+###################################################################################################################################
+### COMPARE  grooming and time outside ############################################################################################
+###################################################################################################################################
 
+root_path <- paste(disk_path,"/main_experiment_grooming",sep="") # root_path <- paste(disk_path,"/main_experiment_grooming",sep="")
+data_path=paste(root_path,"/processed_data/individual_behaviour/pre_vs_post_treatment",sep="")
+pattern="individual_behavioural_data"
+variable_list <-        c("duration_grooming_received_min") #GROOMING  ouside is negligibile as only 58/6016 events happen outside , "prop_duration_grooming_received_outside_min","duration_grooming_received_min_zone2"
+names(variable_list) <- c("duration grooming received min") # , "prop duration grooming received outside min","duration grooming received outside min"
+#transf_variable_list <- c("log"                           )   ######"none", "sqrt" "log","power2"
+
+dur_groom_rec_data <- read_data(data_path,which_individuals="treated")
+
+
+root_path <- paste(disk_path,"/main_experiment",sep="") # root_path <- paste(disk_path,"/main_experiment_grooming",sep="")
+data_path=paste(root_path,"/processed_data/individual_behaviour/pre_vs_post_treatment",sep="")
+pattern="individual_behavioural_data"
+variable_list <-        c("prop_time_outside") #,"proportion_time_active", "average_bout_speed_pixpersec" ,"total_distance_travelled_pix", "inter_caste_contact_duration") #inter_caste_contact_duration?
+names(variable_list) <- c("prop. time outside") # ,"prop. time active", "average bout speed pixpersec" ,"total distance travelled pix", "inter caste contact duration")
+#transf_variable_list <- c("power0.01"        )#,"none"                  ,"log"                          ,"log"                      ,"sqrt"                   )  ######"none", "sqrt" "log","power2"
+
+prop_time_out_data <- read_data(data_path,which_individuals="treated")
+
+#merge
+common_col_names <- intersect(names(dur_groom_rec_data), names(prop_time_out_data))
+#common_col_names <- common_col_names_NetSpace[!common_col_names_NetSpace %in% c("age")]
+CompareBehavs <- dplyr::left_join(dur_groom_rec_data, prop_time_out_data, by = common_col_names[])
+
+# remove extra cols
+CompareBehavs <- CompareBehavs %>%
+  dplyr::select(colony, tag, antID, time_hours, colony_size, treatment, age, period, time_of_day, 
+                prop_time_outside, duration_grooming_received_min
+  )
+
+# melt the dataframe to long format
+CompareBehavs <- reshape(CompareBehavs,
+                         varying = c("prop_time_outside", "duration_grooming_received_min"),
+                         v.names = "measure",
+                         times = c("prop_time_outside", "duration_grooming_received_min"),
+                         timevar = "variables",
+                         direction = "long")
+CompareBehavs$variables <- as.factor(CompareBehavs$variables)
+CompareBehavs$variables <- gsub("_", " ", CompareBehavs$variables)
+
+###### MODEL # only post exposure
+
+#scaling for model (for plot, performed only after that the vars means are calculated)
+CompareBehavs<- CompareBehavs %>%
+  group_by(variables)  %>%
+  dplyr::mutate(measure_scaled = scale(measure)) %>%
+  ungroup()
+
+mod1 <- lmer(log_transf(measure_scaled) ~ variables*time_hours + (1|colony) + (1|antID), data = CompareBehavs[which(CompareBehavs$period=="post"),])
+#output_lmer(mod1)
+anov  <- anova(mod1)
+p_interaction_vars_time <- anov["variables:time_hours","Pr(>F)"]
+
+
+###### PLOT
+
+# 1. Calculate the mean of the variable
+mean_data <- aggregate(measure ~ period + time_hours + variables + colony,
+                       FUN = mean, na.rm = T, na.action = na.pass, CompareBehavs)
+
+# 2. Calculate the grand mean and standard error dropping the colony AND TREATMENT factors
+grand_mean_data <- mean_data %>%
+  group_by(period, time_hours, variables) %>% #treatment
+  summarise(grand_mean = mean(measure),
+            standard_error = sd(measure) / sqrt(n()))
+
+# Add NA values at time_hours == -3
+unique_treatments <- unique(grand_mean_data$variables)
+unique_periods <- unique(grand_mean_data$period)
+na_rows <- expand.grid(period = unique_periods,
+                       time_hours = -3,
+                       variables = unique_treatments,
+                       grand_mean = NA,
+                       standard_error = NA)
+
+grand_mean_data <- rbind(grand_mean_data, na_rows) %>%
+  arrange( period, time_hours, variables) #treatment,
+
+
+# Perform scaling by group # scale() function standardizes a vector to have mean 0 and standard deviation 1
+grand_mean_data_scaled <- grand_mean_data %>%
+  group_by(variables)  %>%
+  dplyr::mutate(scaled_grand_mean = scale(grand_mean),scaled_standard_error = scale(standard_error)) %>%
+  ungroup()
+
+#plot fit
+GroomingVsTimeOutside <- ggplot(grand_mean_data_scaled, aes(x = time_hours, y = scaled_grand_mean,  fill = variables, color = variables, group = variables)) +
+  geom_smooth(data = subset(grand_mean_data_scaled, period == "pre"), method = "lm", se = T, linetype = "dashed") +
+  geom_smooth(data = subset(grand_mean_data_scaled, period == "post"), method = "lm", se = T, linetype = "solid") +
+  labs(#title = "Prop Time Outside by Time Hours and Treatment",
+    x = "Time Hours since treatment exposure",
+    y = "scaled variables" #names(variable_list[i])
+  ) +
+  #geom_text(aes(x = 10, label = from_p_to_ptext(p_interaction_vars_time))) 
+  annotate("text", x = 10, y = 3, label = from_p_to_ptext(p_interaction_vars_time)) +
+  STYLE +
+  theme(legend.position = c(.05, .95), # Position legend inside plot area
+        legend.justification = c(0, 1), # Justify legend at top left
+        legend.box.just = "left",
+        legend.direction = "horizontal",
+        legend.title = element_blank()) + 
+  guides(fill = guide_legend(nrow = 2,ncol = 1))
 
 
 ###################################################################################################################################
@@ -249,6 +354,9 @@ warning("\n-LEGEND SHOULD HAVE NEW treatment LABEL (control small, not control.s
         \n-WRAP LEGEND TO BE 2 COLS https://stackoverflow.com/questions/39552682/base-r-horizontal-legend-with-multiple-rows" )
 
 warning("ISSUE: SOME POST-HOCS OF IND_ONE_ANALYSIS LOOK WRONG (SEE DURATION_GROOMING_RECEIVED)")
+
+fixed_aspect_theme <- theme(aspect.ratio = 3)
+
 
 ### ind_net_properties ### 
 ## degree
@@ -267,13 +375,18 @@ allplots <- cowplot::align_plots(plot_list[[1]] + ylim(plot_comps$y_limits) + gg
                                  plot_list[[3]] + ylim(plot_comps$y_limits) + ggtitle("untreated foragers")+ fixed_aspect_theme  + remove_x_labs + guides(fill = "none") + remove_y_labs,
                                  align="h")
 
-ind_net_properties <- cowplot::plot_grid(
+ind_net_degree <- cowplot::plot_grid(
   cowplot::plot_grid(allplots[[1]], allplots[[2]], allplots[[3]],
                      ncol=3, rel_widths = c(0.28,0.24,0.24))
   , plot_comps$leg, ncol=1, rel_heights = c(0.9, 0.1))
 
 
-ind_net_properties
+# # Specify the image size in pixels
+# width_pixels <- 500
+# height_pixels <- 470
+# # Save the plot grid as an image with specified dimensions
+# ggsave("plot_grid.png", grid, width = width_pixels, height = height_pixels)
+
 
   
 ### ind_beh_measures ### 3 panels
@@ -299,9 +412,7 @@ prop_time_outside <- cowplot::plot_grid(
   , plot_comps1$leg, ncol=1, rel_heights = c(0.9, 0.1))
 
 
-
 ### ind_beh_measures### 2 panels
-
 
 ## duration_of_contact_with_treated_min
 
@@ -359,56 +470,106 @@ duration_grooming_given_to_treated_min <- cowplot::plot_grid(allplots1[[1]], all
 
 ### COMBINE ind_beh_measures 2 panels together
 
-cowplot::plot_grid(
+ind_beh_measures <- cowplot::plot_grid(
   duration_of_contact_with_treated,
   inter_caste_contact_duration,
   duration_grooming_given_to_treated_min,
   plot_comps1$leg, ncol=1, rel_heights = c(0.30,0.30,0.30, 0.1))
 
 
-# ### ind_grooming_received ### 3 panels
-# 
-# plot_list <- list(ind_treated_grooming$barplot_delta_period_list$duration_grooming_received_min,
-#                   ind_treated_grooming$barplot_delta_period_list$inter_caste_contact_duration,
-#                   ind_treated_grooming$barplot_delta_period_list$prop_duration_grooming_received_outside_min)
-# 
-# YLIM_extra <- 1
-# 
-# plot_comps1 <- multi_plot_comps(plot_list,ylim_extra=YLIM_extra)
-# 
-# allplots1 <- cowplot::align_plots(plot_list[[1]] + ylim(plot_comps1$y_limits) + ggtitle("treated nurses")    + fixed_aspect_theme  + remove_x_labs + guides(fill = "none") ,
-#                                   plot_list[[2]] + ylim(plot_comps1$y_limits) + ggtitle("untreated nurses")  + fixed_aspect_theme  + remove_x_labs + guides(fill = "none") + remove_y_labs,
-#                                   plot_list[[3]] + ylim(plot_comps1$y_limits) + ggtitle("untreated foragers")+ fixed_aspect_theme  + remove_x_labs + guides(fill = "none") + remove_y_labs,
-#                                   align="h")
-# 
-# treated_grooming <- cowplot::plot_grid(
-#   cowplot::plot_grid(allplots1[[1]], allplots1[[2]], allplots1[[3]],
-#                      ncol=3, rel_widths = c(0.28,0.24,0.24))
-#   , plot_comps1$leg, ncol=1, rel_heights = c(0.9, 0.1))
-# 
-# 
+### ind_grooming_received ### 3 panels
+
+plot_list <- list(ind_treated_grooming$barplot_delta_period_list$duration_grooming_received_min,
+                  ind_treated_grooming$barplot_delta_period_list$inter_caste_contact_duration,
+                  ind_treated_grooming$barplot_delta_period_list$prop_duration_grooming_received_outside_min)
+
+YLIM_extra <- 0
+
+plot_comps1 <- multi_plot_comps(plot_list,ylim_extra=YLIM_extra)
+
+allplots1 <- cowplot::align_plots(plot_list[[1]] + theme(aspect.ratio = 2)  + remove_x_labs + guides(fill = "none") ,
+                                  plot_list[[2]] + theme(aspect.ratio = 2)  + remove_x_labs + guides(fill = "none") ,
+                                  plot_list[[3]] + theme(aspect.ratio = 2)  + remove_x_labs + guides(fill = "none") ,
+                                  align="h")
+
+treated_grooming <- cowplot::plot_grid(
+  cowplot::plot_grid(allplots1[[1]], allplots1[[2]], allplots1[[3]],
+                     ncol=3, rel_widths = c(0.24,0.24,0.24))
+  , plot_comps1$leg, ncol=1, rel_heights = c(0.9, 0.1))
+
+
+### comparing timeline of grooming and time_outside line_plots  ### 3 panels
+
+plot_list <- list(ind_treated_beh_lineplot$prop_time_outside,
+                  ind_treated_grooming_lineplot$duration_grooming_received_min,
+                  ind_treated_grooming_lineplot$prop_duration_grooming_received_outside_min,
+                  GroomingVsTimeOutside)
+
+YLIM_extra <- 0
+
+#plot_comps1 <- multi_plot_comps(plot_list,ylim_extra=YLIM_extra)
 
 
 
+allplots1 <- cowplot::align_plots(plot_list[[1]] + theme(aspect.ratio = 0.4)  + remove_x_labs + guides(fill = "none") + theme(legend.position = "none") + labs(y = split_title(plot_list[[1]]$labels$y)),
+                                  plot_list[[2]] + theme(aspect.ratio = 0.4)  + remove_x_labs + guides(fill = "none") + theme(legend.position = "none") + labs(y = split_title(plot_list[[2]]$labels$y)),
+                                  plot_list[[3]] + theme(aspect.ratio = 0.4)                  + guides(fill = "none") + theme(legend.position = "none") + labs(y = split_title(plot_list[[3]]$labels$y)),
+                                  plot_list[[4]] + theme(aspect.ratio = 0.4)                  + guides(fill = "none")                                   + labs(y = "Scaled\nvariables"),
+                                  align="hv")
 
+treated_grooming <- cowplot::plot_grid(
+  cowplot::plot_grid(allplots1[[1]], allplots1[[2]], allplots1[[3]],plot_list[[4]],
+                     ncol=2, rel_widths = c(0.24,0.24,0.24,0.24))
+  , plot_comps1$leg, ncol=1, rel_heights = c(0.9, 0.1))
 
-
-
-
-
-
+treated_grooming
 
 
 ### collective_net_properties ### 
-collective_net_properties <- cowplot::plot_grid(
-  coll_rescal_net$barplot_delta_period_list$modularity,
-  coll_rescal_net$barplot_delta_period_list$clustering,
-  coll_rescal_net$barplot_delta_period_list$task_assortativity,
-  coll_rescal_net$barplot_delta_period_list$density,
-  coll_rescal_net$barplot_delta_period_list$efficiency,
-  coll_rescal_net$barplot_delta_period_list$degree_mean,
-  labels=c("", "","",""), nrow = 2)
 
+plot_list <- list(coll_rescal_net$barplot_delta_period_list$modularity,
+                  coll_rescal_net$barplot_delta_period_list$clustering,
+                  coll_rescal_net$barplot_delta_period_list$task_assortativity,
+                  coll_rescal_net$barplot_delta_period_list$density,
+                  coll_rescal_net$barplot_delta_period_list$efficiency,
+                  coll_rescal_net$barplot_delta_period_list$degree_mean)
+
+# Set the same y-axis limits for all plots
+YLIM_extra <- 0.01
+
+#have 2 scales: 1 for top row (measures expected to increase), 1 for bottom row (measures expected to decrease), 
+plot_compsA <- multi_plot_comps(plot_list[1:3],ylim_extra=YLIM_extra)
+plot_compsB <- multi_plot_comps(plot_list[4:6],ylim_extra=YLIM_extra)
+
+
+allplots <- cowplot::align_plots(plot_list[[1]] + ylim(plot_compsA$y_limits) + fixed_aspect_theme  + remove_x_labs + guides(fill = "none") ,
+                                 plot_list[[2]] + ylim(plot_compsA$y_limits) + fixed_aspect_theme  + remove_x_labs + guides(fill = "none") ,
+                                 plot_list[[3]] + ylim(plot_compsA$y_limits) + fixed_aspect_theme  + remove_x_labs + guides(fill = "none") ,
+                                 plot_list[[4]] + ylim(plot_compsB$y_limits) + fixed_aspect_theme  + remove_x_labs + guides(fill = "none") ,
+                                 plot_list[[5]] + ylim(plot_compsB$y_limits) + fixed_aspect_theme  + remove_x_labs + guides(fill = "none") ,
+                                 plot_list[[6]] + ylim(plot_compsB$y_limits) + fixed_aspect_theme  + remove_x_labs + guides(fill = "none") ,
+                                 align="h")
+
+collective_net_properties <- cowplot::plot_grid(
+  cowplot::plot_grid(allplots[[1]], allplots[[2]], allplots[[3]],allplots[[4]], allplots[[5]], allplots[[6]],
+                     ncol=3, rel_widths = c(0.1,0.1,0.1,0.1,0.1,0.1))
+  , plot_comps$leg, ncol=1, rel_heights = c(0.9, 0.1))
+
+
+
+
+
+
+
+# GRID PLOTS!!
+
+ind_net_degree
+
+prop_time_outside
+
+ind_beh_measures
+
+treated_grooming
 
 collective_net_properties
 
@@ -511,3 +672,6 @@ text(x_text2,y_text1,labels=panel_casse("c"),font=panel_font, cex=panel_cex,adj=
 par(xpd=F)
 ####Fifth, Close figure 3 #######
 #dev.off()
+
+
+

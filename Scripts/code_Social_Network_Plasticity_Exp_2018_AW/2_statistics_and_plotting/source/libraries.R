@@ -25,6 +25,13 @@ library(survival)
 library(survcomp)
 library(vioplot)
 library(viridisLite)
+# AW
+require(report)
+require(sjPlot)
+require(lme4)
+require(car)
+require(MuMIn)
+
 
 ### AW # for plotting
 require(RColorBrewer)
@@ -35,8 +42,12 @@ require(ggplot2)
 require(ggnewscale)
 require(gridExtra)
 require(extrafont)
+require(cowplot)
 #library(Cairo) # to ensure working export to pdf with non-standard fonts
-library(showtext)
-font_add_google("Crimson Text", "crimson", db_cache = FALSE)
-showtext_auto()#must be called to indicate that showtext is going to be automatically invoked to draw text whenever a plot is created.
+#font_add_google("Crimson Text", "crimson", db_cache = FALSE)
 require(dplyr)
+#font_import()
+
+######library(showtext)
+######showtext_auto()#must be called to indicate that showtext is going to be automatically invoked to draw text whenever a plot is created.
+
