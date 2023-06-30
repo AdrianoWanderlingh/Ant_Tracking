@@ -162,17 +162,14 @@ test_norm <- function(resids) {
   }
 }
 
-# convert significance levels to stars
+# convert significance levels to stars # AW modded
 from_p_to_ptext <- function(pvalue) {
-  if (is.na(pvalue)) {
+  if (length(pvalue) == 0) {
+    pvaluetext <- "if pval not here, the model failed"
+  } else if (is.na(pvalue)) {
     pvaluetext <- "p = NA"
-  } else{
-    if # (pvalue< 0.00001){
-    #   pvaluetext <- "*****"
-    # }else if (pvalue< 0.0001){
-    #   pvaluetext <- "****"
-    # }else if
-    (pvalue < 0.0001) {
+  } else {
+    if   (pvalue < 0.0001) {
       pvaluetext <- "***"
     } else if (pvalue < 0.005) {
       pvaluetext <- "**"
@@ -182,9 +179,9 @@ from_p_to_ptext <- function(pvalue) {
       pvaluetext <- paste("p=", sprintf("%.3f", pvalue), sep = "")
     } else if (pvalue < 1) {
       pvaluetext <- paste("p=", sprintf("%.2f", pvalue), sep = "")
-    } else{
+    } else {
       pvaluetext <- "p = 1"
-    }#if (pvalue< 10^-6)
+    }
   }
   return(pvaluetext)
 }
@@ -834,6 +831,8 @@ plot_regression <- function(data,time_point,analysis,n_cat_horiz,n_cat_vertic,po
 #@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 #AW adapted Functions
 
+model_n_interations <- lmerControl(optCtrl = list(maxfun = 2e5))
+
 collective_analysis_no_rescal <- function(data_path=data_path,showPlot=T){
   
   ###1. read data
@@ -855,6 +854,8 @@ collective_analysis_no_rescal <- function(data_path=data_path,showPlot=T){
   data_ori <- data
   stats_outcomes    <- NULL
   post_hoc_outcomes <- NULL
+  stats_outcomes1    <- NULL
+  post_hoc_outcomes1 <- NULL
   barplot_delta_period_list <- list()
   
   for (i in 1:length(variable_list)){
@@ -892,7 +893,20 @@ collective_analysis_no_rescal <- function(data_path=data_path,showPlot=T){
     anov  <- anova(model)
     p_interaction_treatment <- anov["period:treatment","Pr(>F)"]
     
-    stats_outcomes <- rbind(stats_outcomes,data.frame(variable=variable_list[i],predictor="period:treatment",df=paste(round(anov["period:treatment","NumDF"]),round(anov["period:treatment","DenDF"]),sep=","),pval=anov["period:treatment","Pr(>F)"],stringsAsFactors = F))
+    # Check if the model converged
+    if(length(summary(model)$optinfo$conv$lme4$messages) != 0) {
+      # If the model fails to converge, calculate VIF
+      # The Variance Inflation Factor (VIF) is a measure of multicollinearity. A rule of thumb is that if the VIF is greater than 5, then the explanatory variables are highly correlated, which can affect the stability and interpretability of the model
+      vif_values <- car::vif(model)
+      
+      # If any VIF is > 10, assign p_interaction_treatment = 1, and try simpler model 
+      if(any(vif_values[, "GVIF"] > 10)) {
+        p_interaction_treatment <- 1
+        warning("model multicollinearity detected, try simpler model")
+      }
+    }
+    
+    stats_outcomes <- rbind(stats_outcomes,data.frame(variable=variable_list[i],predictor="period:treatment",df=paste(round(anov["period:treatment","NumDF"]),round(anov["period:treatment","DenDF"]),sep=","),pval=p_interaction_treatment,stringsAsFactors = F))
     ###check interaction
     if (p_interaction_treatment<=0.05){
       test_norm(residuals(model))
@@ -925,7 +939,7 @@ collective_analysis_no_rescal <- function(data_path=data_path,showPlot=T){
       
       ###if interaction with treatment is not significant, repeat analysis, but separating size and exposure
       ###fit model 
-      model <- lmer(   variable ~ period*exposure + period*size + (1|time_of_day) + (1|colony) ,data=data)
+      model <- lmer(   variable ~ period*exposure + period*size + (1|time_of_day) + (1|colony) ,data=data,control = model_n_interations)
       anov  <- anova(model)
       p_interaction_exposure <- anov["Pr(>F)"]["period:exposure","Pr(>F)"]
       p_interaction_size     <- anov["Pr(>F)"]["period:size","Pr(>F)"] 
@@ -953,7 +967,7 @@ collective_analysis_no_rescal <- function(data_path=data_path,showPlot=T){
           stats_outcomes <- rbind(stats_outcomes,data.frame(variable=variable_list[i],predictor="period:size",df=paste(round(anov["period:size","NumDF"]),round(anov["period:size","DenDF"]),sep=","),pval=anov["period:size","Pr(>F)"],stringsAsFactors = F))
           
           ###fit model 
-          model <- lmer(   variable ~ period*exposure + (1|time_of_day) + (1|colony) ,data=data)
+          model <- lmer(   variable ~ period*exposure + (1|time_of_day) + (1|colony) ,data=data,control = model_n_interations)
           anov  <- anova(model)
           test_norm(residuals(model))
           for (rowi in 1:nrow(anov)){
@@ -984,7 +998,7 @@ collective_analysis_no_rescal <- function(data_path=data_path,showPlot=T){
           # print(anov["period:exposure",])
           # 
           ###fit model 
-          model <- lmer(   variable ~ period*size + (1|time_of_day) + (1|colony) ,data=data)
+          model <- lmer(   variable ~ period*size + (1|time_of_day) + (1|colony) ,data=data ,control = model_n_interations)
           anov  <- anova(model)
           test_norm(residuals(model))
           for (rowi in 1:nrow(anov)){
@@ -1020,10 +1034,17 @@ collective_analysis_no_rescal <- function(data_path=data_path,showPlot=T){
     if (showPlot) {print(barplot_delta_period)}
     barplot_delta_period_list[[variable_list[i]]]        <- barplot_delta_period
     #names(barplot_delta_period_list[[i]]) <- variable_list[i]
+    
+    # add cleaning step
+    post_hoc_outcomes1 <- c(post_hoc_outcomes1,post_hoc_outcomes)
+    stats_outcomes1    <- c(stats_outcomes1,stats_outcomes)
+    
+    rm(list = ls()[which(names(ls()) == "post_hoc_outcomes")])
+    rm(list = ls()[which(names(ls()) == "stats_outcomes")])
   }
   rownames(stats_outcomes) <- NULL
   
-  return(list(stats_outcomes=stats_outcomes,    post_hoc_outcomes=post_hoc_outcomes,  barplot_delta_period_list=barplot_delta_period_list))
+  return(list(stats_outcomes=stats_outcomes1,    post_hoc_outcomes=post_hoc_outcomes1,  barplot_delta_period_list=barplot_delta_period_list))
 }
 
 collective_analysis_rescal <- function(data_path=data_path,showPlot=T){
@@ -1049,6 +1070,8 @@ collective_analysis_rescal <- function(data_path=data_path,showPlot=T){
   data_ori <- data
   stats_outcomes    <- NULL
   post_hoc_outcomes <- NULL
+  stats_outcomes1    <- NULL
+  post_hoc_outcomes1 <- NULL
   barplot_delta_period_list <- list()
   
   for (i in 1:length(variable_list)){
@@ -1089,11 +1112,24 @@ collective_analysis_rescal <- function(data_path=data_path,showPlot=T){
     data$period    <- factor(data$period    , levels=period_order   [which(period_order%in%data$period )])
     
     ###fit model - using treatment
-    model <- lmer(   variable ~ period*treatment + (1|time_of_day) + (1|colony) ,data=data)
+    model <- lmer(   variable ~ period*treatment + (1|time_of_day) + (1|colony) ,data=data,control = model_n_interations)
     anov  <- anova(model)
     p_interaction_treatment <- anov["period:treatment","Pr(>F)"]
     
-    stats_outcomes <- rbind(stats_outcomes,data.frame(variable=variable_list[i],predictor="period:treatment",df=paste(round(anov["period:treatment","NumDF"]),round(anov["period:treatment","DenDF"]),sep=","),pval=anov["period:treatment","Pr(>F)"],stringsAsFactors = F))
+    # Check if the model converged
+    if(length(summary(model)$optinfo$conv$lme4$messages) != 0) {
+      # If the model fails to converge, calculate VIF
+      # The Variance Inflation Factor (VIF) is a measure of multicollinearity. A rule of thumb is that if the VIF is greater than 5, then the explanatory variables are highly correlated, which can affect the stability and interpretability of the model
+      vif_values <- car::vif(model)
+      
+      # If any VIF is > 10, assign p_interaction_treatment = 1, and try simpler model 
+      if(any(vif_values[, "GVIF"] > 10)) {
+        p_interaction_treatment <- 1
+        warning("model multicollinearity detected, try simpler model")
+      }
+    }
+    
+    stats_outcomes <- rbind(stats_outcomes,data.frame(variable=variable_list[i],predictor="period:treatment",df=paste(round(anov["period:treatment","NumDF"]),round(anov["period:treatment","DenDF"]),sep=","),pval=p_interaction_treatment,stringsAsFactors = F))
     ###check interaction
     if (p_interaction_treatment<=0.05){
       test_norm(residuals(model))
@@ -1126,7 +1162,7 @@ collective_analysis_rescal <- function(data_path=data_path,showPlot=T){
       
       ###if interaction with treatment is not significant, repeat analysis, but separating size and exposure
       ###fit model 
-      model <- lmer(   variable ~ period*exposure + period*size + (1|time_of_day) + (1|colony) ,data=data)
+      model <- lmer(   variable ~ period*exposure + period*size + (1|time_of_day) + (1|colony) ,data=data ,control = model_n_interations)
       anov  <- anova(model)
       p_interaction_exposure <- anov["Pr(>F)"]["period:exposure","Pr(>F)"]
       p_interaction_size     <- anov["Pr(>F)"]["period:size","Pr(>F)"] 
@@ -1154,7 +1190,7 @@ collective_analysis_rescal <- function(data_path=data_path,showPlot=T){
           stats_outcomes <- rbind(stats_outcomes,data.frame(variable=variable_list[i],predictor="period:size",df=paste(round(anov["period:size","NumDF"]),round(anov["period:size","DenDF"]),sep=","),pval=anov["period:size","Pr(>F)"],stringsAsFactors = F))
           
           ###fit model 
-          model <- lmer(   variable ~ period*exposure + (1|time_of_day) + (1|colony) ,data=data)
+          model <- lmer(   variable ~ period*exposure + (1|time_of_day) + (1|colony) ,data=data ,control = model_n_interations)
           anov  <- anova(model)
           test_norm(residuals(model))
           for (rowi in 1:nrow(anov)){
@@ -1185,7 +1221,7 @@ collective_analysis_rescal <- function(data_path=data_path,showPlot=T){
           # print(anov["period:exposure",])
           # 
           ###fit model 
-          model <- lmer(   variable ~ period*size + (1|time_of_day) + (1|colony) ,data=data)
+          model <- lmer(   variable ~ period*size + (1|time_of_day) + (1|colony) ,data=data ,control = model_n_interations)
           anov  <- anova(model)
           test_norm(residuals(model))
           for (rowi in 1:nrow(anov)){
@@ -1220,9 +1256,17 @@ collective_analysis_rescal <- function(data_path=data_path,showPlot=T){
     barplot_delta_period <- barplot_delta(dataset=data,predictor="treatment",post_hoc_outcomes=post_hoc_outcomes,stats_outcomes=stats_outcomes,i=i,type="collective",collective=T,plot_untransformed=T,diff_type="") #form_stat=NULL,
     if (showPlot) {print(barplot_delta_period)}
     barplot_delta_period_list[[variable_list[i]]]        <- barplot_delta_period
-  }
+  
+    # add cleaning step
+    post_hoc_outcomes1 <- c(post_hoc_outcomes1,post_hoc_outcomes)
+    stats_outcomes1    <- c(stats_outcomes1,stats_outcomes)
+    
+    rm(list = ls()[which(names(ls()) == "post_hoc_outcomes")])
+    rm(list = ls()[which(names(ls()) == "stats_outcomes")])
+    
+    }
   rownames(stats_outcomes) <- NULL
-  return(list(stats_outcomes=stats_outcomes,    post_hoc_outcomes=post_hoc_outcomes,  barplot_delta_period_list=barplot_delta_period_list))
+  return(list(stats_outcomes=stats_outcomes1,    post_hoc_outcomes=post_hoc_outcomes1,  barplot_delta_period_list=barplot_delta_period_list))
 }
 
 individual_ONE_analysis <- function(data_path=data_path,which_individuals,showPlot=T){
@@ -1277,6 +1321,8 @@ individual_ONE_analysis <- function(data_path=data_path,which_individuals,showPl
   data_ori <- data
   stats_outcomes    <- NULL
   post_hoc_outcomes <- NULL
+  stats_outcomes1    <- NULL
+  post_hoc_outcomes1 <- NULL
   barplot_delta_period_list <- list()
   
   for (i in 1:length(variable_list)){
@@ -1310,11 +1356,24 @@ individual_ONE_analysis <- function(data_path=data_path,which_individuals,showPl
     data$antID     <- factor( data$antID )
     
     ###fit model - using treatment
-    model <- lmer(   variable ~ period*treatment + (1|time_of_day) + (1|colony) + (1|antID) ,data=data)
+    model <- lmer(   variable ~ period*treatment + (1|time_of_day) + (1|colony) + (1|antID) ,data=data ,control = model_n_interations)
     anov  <- anova(model)
     p_interaction_treatment <- anov["period:treatment","Pr(>F)"]
     
-    stats_outcomes <- rbind(stats_outcomes,data.frame(variable=variable_list[i],predictor="period:treatment",df=paste(round(anov["period:treatment","NumDF"]),round(anov["period:treatment","DenDF"]),sep=","),pval=anov["period:treatment","Pr(>F)"],stringsAsFactors = F))
+    # Check if the model converged
+    if(length(summary(model)$optinfo$conv$lme4$messages) != 0) {
+      # If the model fails to converge, calculate VIF
+      # The Variance Inflation Factor (VIF) is a measure of multicollinearity. A rule of thumb is that if the VIF is greater than 5, then the explanatory variables are highly correlated, which can affect the stability and interpretability of the model
+      vif_values <- car::vif(model)
+      
+      # If any VIF is > 10, assign p_interaction_treatment = 1, and try simpler model 
+      if(any(vif_values[, "GVIF"] > 10)) {
+        p_interaction_treatment <- 1
+      warning("model multicollinearity detected, try simpler model")
+      }
+    }
+
+    stats_outcomes <- rbind(stats_outcomes,data.frame(variable=variable_list[i],predictor="period:treatment",df=paste(round(anov["period:treatment","NumDF"]),round(anov["period:treatment","DenDF"]),sep=","),pval=p_interaction_treatment,stringsAsFactors = F))
     ###check interaction
     if (p_interaction_treatment<=0.05){
       test_norm(residuals(model))
@@ -1347,7 +1406,7 @@ individual_ONE_analysis <- function(data_path=data_path,which_individuals,showPl
       
       ###if interaction with treatment is not significant, repeat analysis, but separating size and exposure
       ###fit model 
-      model <- lmer(   variable ~ period*exposure + period*size + (1|time_of_day) + (1|colony) + (1|antID),data=data)
+      model <- lmer(   variable ~ period*exposure + period*size + (1|time_of_day) + (1|colony) + (1|antID),data=data ,control = model_n_interations)
       anov  <- anova(model)
       p_interaction_exposure <- anov["Pr(>F)"]["period:exposure","Pr(>F)"]
       p_interaction_size     <- anov["Pr(>F)"]["period:size","Pr(>F)"] 
@@ -1375,7 +1434,7 @@ individual_ONE_analysis <- function(data_path=data_path,which_individuals,showPl
           stats_outcomes <- rbind(stats_outcomes,data.frame(variable=variable_list[i],predictor="period:size",df=paste(round(anov["period:size","NumDF"]),round(anov["period:size","DenDF"]),sep=","),pval=anov["period:size","Pr(>F)"],stringsAsFactors = F))
           
           ###fit model 
-          model <- lmer(   variable ~ period*exposure + (1|time_of_day) + (1|colony) + (1|antID),data=data)
+          model <- lmer(   variable ~ period*exposure + (1|time_of_day) + (1|colony) + (1|antID),data=data ,control = model_n_interations)
           anov  <- anova(model)
           test_norm(residuals(model))
           for (rowi in 1:nrow(anov)){
@@ -1406,7 +1465,7 @@ individual_ONE_analysis <- function(data_path=data_path,which_individuals,showPl
           # print(anov["period:exposure",])
           # 
           ###fit model 
-          model <- lmer(   variable ~ period*size + (1|time_of_day) + (1|colony) + (1|antID),data=data)
+          model <- lmer(   variable ~ period*size + (1|time_of_day) + (1|colony) + (1|antID),data=data ,control = model_n_interations)
           anov  <- anova(model)
           test_norm(residuals(model))
           for (rowi in 1:nrow(anov)){
@@ -1444,10 +1503,16 @@ individual_ONE_analysis <- function(data_path=data_path,which_individuals,showPl
     barplot_delta_period_list[[variable_list[i]]]        <- barplot_delta_period 
     #ADD SAVING OF THE PLOT on single pdf file as done in plot_grooming file
     
+    # add cleaning step
+    post_hoc_outcomes1 <- c(post_hoc_outcomes1,post_hoc_outcomes)
+    stats_outcomes1    <- c(stats_outcomes1,stats_outcomes)
+    
+    rm(list = ls()[which(names(ls()) == "post_hoc_outcomes")])
+    rm(list = ls()[which(names(ls()) == "stats_outcomes")])
   }
   rownames(stats_outcomes) <- NULL
   
-  return(list(stats_outcomes=stats_outcomes,    post_hoc_outcomes=post_hoc_outcomes,  barplot_delta_period_list=barplot_delta_period_list))
+  return(list(stats_outcomes=stats_outcomes1,    post_hoc_outcomes=post_hoc_outcomes1,  barplot_delta_period_list=barplot_delta_period_list))
   
 }
 
@@ -1502,6 +1567,8 @@ individual_TWO_analysis <- function(data_path=data_path,which_individuals,showPl
   data_ori <- data
   stats_outcomes    <- NULL
   post_hoc_outcomes <- NULL
+  stats_outcomes1    <- NULL
+  post_hoc_outcomes1 <- NULL
   barplot_delta_period_list <- list()
   
   for (i in 1:length(variable_list)){
@@ -1535,9 +1602,23 @@ individual_TWO_analysis <- function(data_path=data_path,which_individuals,showPl
     data$task_group <- factor(data$task_group, levels=task_group_order[which(task_group_order%in%data$task_group )])
     
     ###fit model - using treatment and task_group in 3-way interaction
-    model <- lmer(   variable ~ period*treatment*task_group + (1|time_of_day) + (1|colony) + (1|antID) ,data=data)
+    model <- lmer(   variable ~ period*treatment*task_group + (1|time_of_day) + (1|colony) + (1|antID) ,data=data ,control = model_n_interations)
     anov  <- anova(model)
     p_interaction_treatment_group <- anov["period:treatment:task_group","Pr(>F)"]
+    
+    # Check if the model converged
+    if(length(summary(model)$optinfo$conv$lme4$messages) != 0) {
+      # If the model fails to converge, calculate VIF
+      # The Variance Inflation Factor (VIF) is a measure of multicollinearity. A rule of thumb is that if the VIF is greater than 5, then the explanatory variables are highly correlated, which can affect the stability and interpretability of the model
+      vif_values <- car::vif(model)
+      
+      # If any VIF is > 10, assign p_interaction_treatment = 1, and try simpler model 
+      if(any(vif_values[, "GVIF"] > 10)) {
+        p_interaction_treatment <- 1
+        warning("model multicollinearity detected, try simpler model")
+      }
+    }
+    
     stats_outcomes <- rbind(stats_outcomes,data.frame(variable=variable_list[i],predictor="period:treatment:task_group",df=paste(round(anov["period:treatment:task_group","NumDF"]),round(anov["period:treatment:task_group","DenDF"]),sep=","),pval=anov["period:treatment:task_group","Pr(>F)"],stringsAsFactors = F))
     
     if (p_interaction_treatment_group<=0.05){
@@ -1620,11 +1701,11 @@ individual_TWO_analysis <- function(data_path=data_path,which_individuals,showPl
     }else{
       
       ###fit model - using treatment
-      model <- lmer(   variable ~ period*treatment + (1|time_of_day) + (1|colony) + (1|antID) ,data=data)
+      model <- lmer(   variable ~ period*treatment + (1|time_of_day) + (1|colony) + (1|antID) ,data=data ,control = model_n_interations)
       anov  <- anova(model)
       p_interaction_treatment <- anov["period:treatment","Pr(>F)"]
       
-      stats_outcomes <- rbind(stats_outcomes,data.frame(variable=variable_list[i],predictor="period:treatment",df=paste(round(anov["period:treatment","NumDF"]),round(anov["period:treatment","DenDF"]),sep=","),pval=anov["period:treatment","Pr(>F)"],stringsAsFactors = F))
+      stats_outcomes <- rbind(stats_outcomes,data.frame(variable=variable_list[i],predictor="period:treatment",df=paste(round(anov["period:treatment","NumDF"]),round(anov["period:treatment","DenDF"]),sep=","),pval=p_interaction_treatment,stringsAsFactors = F))
       ###check interaction
       if (p_interaction_treatment<=0.05){
         test_norm(residuals(model))
@@ -1657,7 +1738,7 @@ individual_TWO_analysis <- function(data_path=data_path,which_individuals,showPl
         
         ###if interaction with treatment is not significant, repeat analysis, but separating size and exposure
         ###fit model 
-        model <- lmer(   variable ~ period*exposure + period*size + (1|time_of_day) + (1|colony) + (1|antID),data=data)
+        model <- lmer(   variable ~ period*exposure + period*size + (1|time_of_day) + (1|colony) + (1|antID),data=data ,control = model_n_interations)
         anov  <- anova(model)
         p_interaction_exposure <- anov["Pr(>F)"]["period:exposure","Pr(>F)"]
         p_interaction_size     <- anov["Pr(>F)"]["period:size","Pr(>F)"] 
@@ -1685,7 +1766,7 @@ individual_TWO_analysis <- function(data_path=data_path,which_individuals,showPl
             stats_outcomes <- rbind(stats_outcomes,data.frame(variable=variable_list[i],predictor="period:size",df=paste(round(anov["period:size","NumDF"]),round(anov["period:size","DenDF"]),sep=","),pval=anov["period:size","Pr(>F)"],stringsAsFactors = F))
             
             ###fit model 
-            model <- lmer(   variable ~ period*exposure + (1|time_of_day) + (1|colony) + (1|antID),data=data)
+            model <- lmer(   variable ~ period*exposure + (1|time_of_day) + (1|colony) + (1|antID),data=data ,control = model_n_interations)
             anov  <- anova(model)
             test_norm(residuals(model))
             for (rowi in 1:nrow(anov)){
@@ -1716,7 +1797,7 @@ individual_TWO_analysis <- function(data_path=data_path,which_individuals,showPl
             # print(anov["period:exposure",])
             # 
             ###fit model 
-            model <- lmer(   variable ~ period*size + (1|time_of_day) + (1|colony) + (1|antID),data=data)
+            model <- lmer(   variable ~ period*size + (1|time_of_day) + (1|colony) + (1|antID),data=data ,control = model_n_interations)
             anov  <- anova(model)
             test_norm(residuals(model))
             for (rowi in 1:nrow(anov)){
@@ -1750,11 +1831,19 @@ individual_TWO_analysis <- function(data_path=data_path,which_individuals,showPl
     
     barplot_delta_period_list[[variable_list[i]]]        <- barplot_delta_period
 
+    
+    # add cleaning step
+    post_hoc_outcomes1 <- c(post_hoc_outcomes1,post_hoc_outcomes)
+    stats_outcomes1    <- c(stats_outcomes1,stats_outcomes)
+    
+    rm(list = ls()[which(names(ls()) == "post_hoc_outcomes")])
+    rm(list = ls()[which(names(ls()) == "stats_outcomes")])
   }
+  
+  
   rownames(stats_outcomes) <- NULL
   
-  
-  return(list(stats_outcomes=stats_outcomes,    post_hoc_outcomes=post_hoc_outcomes,  barplot_delta_period_list=barplot_delta_period_list))
+  return(list(stats_outcomes=stats_outcomes1,    post_hoc_outcomes=post_hoc_outcomes1,  barplot_delta_period_list=barplot_delta_period_list))
   
 }
 
@@ -1864,6 +1953,7 @@ line_plot <- function(data_path, which_individuals,showPlot=T){
   line_plot_obj <- ggplot(grand_mean_data, aes(x = time_hours, y = grand_mean, color = treatment, group = treatment)) +
     geom_line() +
     geom_ribbon(aes(ymin = grand_mean - standard_error, ymax = grand_mean + standard_error, fill = treatment), alpha = 0.2) +
+    scale_x_continuous(limits = c(min(grand_mean_data$time_hours), max(grand_mean_data$time_hours)), expand = c(0, 0)) +
     labs(#title = "Prop Time Outside by Time Hours and Treatment",
          x = "Time Hours since treatment exposure",
          y = names(variable_list[i])
@@ -2122,15 +2212,15 @@ barplot_delta <-
       if (variable_list[i] %in% names(post_hoc_outcomes)) {
         additional_geoms <- list(geom_segment(
           aes(
-            x = sum(means$x_axis[means$group == "small"]) / 2,
-            xend = sum(means$x_axis[means$group == "big"]) / 2,
+            x = sum(x_axis[group == "small"]) / 2,
+            xend = sum(x_axis[group == "big"]) / 2,
             y = abs(max_mean_se),
             yend = abs(max_mean_se)
           )
         ),
         geom_text(
           aes(
-            x = mean(means$x_axis),
+            x = mean(x_axis),
             y = abs(max_mean_se + 1 / 2 * (max_mean_se)),
             label = from_p_to_ptext(stats_outcomes[which(
               stats_outcomes$variable == variable_list[i] &
@@ -2141,7 +2231,10 @@ barplot_delta <-
         plot_var <- plot_var + additional_geoms
       }
       
-    } else if (all(names(post_hoc_outcomes[[variable_list[i]]]) == levels(dataset$exposure))) {
+    } else if (
+      all(names(post_hoc_outcomes[[variable_list[i]]]) %in% levels(dataset$exposure)) #&&
+      #all(levels(dataset$exposure) %in% names(post_hoc_outcomes[[variable_list[i]]])) #extra recursivness
+      ) {
       print("Only period*exposure interaction significant")
       
       # Reorder the vector by size
@@ -2184,7 +2277,7 @@ barplot_delta <-
         ))
         plot_var <- plot_var + scale_geom
       }
-      
+      # 
       # Add bar with significant stars
       # for more than 1 element in the ggplot if statement, there is the error: Error in `+.gg`:! Cannot add ggproto objects together )
       if (variable_list[i] %in% names(post_hoc_outcomes)) {
@@ -2192,8 +2285,8 @@ barplot_delta <-
         
          additional_geoms <- list(geom_segment(
           aes(
-            x = sum(means$x_axis[means$group == "control"]) / 2,
-            xend = sum(means$x_axis[means$group == "pathogen"]) / 2,
+            x = sum(x_axis[group == "control"]) / 2,
+            xend = sum(x_axis[group == "pathogen"]) / 2,
             y = abs(max_mean_se),
             yend = abs(max_mean_se)
           )
@@ -2201,7 +2294,7 @@ barplot_delta <-
         
         geom_text(
           aes(
-            x = mean(means$x_axis),
+            x = mean(x_axis),
             y = abs(max_mean_se + 1 / 2 * (max_mean_se)),
             label = from_p_to_ptext(stats_outcomes[which(
               stats_outcomes$variable == variable_list[i] &
@@ -2209,12 +2302,19 @@ barplot_delta <-
             ), "pval"])
           )
         ))
-        plot_var <- plot_var + additional_geoms
+        plot_var <- plot_var + additional_geoms #+ geom_text(aes(label = ''))
       }
 
     }else{
       plot_var <- plot_var + geom_text(aes(label = '')) #add empty label
     }
+    
+    if(!all(grepl(paste0(levels(dataset$treatment), collapse = "|"), names(post_hoc_outcomes[[variable_list[i]]])))){#not main int sig
+    if (all(names(post_hoc_outcomes[[variable_list[i]]]) == levels(dataset$size)) && # size is sign
+        all(names(post_hoc_outcomes[[variable_list[i]]]) %in% levels(dataset$exposure)) #exp is sign
+        ) {
+      warning("both period*exposure and period*size are significant. There is currently no plotting contidion for that")
+    }}
     
     
     #legend modifiers (2 rows and changed labs)
@@ -2502,7 +2602,7 @@ plot_qpcr <- function(experiments){
     
     data$predictor <- factor(data$predictor,levels=means$predictor)
     
-    model_lmer <- lmer(variable~predictor+(1|colony),data=data)
+    model_lmer <- lmer(variable~predictor+(1|colony),data=data ,control = model_n_interations)
     test_norm(residuals(model_lmer))
     pvalue <- Anova(model_lmer)["predictor","Pr(>Chisq)"]
     print(Anova(model_lmer))

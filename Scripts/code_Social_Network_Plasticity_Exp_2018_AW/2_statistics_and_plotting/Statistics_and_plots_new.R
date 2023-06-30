@@ -38,6 +38,8 @@ source(paste(source_path,"/analysis_parameters.R",sep=""))
 
 RUN_UNSCALED_NETS <- F
 
+fixed_aspect_theme <- theme(aspect.ratio = 3) #move to plotting_parmas.R
+
 # NOTES
 # plot_untransformed is always TRUE as the the variable fed to the plotting is transformed beforehand (see section: transform variable)
 
@@ -173,14 +175,13 @@ ind_untreated_net_nurse <- individual_ONE_analysis(data_path,which_individuals="
 ind_untreated_net_forag <- individual_ONE_analysis(data_path,which_individuals="forager",showPlot=F) ## "treated","queen","nurse","forager"
 
 
-
 ### behavioural data
 root_path <- paste(disk_path,"/main_experiment",sep="")
 data_path=paste(root_path,"/processed_data/individual_behaviour/pre_vs_post_treatment",sep="")
 pattern="individual_behavioural_data"
 variable_list <-        c("prop_time_outside","inter_caste_contact_duration","duration_of_contact_with_treated_min")
 names(variable_list) <- c("prop. time outside","inter caste contact duration","duration of contact with treated min")
-transf_variable_list <- c("power0.01"        , "Box_Cox"                    , "Box_Cox"            )   ######"none", "sqrt" "log","power2"
+transf_variable_list <- c("Box_Cox"        , "Box_Cox"                    , "Box_Cox"            )   ######"none", "sqrt" "log","power2"
 
 ind_untreated_beh_nurse <- individual_ONE_analysis(data_path,which_individuals="nurse",showPlot=F) ## "treated","queen","nurse","forager"
 ind_untreated_beh_forag <- individual_ONE_analysis(data_path,which_individuals="forager",showPlot=F) ## "treated","queen","nurse","forager"
@@ -196,7 +197,6 @@ transf_variable_list <- c("log"        )   ######"none", "sqrt" "log","power2"
 
 ind_untreated_grooming_nurse <- individual_ONE_analysis(data_path,which_individuals="nurse",showPlot=F) ## "treated","queen","nurse","forager"
 ind_untreated_grooming_forag <- individual_ONE_analysis(data_path,which_individuals="forager",showPlot=F) ## "treated","queen","nurse","forager"
-
 
 ###################################################################################################################################
 ###IV - individual analysis - for TWO types of individuals (e.g. nurses and foragers; or "untreated" and "treated") ###############
@@ -327,13 +327,19 @@ grand_mean_data_scaled <- grand_mean_data %>%
   dplyr::mutate(scaled_grand_mean = scale(grand_mean),scaled_standard_error = scale(standard_error)) %>%
   ungroup()
 
+
+# Wrap the legend labels
+grand_mean_data_scaled$variables <- str_wrap(grand_mean_data_scaled$variables, width = 20)  # Adjust the width as needed
+
 #plot fit
 GroomingVsTimeOutside <- ggplot(grand_mean_data_scaled, aes(x = time_hours, y = scaled_grand_mean,  fill = variables, color = variables, group = variables)) +
   geom_smooth(data = subset(grand_mean_data_scaled, period == "pre"), method = "lm", se = T, linetype = "dashed") +
   geom_smooth(data = subset(grand_mean_data_scaled, period == "post"), method = "lm", se = T, linetype = "solid") +
+  scale_x_continuous(limits = c(min(grand_mean_data_scaled$time_hours), max(grand_mean_data_scaled$time_hours)), expand = c(0, 0)) +
   labs(#title = "Prop Time Outside by Time Hours and Treatment",
     x = "Time Hours since treatment exposure",
-    y = "scaled variables" #names(variable_list[i])
+    #y = "scaled variables" #names(variable_list[i])
+    y = "\nScaled\nvariables"
   ) +
   #geom_text(aes(x = 10, label = from_p_to_ptext(p_interaction_vars_time))) 
   annotate("text", x = 10, y = 3, label = from_p_to_ptext(p_interaction_vars_time)) +
@@ -343,19 +349,14 @@ GroomingVsTimeOutside <- ggplot(grand_mean_data_scaled, aes(x = time_hours, y = 
         legend.box.just = "left",
         legend.direction = "horizontal",
         legend.title = element_blank()) + 
-  guides(fill = guide_legend(nrow = 2,ncol = 1))
+  guides(fill = guide_legend(nrow = 2,ncol = 1)) 
 
 
 ###################################################################################################################################
 ### PLOT GRIDS ####################################################################################################################
 ###################################################################################################################################
 
-warning("\n-LEGEND SHOULD HAVE NEW treatment LABEL (control small, not control.small), TO BE UPDATED AS IT WAS DONE FOR THE X-ASIS
-        \n-WRAP LEGEND TO BE 2 COLS https://stackoverflow.com/questions/39552682/base-r-horizontal-legend-with-multiple-rows" )
-
 warning("ISSUE: SOME POST-HOCS OF IND_ONE_ANALYSIS LOOK WRONG (SEE DURATION_GROOMING_RECEIVED)")
-
-fixed_aspect_theme <- theme(aspect.ratio = 3)
 
 
 ### ind_net_properties ### 
@@ -424,7 +425,7 @@ YLIM_extra <- 0.05
 
 plot_comps1 <- multi_plot_comps(plot_list,ylim_extra=YLIM_extra)
 
-allplots1 <- cowplot::align_plots(plot_list[[1]] + ylim(plot_comps1$y_limits) + ggtitle("untreated nurses")    + fixed_aspect_theme  + remove_x_labs + guides(fill = "none") ,
+allplots1 <- cowplot::align_plots(plot_list[[1]] + ylim(plot_comps1$y_limits) + ggtitle("untreated nurses")    + fixed_aspect_theme  + remove_x_labs + guides(fill = "none") + labs(y = split_title(plot_list[[1]]$labels$y)),
                                   plot_list[[2]] + ylim(plot_comps1$y_limits) + ggtitle("untreated foragers")  + fixed_aspect_theme  + remove_x_labs + guides(fill = "none") + remove_y_labs,
                                   align="h")
 
@@ -440,7 +441,7 @@ YLIM_extra <- 0.5
 
 plot_comps1 <- multi_plot_comps(plot_list,ylim_extra=YLIM_extra)
 
-allplots1 <- cowplot::align_plots(plot_list[[1]] + ylim(plot_comps1$y_limits) + ggtitle("untreated nurses")    + fixed_aspect_theme  + remove_x_labs + guides(fill = "none") ,
+allplots1 <- cowplot::align_plots(plot_list[[1]] + ylim(plot_comps1$y_limits) + ggtitle("untreated nurses")    + fixed_aspect_theme  + remove_x_labs + guides(fill = "none") + labs(y = split_title(plot_list[[1]]$labels$y)),
                                   plot_list[[2]] + ylim(plot_comps1$y_limits) + ggtitle("untreated foragers")  + fixed_aspect_theme  + remove_x_labs + guides(fill = "none") + remove_y_labs,
                                   align="h")
 
@@ -459,7 +460,7 @@ plot_list <- list(ind_untreated_grooming_nurse$barplot_delta_period_list$duratio
 
 plot_comps1 <- multi_plot_comps(plot_list,ylim_extra=YLIM_extra)
 
-allplots1 <- cowplot::align_plots(plot_list[[1]] + ggtitle("untreated nurses")    + fixed_aspect_theme  + remove_x_labs + guides(fill = "none") , # ylim(plot_comps1$y_limits)
+allplots1 <- cowplot::align_plots(plot_list[[1]] + ggtitle("untreated nurses")    + fixed_aspect_theme  + remove_x_labs + guides(fill = "none") + labs(y = split_title(plot_list[[1]]$labels$y)), # ylim(plot_comps1$y_limits)
                                   plot_list[[2]] + ggtitle("untreated foragers")  + fixed_aspect_theme  + remove_x_labs + guides(fill = "none") + remove_y_labs, # ylim(plot_comps1$y_limits)
                                   align="h")
 
@@ -508,21 +509,22 @@ plot_list <- list(ind_treated_beh_lineplot$prop_time_outside,
 YLIM_extra <- 0
 
 #plot_comps1 <- multi_plot_comps(plot_list,ylim_extra=YLIM_extra)
+#leg <-cowplot::get_legend(plot_list[[1]] + theme(legend.direction="horizontal"))
 
 
+#inherit legend from elsewhere
 
-allplots1 <- cowplot::align_plots(plot_list[[1]] + theme(aspect.ratio = 0.4)  + remove_x_labs + guides(fill = "none") + theme(legend.position = "none") + labs(y = split_title(plot_list[[1]]$labels$y)),
-                                  plot_list[[2]] + theme(aspect.ratio = 0.4)  + remove_x_labs + guides(fill = "none") + theme(legend.position = "none") + labs(y = split_title(plot_list[[2]]$labels$y)),
-                                  plot_list[[3]] + theme(aspect.ratio = 0.4)                  + guides(fill = "none") + theme(legend.position = "none") + labs(y = split_title(plot_list[[3]]$labels$y)),
-                                  plot_list[[4]] + theme(aspect.ratio = 0.4)                  + guides(fill = "none")                                   + labs(y = "Scaled\nvariables"),
+allplots1 <- cowplot::align_plots(plot_list[[1]] + theme(aspect.ratio = 0.5)  + remove_x_labs + guides(fill = "none") + theme(legend.position = "none") + labs(y = split_title(plot_list[[1]]$labels$y)),
+                                  plot_list[[2]] + theme(aspect.ratio = 0.5)  + remove_x_labs + guides(fill = "none") + theme(legend.position = "none") + labs(y = split_title(plot_list[[2]]$labels$y)),
+                                  plot_list[[3]] + theme(aspect.ratio = 0.5)                  + guides(fill = "none") + theme(legend.position = "none") + labs(y = split_title(plot_list[[3]]$labels$y)),
+                                  plot_list[[4]] + theme(aspect.ratio = 0.5)                  + guides(fill = "none")                                   ,
                                   align="hv")
 
-treated_grooming <- cowplot::plot_grid(
+GroomVSTimeOut <- cowplot::plot_grid(
   cowplot::plot_grid(allplots1[[1]], allplots1[[2]], allplots1[[3]],plot_list[[4]],
                      ncol=2, rel_widths = c(0.24,0.24,0.24,0.24))
   , plot_comps1$leg, ncol=1, rel_heights = c(0.9, 0.1))
 
-treated_grooming
 
 
 ### collective_net_properties ### 
@@ -553,7 +555,7 @@ allplots <- cowplot::align_plots(plot_list[[1]] + ylim(plot_compsA$y_limits) + f
 collective_net_properties <- cowplot::plot_grid(
   cowplot::plot_grid(allplots[[1]], allplots[[2]], allplots[[3]],allplots[[4]], allplots[[5]], allplots[[6]],
                      ncol=3, rel_widths = c(0.1,0.1,0.1,0.1,0.1,0.1))
-  , plot_comps$leg, ncol=1, rel_heights = c(0.9, 0.1))
+  , plot_compsB$leg, ncol=1, rel_heights = c(0.9, 0.1))
 
 
 
@@ -567,9 +569,11 @@ ind_net_degree
 
 prop_time_outside
 
-ind_beh_measures
+ind_beh_measures # ISSUE WITH PVAL IN MODEL!!!!!!!!!!!!!!!!!!!!!!!!!
 
-treated_grooming
+treated_grooming # WHY NOW DIFF IS SIGNIFICANT? WHCIH TRANSF IS MORE ADAPT? IT SHOULD NOT BE! LETTERS ARE WEIRD TOO
+
+GroomVSTimeOut
 
 collective_net_properties
 
