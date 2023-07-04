@@ -38,7 +38,7 @@ source(paste(source_path,"/analysis_parameters.R",sep=""))
 
 RUN_UNSCALED_NETS <- F
 
-fixed_aspect_theme <- theme(aspect.ratio = 3) #move to plotting_parmas.R
+fixed_aspect_theme <- theme(aspect.ratio = 2) #move to plotting_parmas.R
 
 # NOTES
 # plot_untransformed is always TRUE as the the variable fed to the plotting is transformed beforehand (see section: transform variable)
@@ -82,7 +82,7 @@ variable_list <- c("modularity","clustering","task_assortativity","efficiency","
 names(variable_list) <- c("modularity","clustering","task assortativity","efficiency","mean degree","degree maximum","density","diameter")
 transf_variable_list <- c("log"      ,"none"      ,"none"         ,"log"      ,"log"       ,"log"          ,"none"   ,"log")   ######"none", "sqrt" "log","power2"
 
-coll_no_rescal_net <- collective_analysis_no_rescal(data_path)
+coll_no_rescal_net <- collective_analysis_no_rescal(data_path,showPlot=F)
 
 # to print a plot
 #coll_no_rescal$barplot_delta_collective_list$modularity
@@ -383,8 +383,8 @@ ind_net_degree <- cowplot::plot_grid(
 
 
 # # Specify the image size in pixels
-# width_pixels <- 500
-# height_pixels <- 470
+# width_pixels <- 600
+# height_pixels <- 400
 # # Save the plot grid as an image with specified dimensions
 # ggsave("plot_grid.png", grid, width = width_pixels, height = height_pixels)
 
@@ -411,6 +411,9 @@ prop_time_outside <- cowplot::plot_grid(
   cowplot::plot_grid(allplots1[[1]], allplots1[[2]], allplots1[[3]],
                      ncol=3, rel_widths = c(0.28,0.24,0.24))
   , plot_comps1$leg, ncol=1, rel_heights = c(0.9, 0.1))
+
+# width_pixels <- 600
+# height_pixels <- 400
 
 
 ### ind_beh_measures### 2 panels
@@ -441,8 +444,8 @@ YLIM_extra <- 0.5
 
 plot_comps1 <- multi_plot_comps(plot_list,ylim_extra=YLIM_extra)
 
-allplots1 <- cowplot::align_plots(plot_list[[1]] + ylim(plot_comps1$y_limits) + ggtitle("untreated nurses")    + fixed_aspect_theme  + remove_x_labs + guides(fill = "none") + labs(y = split_title(plot_list[[1]]$labels$y)),
-                                  plot_list[[2]] + ylim(plot_comps1$y_limits) + ggtitle("untreated foragers")  + fixed_aspect_theme  + remove_x_labs + guides(fill = "none") + remove_y_labs,
+allplots1 <- cowplot::align_plots(plot_list[[1]] + ylim(plot_comps1$y_limits) + fixed_aspect_theme  + remove_x_labs + guides(fill = "none") + labs(y = split_title(plot_list[[1]]$labels$y)),
+                                  plot_list[[2]] + ylim(plot_comps1$y_limits) + fixed_aspect_theme  + remove_x_labs + guides(fill = "none") + remove_y_labs,
                                   align="h")
 
 
@@ -460,8 +463,8 @@ plot_list <- list(ind_untreated_grooming_nurse$barplot_delta_period_list$duratio
 
 plot_comps1 <- multi_plot_comps(plot_list,ylim_extra=YLIM_extra)
 
-allplots1 <- cowplot::align_plots(plot_list[[1]] + ggtitle("untreated nurses")    + fixed_aspect_theme  + remove_x_labs + guides(fill = "none") + labs(y = split_title(plot_list[[1]]$labels$y)), # ylim(plot_comps1$y_limits)
-                                  plot_list[[2]] + ggtitle("untreated foragers")  + fixed_aspect_theme  + remove_x_labs + guides(fill = "none") + remove_y_labs, # ylim(plot_comps1$y_limits)
+allplots1 <- cowplot::align_plots(plot_list[[1]] + fixed_aspect_theme  + remove_x_labs + guides(fill = "none") + labs(y = split_title(plot_list[[1]]$labels$y)), # ylim(plot_comps1$y_limits)
+                                  plot_list[[2]] + fixed_aspect_theme  + remove_x_labs + guides(fill = "none") + remove_y_labs, # ylim(plot_comps1$y_limits)
                                   align="h")
 
 
@@ -475,7 +478,7 @@ ind_beh_measures <- cowplot::plot_grid(
   duration_of_contact_with_treated,
   inter_caste_contact_duration,
   duration_grooming_given_to_treated_min,
-  plot_comps1$leg, ncol=1, rel_heights = c(0.30,0.30,0.30, 0.1))
+  plot_comps1$leg, ncol=1, rel_heights = c(0.30,0.30,0.30, 0.05))
 
 
 ### ind_grooming_received ### 3 panels
@@ -488,15 +491,18 @@ YLIM_extra <- 0
 
 plot_comps1 <- multi_plot_comps(plot_list,ylim_extra=YLIM_extra)
 
-allplots1 <- cowplot::align_plots(plot_list[[1]] + theme(aspect.ratio = 2)  + remove_x_labs + guides(fill = "none") ,
-                                  plot_list[[2]] + theme(aspect.ratio = 2)  + remove_x_labs + guides(fill = "none") ,
-                                  plot_list[[3]] + theme(aspect.ratio = 2)  + remove_x_labs + guides(fill = "none") ,
+allplots1 <- cowplot::align_plots(plot_list[[1]] + fixed_aspect_theme  + remove_x_labs + guides(fill = "none") ,
+                                  plot_list[[2]] + fixed_aspect_theme  + remove_x_labs + guides(fill = "none") ,
+                                  plot_list[[3]] + fixed_aspect_theme  + remove_x_labs + guides(fill = "none") ,
                                   align="h")
 
 treated_grooming <- cowplot::plot_grid(
   cowplot::plot_grid(allplots1[[1]], allplots1[[2]], allplots1[[3]],
                      ncol=3, rel_widths = c(0.24,0.24,0.24))
   , plot_comps1$leg, ncol=1, rel_heights = c(0.9, 0.1))
+
+# width_pixels <- 700
+# height_pixels <- 400
 
 
 ### comparing timeline of grooming and time_outside line_plots  ### 3 panels
@@ -557,31 +563,140 @@ collective_net_properties <- cowplot::plot_grid(
                      ncol=3, rel_widths = c(0.1,0.1,0.1,0.1,0.1,0.1))
   , plot_compsB$leg, ncol=1, rel_heights = c(0.9, 0.1))
 
+# width_pixels <- 600 
+# height_pixels <- 600
 
 
 
 
 
+# GRID PLOTS!! (add here the outputs of the models in them! stat_outcomes$formatted)
 
-# GRID PLOTS!!
+ind_net_degree 
 
-ind_net_degree
-
-prop_time_outside
+prop_time_outside 
 
 ind_beh_measures # ISSUE WITH PVAL IN MODEL!!!!!!!!!!!!!!!!!!!!!!!!!
 
-treated_grooming # WHY NOW DIFF IS SIGNIFICANT? WHCIH TRANSF IS MORE ADAPT? IT SHOULD NOT BE! LETTERS ARE WEIRD TOO
+treated_grooming # WHY NOW DIFF IS SIGNIFICANT? WHICH TRANSF IS MORE ADAPT? IT SHOULD NOT BE! LETTERS ARE WEIRD TOO
 
 GroomVSTimeOut
 
 collective_net_properties
+
+ind_treated_grooming$barplot_delta_period_list$inter_caste_contact_duration #ADD PLOT
+
+
+warning("MAKE SURE THAT FOR THE INDIVIDUAL MEASURES OF UNTREATED WORKERS, THE DATASET RETAINED IS RIGHT")
+
+warning("inter_caste_contact_duration REMOVE FROM EVERYWHERE, or add nurses if can be added to the story!")
+
+## posthoc letters looking weird:
+# - prop. time outside (treated nurses)
+# - duration grooming received (treated nurses)
+# - duration grooming given to treated (unt. nurses)
+# - 
+
+# stars not assigned (occasionally)
+# - inter caste contact duration (forager)
+# - duration grooming given to treated (forager) - ensure it is directed to treated only!!!
+
+
+
+
+## ADD NEW SIMULATIONS STUFF!!!!!
+
+
+warning("BE CAREFUL WITH POWER TRANSF AS IT CUTS NEGATIVE VALUES!")
+
 
 
 
 ###################################################################################################################################
 ### Simulated Load plots ##########################################################################################################
 ###################################################################################################################################
+
+
+
+root_path <- paste(disk_path,"/main_experiment",sep="") # root_path <- paste(disk_path,"/main_experiment_grooming/processed_data",sep="")
+data_path <- paste(root_path,"/transmission_simulations/pre_vs_post_treatment/experimentally_exposed_seeds",sep="")
+pattern="collective_simulation_results_observed"
+variable_list <-  c("Prevalence", "Mean_load", "Load_skewness", "Queen_load", "logistic_r")
+names(variable_list) <-  c("Prevalence", "Mean load", "Load skewness", "Queen load", "logistic r")
+transf_variable_list <- c("none"       ,"none"        ,"none"           ,"log"      ,"log" )   ######"none", "sqrt" "log","power2"
+
+coll_no_rescal_sim <- collective_analysis_no_rescal(data_path,showPlot=T)
+warning(paste("-Prevalence", "-Mean load", "-Load skewness","Can't be modeled",sep= "\n"))
+
+#https://stackoverflow.com/questions/68915173/how-do-i-fit-a-quasi-poisson-model-with-lme4-or-glmmtmb
+#model <- glmer(Prevalence ~ period*treatment + (1|colony) ,data=data, family = poisson)
+
+
+
+root_path <- paste(disk_path,"/main_experiment",sep="") # root_path <- paste(disk_path,"/main_experiment_grooming/processed_data",sep="")
+data_path <- paste(root_path,"/transmission_simulations/pre_vs_post_treatment/experimentally_exposed_seeds",sep="")
+pattern="individual_simulation_results_observed"
+variable_list <-  c("simulated_load", "transmission_latency", "transmission_rank")
+names(variable_list) <-  c("simulated load", "transmission latency", "transmission rank")
+transf_variable_list <- c("none"           ,"log"                ,"none")   ######"none", "sqrt" "log","power2"
+
+ind_untreated_sim_nurse <- individual_ONE_analysis(data_path,which_individuals="nurse",showPlot=T) ## "treated","queen","nurse","forager"
+ind_untreated_sim_forag <- individual_ONE_analysis(data_path,which_individuals="forager",showPlot=T) ## "treated","queen","nurse","forager"
+
+#probability_of_transmission for nurses and foragers is almost always 1, can't really be modeled
+
+
+
+
+
+
+
+
+###################################################################################################################################
+### PLOT GRIDS ####################################################################################################################
+###################################################################################################################################
+
+
+### collective_sim_properties ### 
+plot_list <- list(coll_no_rescal_sim$barplot_delta_period_list$Prevalence,
+                  coll_no_rescal_sim$barplot_delta_period_list$Mean_load,
+                  coll_no_rescal_sim$barplot_delta_period_list$Load_skewness,
+                  coll_no_rescal_sim$barplot_delta_period_list$Queen_load,
+                  coll_no_rescal_sim$barplot_delta_period_list$logistic_r)
+
+# Set the same y-axis limits for all plots
+YLIM_extra <- 0.001
+
+# #have 2 scales: 1 for top row (measures expected to increase), 1 for bottom row (measures expected to decrease), 
+# plot_compsA <- multi_plot_comps(plot_list[1:2],ylim_extra=YLIM_extra)
+# plot_compsB <- multi_plot_comps(plot_list[3:4],ylim_extra=YLIM_extra)
+
+allplots <- cowplot::align_plots(plot_list[[1]]  + ylim(-0.009,0.009) + fixed_aspect_theme  + remove_x_labs + guides(fill = "none") ,
+                                 plot_list[[2]]  + ylim(-0.007,0.007) + fixed_aspect_theme  + remove_x_labs + guides(fill = "none") ,
+                                 plot_list[[3]]  + ylim(-0.4,0.4) + fixed_aspect_theme  + remove_x_labs + guides(fill = "none") ,
+                                 plot_list[[4]]  + ylim(-0.07,0.07)           + fixed_aspect_theme  + remove_x_labs + guides(fill = "none") ,
+                                 plot_list[[5]]                               + fixed_aspect_theme  + remove_x_labs + guides(fill = "none") ,
+                                 align="h")
+
+collective_sim_properties <- cowplot::plot_grid(
+  cowplot::plot_grid(allplots[[1]], allplots[[2]], allplots[[3]],allplots[[4]], allplots[[5]],
+                     ncol=5, rel_widths = c(0.1,0.1,0.1,0.1,0.1))
+  #, plot_compsB$leg
+  ,ncol=1, rel_heights = c(0.9, 0.1))
+
+
+collective_sim_properties
+# width_pixels <- 900 
+# height_pixels <- 250
+
+warning(paste("-Prevalence", "-Mean load", "-Load skewness","Can't be modeled",sep= "\n"))
+
+
+
+
+
+
+
 
 
 ### Experimentally measured and simulated M.brunneum transmission in pathogen-exposed colonies ###
