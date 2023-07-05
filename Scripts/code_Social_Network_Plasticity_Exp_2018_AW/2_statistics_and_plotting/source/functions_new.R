@@ -762,6 +762,19 @@ plot_regression <- function(data,time_point,analysis,n_cat_horiz,n_cat_vertic,po
         }
       }
       
+    }else if (transf_variable=="Box_Cox"){
+      data[!is.na(data$variable),"variable"]  <- Box_Cox(data[!is.na(data$variable),"variable"] )
+      if (!plot_untransformed){
+        
+        if (boldy){
+          ylabel <- substitute(paste(bold(ylabel),bolditalic(" ("),sqrt(bolditalic(")"))),list(ylabel=ylabel))
+          adjust_title_line <- 0.24
+        }else{
+          ylabel <- substitute(paste(ylabel,italic(" ("),sqrt(italic(")"))),list(ylabel=ylabel))
+          adjust_title_line <- 0.24
+        }
+      }
+      
     }
     ####for comparison: use perform_analysis_combined_function
     if (time_point=="comparison"){
@@ -2822,7 +2835,7 @@ plot_qpcr <- function(experiments){
  #     ggtitle("Frequency Histogram of Simulated Load by Treatment")
  # )
   
-  predicted_value <- plot_regression(data=all_sim_qpcr_data,time_point="after",analysis=analysis,n_cat_horiz=20,n_cat_vertic=11,pool=c(F,F),collective=T,input_color=colour_palette_age,xmin=xmin,xmax=xmax,ymin=ymin,ymax=ymax,point_cex=1.5,predict=high_threshold)
+  predicted_value <- plot_regression(data=all_sim_qpcr_data,time_point="after",analysis=analysis,n_cat_horiz=20,n_cat_vertic=11,pool=c(F,F),collective=T,input_color=colour_palette_age,xmin=xmin,xmax=xmax,ymin=ymin,ymax=ymax,point_cex=1.5,predict=NULL) #high_threshold
   par(xpd=NA)
   if (varb =="simulated_load"){
     title(sub=expression(italic("(Prop. exposure dose)")),cex.sub=min_cex,font.sub=1,mgp=c(1,0.1,0))
