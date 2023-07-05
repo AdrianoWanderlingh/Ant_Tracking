@@ -3241,19 +3241,25 @@ assign_CTDiff_15PipErr <- function(mean_Ct) {
 ####################################################
 
 ###########    PLOT SAVING    ###############
+
+#standard pixels per inch
+ppi <- 72
+
 SavePrint_plot <- function(plot_obj, plot_name, dataset_name, save_dir, plot_size = c(7, 4), dpi = 300, font_size = 30) {
   # Create the directory if it doesn't exist
-  if (!dir.exists(save_dir_plots)) {
-    dir.create(save_dir_plots, recursive = TRUE)
+  if (!dir.exists(save_dir)) {
+    dir.create(save_dir, recursive = TRUE)
   }
   # Modify the plot object to adjust the font size for jpg
   plot_obj_jpg <- plot_obj + theme(text = element_text(size = font_size, lineheight = .3))
   # Check if the directory is writable
-  if (!file.access(save_dir_plots, 2)) {
+  if (!file.access(save_dir, 2)) {
     # Save plot as png
-    ggsave(paste0(save_dir_plots, dataset_name, "_", plot_name, "_", Sys.Date(), ".png"), plot = plot_obj_jpg, width = plot_size[1], height = plot_size[2], dpi = dpi)
+    ggsave(paste0(save_dir, dataset_name, "_", plot_name, "_", Sys.Date(), ".png"), plot = plot_obj_jpg, width = plot_size[1], height = plot_size[2], dpi = dpi)
     # Save plot as pdf
-    ggsave(paste0(save_dir_plots, dataset_name, "_", plot_name, "_", Sys.Date(), ".pdf"), plot = plot_obj, width = plot_size[1], height = plot_size[2])
+    #ggsave(paste0(save_dir, dataset_name, "_", plot_name, "_", Sys.Date(), ".pdf"), plot = plot_obj, width = plot_size[1], height = plot_size[2])
+    # issue with font_import(), loadfonts(device = "pdf")
+    # More than one version of regular/bold/italic found for Liberation Serif. Skipping setup for this font.
     # Print the plot to the currently open device (the cumulative PDF file)
     print(plot_obj)
   } else {

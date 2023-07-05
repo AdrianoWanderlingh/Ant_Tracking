@@ -20,9 +20,9 @@ if (USER == "2A13_Office") {
 
 #####Overall parameters and functions ##########
 ####define folders
-figurefolder <- "~/figures"
 disk_path    <- paste0("/media/",usr,"/DISK4/Lasius-Bristol_pathogen_experiment")
-
+figurefolder <- paste0(disk_path,"/figures/") #"~/figures"
+  
 treatment_order <- c("control.small","control.big","pathogen.small","pathogen.big")
 #treatment_labs_order <- c("control small","control large","pathogen small","pathogen large")
 exposure_order  <- c("control","pathogen")
@@ -150,7 +150,7 @@ root_path <- paste(disk_path,"/main_experiment_grooming",sep="") # root_path <- 
 data_path=paste(root_path,"/processed_data/individual_behaviour/pre_vs_post_treatment",sep="")
 pattern="individual_behavioural_data"
 variable_list <-        c("duration_grooming_received_min", "inter_caste_contact_duration","prop_duration_grooming_received_outside_min") #GROOMING  ouside is negligibile as only 58/6016 events happen outside , "prop_duration_grooming_received_outside_min","duration_grooming_received_min_zone2"
-names(variable_list) <- c("duration grooming received min", "inter caste grooming duration","prop. duration grooming received outside_min") # , "prop duration grooming received outside min","duration grooming received outside min"
+names(variable_list) <- c("duration grooming received (min)", "inter caste grooming duration","prop. duration grooming received outside (min)") # , "prop duration grooming received outside min","duration grooming received outside min"
 transf_variable_list <- c("log"                          ,"log"                         , "Box_Cox")   ######"none", "sqrt" "log","power2"
 
 
@@ -180,7 +180,7 @@ root_path <- paste(disk_path,"/main_experiment",sep="")
 data_path=paste(root_path,"/processed_data/individual_behaviour/pre_vs_post_treatment",sep="")
 pattern="individual_behavioural_data"
 variable_list <-        c("prop_time_outside","inter_caste_contact_duration","duration_of_contact_with_treated_min")
-names(variable_list) <- c("prop. time outside","inter caste contact duration","duration of contact with treated min")
+names(variable_list) <- c("prop. time outside","inter caste contact duration","duration of contact with treated (min)")
 transf_variable_list <- c("Box_Cox"        , "Box_Cox"                    , "Box_Cox"            )   ######"none", "sqrt" "log","power2"
 
 ind_untreated_beh_nurse <- individual_ONE_analysis(data_path,which_individuals="nurse",showPlot=F) ## "treated","queen","nurse","forager"
@@ -192,7 +192,7 @@ root_path <- paste(disk_path,"/main_experiment_grooming",sep="")
 data_path=paste(root_path,"/processed_data/individual_behaviour/pre_vs_post_treatment",sep="")
 pattern="individual_behavioural_data"
 variable_list <-        c("duration_grooming_given_to_treated_min")
-names(variable_list) <- c("duration grooming given to treated min")
+names(variable_list) <- c("duration grooming given to treated (min)")
 transf_variable_list <- c("log"        )   ######"none", "sqrt" "log","power2"
 
 ind_untreated_grooming_nurse <- individual_ONE_analysis(data_path,which_individuals="nurse",showPlot=F) ## "treated","queen","nurse","forager"
@@ -246,7 +246,7 @@ root_path <- paste(disk_path,"/main_experiment_grooming",sep="") # root_path <- 
 data_path=paste(root_path,"/processed_data/individual_behaviour/pre_vs_post_treatment",sep="")
 pattern="individual_behavioural_data"
 variable_list <-        c("duration_grooming_received_min") #GROOMING  ouside is negligibile as only 58/6016 events happen outside , "prop_duration_grooming_received_outside_min","duration_grooming_received_min_zone2"
-names(variable_list) <- c("duration grooming received min") # , "prop duration grooming received outside min","duration grooming received outside min"
+names(variable_list) <- c("duration grooming received (min)") # , "prop duration grooming received outside min","duration grooming received outside min"
 #transf_variable_list <- c("log"                           )   ######"none", "sqrt" "log","power2"
 
 dur_groom_rec_data <- read_data(data_path,which_individuals="treated")
@@ -368,7 +368,7 @@ plot_list <- list(ind_treated_net$barplot_delta_period_list$degree,
 # Set the same y-axis limits for all plots
 YLIM_extra <- 1
 plot_comps <- multi_plot_comps(plot_list,ylim_extra=YLIM_extra)
-allplots <- cowplot::align_plots(plot_list[[1]] + ylim(plot_comps$y_limits) + ggtitle("untreated\nnurses")    + fixed_aspect_theme  + remove_x_labs + guides(fill = "none") ,
+allplots <- cowplot::align_plots(plot_list[[1]] + ylim(plot_comps$y_limits) + ggtitle("treated\nnurses")    + fixed_aspect_theme  + remove_x_labs + guides(fill = "none") ,
                                  plot_list[[2]] + ylim(plot_comps$y_limits) + ggtitle("untreated\nnurses")  + fixed_aspect_theme  + remove_x_labs + guides(fill = "none") + remove_y_labs,
                                  plot_list[[3]] + ylim(plot_comps$y_limits) + ggtitle("untreated\nforagers")+ fixed_aspect_theme  + remove_x_labs + guides(fill = "none") + remove_y_labs,
                                  align="h")
@@ -393,7 +393,7 @@ plot_list <- list(ind_treated_beh$barplot_delta_period_list$prop_time_outside,
                   ind_untreated_beh_forag$barplot_delta_period_list$prop_time_outside)
 YLIM_extra <- 0.01
 plot_comps1 <- multi_plot_comps(plot_list,ylim_extra=YLIM_extra)
-allplots1 <- cowplot::align_plots(plot_list[[1]] + ylim(plot_comps1$y_limits) + ggtitle("untreated\nnurses")    + fixed_aspect_theme  + remove_x_labs + guides(fill = "none") ,
+allplots1 <- cowplot::align_plots(plot_list[[1]] + ylim(plot_comps1$y_limits) + ggtitle("treated\nnurses")    + fixed_aspect_theme  + remove_x_labs + guides(fill = "none") ,
                                  plot_list[[2]] + ylim(plot_comps1$y_limits) + ggtitle("untreated\nnurses")  + fixed_aspect_theme  + remove_x_labs + guides(fill = "none") + remove_y_labs,
                                  plot_list[[3]] + ylim(plot_comps1$y_limits) + ggtitle("untreated\nforagers")+ fixed_aspect_theme  + remove_x_labs + guides(fill = "none") + remove_y_labs,
                                  align="h")
@@ -406,14 +406,20 @@ prop_time_outside <- cowplot::plot_grid(
 
 
 ### ind_beh_measures### 2 panels
+# create text boxes for titles (to ensure equal size of all plotted objects)
+titlePlots <- cowplot::align_plots(ggplot() + theme_void() + annotate("text", x = 0.5, y = 0.5, label = "untreated\nnurses", family = "Liberation Serif", fontface = "bold", size = 4, hjust = 0.5), 
+                                   ggplot() + theme_void() + annotate("text", x = 0.5, y = 0.5, label = "untreated\nforagers",family = "Liberation Serif", fontface = "bold", size = 4, hjust = 0.5),
+                                   align="h")
+titlePlots_untreated <- cowplot::plot_grid(titlePlots[[1]], titlePlots[[2]], ncol=2, rel_widths = c(0.28,0.24))
+
 
 ## duration_of_contact_with_treated_min
 plot_list <- list(ind_untreated_beh_nurse$barplot_delta_period_list$duration_of_contact_with_treated_min,
                   ind_untreated_beh_forag$barplot_delta_period_list$duration_of_contact_with_treated_min)
 YLIM_extra <- 0.05
 plot_comps1 <- multi_plot_comps(plot_list,ylim_extra=YLIM_extra)
-allplots1 <- cowplot::align_plots(plot_list[[1]] + ylim(plot_comps1$y_limits) + ggtitle("untreated\nnurses")    + fixed_aspect_theme  + remove_x_labs + guides(fill = "none") + labs(y = split_title(plot_list[[1]]$labels$y)),
-                                  plot_list[[2]] + ylim(plot_comps1$y_limits) + ggtitle("untreated\nforagers")  + fixed_aspect_theme  + remove_x_labs + guides(fill = "none") + remove_y_labs,
+allplots1 <- cowplot::align_plots(plot_list[[1]] + ylim(plot_comps1$y_limits)    + fixed_aspect_theme  + remove_x_labs + guides(fill = "none") + labs(y = split_title(plot_list[[1]]$labels$y)),
+                                  plot_list[[2]] + ylim(plot_comps1$y_limits)   + fixed_aspect_theme  + remove_x_labs + guides(fill = "none") + remove_y_labs,
                                   align="h")
 duration_of_contact_with_treated <- cowplot::plot_grid(allplots1[[1]], allplots1[[2]],
                    ncol=2, rel_widths = c(0.28,0.24))
@@ -439,12 +445,15 @@ allplots1 <- cowplot::align_plots(plot_list[[1]] + fixed_aspect_theme  + remove_
 duration_grooming_given_to_treated_min <- cowplot::plot_grid(allplots1[[1]], allplots1[[2]],
                                                    ncol=2, rel_widths = c(0.28,0.24))
 
+
+
 ### COMBINE ind_beh_measures 2 panels together
 ind_beh_measures <- cowplot::plot_grid(
+  titlePlots_untreated,
   duration_of_contact_with_treated,
   inter_caste_contact_duration,
   duration_grooming_given_to_treated_min,
-  plot_comps1$leg, ncol=1, rel_heights = c(0.30,0.30,0.30, 0.05))
+  plot_comps1$leg, ncol=1, rel_heights = c(0.08,0.30,0.30,0.30, 0.05))
 
 
 ###################################################################################################################################
@@ -454,9 +463,9 @@ plot_list <- list(ind_treated_grooming$barplot_delta_period_list$duration_groomi
                   ind_treated_grooming$barplot_delta_period_list$prop_duration_grooming_received_outside_min)
 YLIM_extra <- 0
 plot_comps1 <- multi_plot_comps(plot_list,ylim_extra=YLIM_extra)
-allplots1 <- cowplot::align_plots(plot_list[[1]] + fixed_aspect_theme  + remove_x_labs + guides(fill = "none") ,
-                                  plot_list[[2]] + fixed_aspect_theme  + remove_x_labs + guides(fill = "none") ,
-                                  plot_list[[3]] + fixed_aspect_theme  + remove_x_labs + guides(fill = "none") ,
+allplots1 <- cowplot::align_plots(plot_list[[1]] + fixed_aspect_theme  + remove_x_labs + guides(fill = "none") + labs(y = split_title(plot_list[[1]]$labels$y)),
+                                  plot_list[[2]] + fixed_aspect_theme  + remove_x_labs + guides(fill = "none") + labs(y = split_title(plot_list[[2]]$labels$y)),
+                                  plot_list[[3]] + fixed_aspect_theme  + remove_x_labs + guides(fill = "none") + labs(y = split_title(plot_list[[3]]$labels$y)),
                                   align="h")
 treated_grooming <- cowplot::plot_grid(
   cowplot::plot_grid(allplots1[[1]], allplots1[[2]], allplots1[[3]],
@@ -520,6 +529,20 @@ collective_net_properties <- cowplot::plot_grid(
 ###################################################################################################################################
 # GRID PLOTS!! (add here the outputs of the models in them! stat_outcomes$formatted)
 
+
+SavePrint_plot(
+  plot_obj = ind_net_degree,
+  plot_name = "ind_net_degree",
+  plot_size = c(600/ppi, 400/ppi),
+  # font_size_factor = 4,
+  dataset_name = "Grid",
+  save_dir = figurefolder
+)
+
+# width_pixels <- 600
+# height_pixels <- 400
+
+
 ind_net_degree 
 
 prop_time_outside 
@@ -527,7 +550,7 @@ prop_time_outside
 ind_beh_measures # ISSUE WITH PVAL IN MODEL!!!!!!!!!!!!!!!!!!!!!!!!!
 
 treated_grooming # WHY NOW DIFF IS SIGNIFICANT? WHICH TRANSF IS MORE ADAPT? IT SHOULD NOT BE! LETTERS ARE WEIRD TOO
-
+                     # remove inter_Caste_grooming_duration
 GroomVSTimeOut
 
 collective_net_properties
@@ -564,7 +587,7 @@ variable_list <-  c("Prevalence", "Mean_load", "Load_skewness", "Queen_load", "l
 names(variable_list) <-  c("Prevalence", "Mean load", "Load skewness", "Queen load", "logistic r")
 transf_variable_list <- c("none"       ,"none"        ,"none"           ,"log"      ,"log" )   ######"none", "sqrt" "log","power2"
 
-coll_no_rescal_sim <- collective_analysis_no_rescal(data_path,showPlot=T)
+coll_no_rescal_sim <- collective_analysis_no_rescal(data_path,showPlot=F)
 warning(paste("-Prevalence", "-Mean load", "-Load skewness","Can't be modeled",sep= "\n"))
 
 #https://stackoverflow.com/questions/68915173/how-do-i-fit-a-quasi-poisson-model-with-lme4-or-glmmtmb
@@ -579,8 +602,8 @@ variable_list <-  c("simulated_load", "transmission_latency", "transmission_rank
 names(variable_list) <-  c("simulated load", "transmission latency", "transmission rank")
 transf_variable_list <- c("none"           ,"log"                ,"none")   ######"none", "sqrt" "log","power2"
 
-ind_untreated_sim_nurse <- individual_ONE_analysis(data_path,which_individuals="nurse",showPlot=T) ## "treated","queen","nurse","forager"
-ind_untreated_sim_forag <- individual_ONE_analysis(data_path,which_individuals="forager",showPlot=T) ## "treated","queen","nurse","forager"
+ind_untreated_sim_nurse <- individual_ONE_analysis(data_path,which_individuals="nurse",showPlot=F) ## "treated","queen","nurse","forager"
+ind_untreated_sim_forag <- individual_ONE_analysis(data_path,which_individuals="forager",showPlot=F) ## "treated","queen","nurse","forager"
 
 #probability_of_transmission for nurses and foragers is almost always 1, can't really be modeled
 
@@ -616,7 +639,7 @@ allplots <- cowplot::align_plots(plot_list[[1]]  + ylim(-0.009,0.009) + fixed_as
 collective_sim_properties <- cowplot::plot_grid(
   cowplot::plot_grid(allplots[[1]], allplots[[2]], allplots[[3]],allplots[[4]], allplots[[5]],
                      ncol=5, rel_widths = c(0.1,0.1,0.1,0.1,0.1))
-   #, plot_compsB$leg
+  #, plot_compsB$leg
   ,ncol=1, rel_heights = c(0.9, 0.1))
 
 # width_pixels <- 900 
@@ -625,16 +648,17 @@ collective_sim_properties <- cowplot::plot_grid(
 ###################################################################################################################################
 ### individual_sim_properties ###
 
-## duration_of_contact_with_treated_min
+
+## simulated_load
 plot_list <- list(ind_untreated_sim_nurse$barplot_delta_period_list$simulated_load,
                   ind_untreated_sim_forag$barplot_delta_period_list$simulated_load)
 plot_comps1 <- multi_plot_comps(plot_list,ylim_extra=0.005)
-allplots1 <- cowplot::align_plots(plot_list[[1]] + ylim(plot_comps1$y_limits) + ggtitle("untreated\nnurses")    + fixed_aspect_theme  + remove_x_labs + guides(fill = "none") + labs(y = split_title(plot_list[[1]]$labels$y)),
-                                  plot_list[[2]] + ylim(plot_comps1$y_limits) + ggtitle("untreated\nforagers")  + fixed_aspect_theme  + remove_x_labs + guides(fill = "none") + remove_y_labs,
+allplots1 <- cowplot::align_plots(plot_list[[1]] + ylim(plot_comps1$y_limits) +  fixed_aspect_theme  + remove_x_labs + guides(fill = "none") + labs(y = split_title(plot_list[[1]]$labels$y)),
+                                  plot_list[[2]] + ylim(plot_comps1$y_limits) + fixed_aspect_theme  + remove_x_labs + guides(fill = "none") + remove_y_labs,
                                   align="h")
 individual_sim_SL <- cowplot::plot_grid(allplots1[[1]], allplots1[[2]],
                                                        ncol=2, rel_widths = c(0.28,0.24))
-## inter_caste_contact_duration
+## transmission_latency
 plot_list <- list(ind_untreated_sim_nurse$barplot_delta_period_list$transmission_latency,
                   ind_untreated_sim_forag$barplot_delta_period_list$transmission_latency)
 plot_comps1 <- multi_plot_comps(plot_list,ylim_extra=0.5)
@@ -644,7 +668,7 @@ allplots1 <- cowplot::align_plots(plot_list[[1]] + ylim(plot_comps1$y_limits) + 
 individual_sim_TL <- cowplot::plot_grid(allplots1[[1]], allplots1[[2]],
                                                    ncol=2, rel_widths = c(0.28,0.24))
 
-## duration_grooming_given_to_treated_min
+## transmission_rank
 plot_list <- list(ind_untreated_sim_nurse$barplot_delta_period_list$transmission_rank,
                   ind_untreated_sim_forag$barplot_delta_period_list$transmission_rank)
 plot_comps1 <- multi_plot_comps(plot_list,ylim_extra=0.8)
@@ -656,10 +680,11 @@ individual_sim_TR <- cowplot::plot_grid(allplots1[[1]], allplots1[[2]],
 
 ### COMBINE ind_beh_measures 2 panels together
 individual_sim_properties <- cowplot::plot_grid(
+  titlePlots_untreated,
   individual_sim_SL,
   individual_sim_TL,
   individual_sim_TR,
-  plot_comps1$leg, ncol=1, rel_heights = c(0.30,0.30,0.30, 0.05))
+  plot_comps1$leg, ncol=1, rel_heights = c(0.1,0.30,0.30,0.30, 0.05))
 
 
 
@@ -715,7 +740,7 @@ par(mar=par_mar_ori)
 ####Close figure 2#####
 #dev.off()
 ######## clean before next step###
-clean();
+#clean();
 Sys.sleep(2)
 
 
