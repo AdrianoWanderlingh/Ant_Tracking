@@ -348,7 +348,9 @@ GroomingVsTimeOutside <- ggplot(grand_mean_data_scaled, aes(x = time_hours, y = 
         legend.justification = c(0, 1), # Justify legend at top left
         legend.box.just = "left",
         legend.direction = "horizontal",
+        legend.background = element_rect(fill='transparent'),
         legend.title = element_blank()) + 
+  
   guides(fill = guide_legend(nrow = 2,ncol = 1)) 
 
 
@@ -378,12 +380,6 @@ ind_net_degree <- cowplot::plot_grid(
   , plot_comps$leg, ncol=1, rel_heights = c(0.9, 0.1))
 
 
-# # Specify the image size in pixels
-# width_pixels <- 600
-# height_pixels <- 400
-# # Save the plot grid as an image with specified dimensions
-# ggsave("plot_grid.png", grid, width = width_pixels, height = height_pixels)
-
 ###################################################################################################################################  
 ### ind_beh_measures ### 3 panels
 
@@ -401,14 +397,12 @@ prop_time_outside <- cowplot::plot_grid(
   cowplot::plot_grid(allplots1[[1]], allplots1[[2]], allplots1[[3]],
                      ncol=3, rel_widths = c(0.28,0.24,0.24))
   , plot_comps1$leg, ncol=1, rel_heights = c(0.9, 0.1))
-# width_pixels <- 600
-# height_pixels <- 400
 
 
 ### ind_beh_measures### 2 panels
 # create text boxes for titles (to ensure equal size of all plotted objects)
-titlePlots <- cowplot::align_plots(ggplot() + theme_void() + annotate("text", x = 0.5, y = 0.5, label = "untreated\nnurses", family = "Liberation Serif", fontface = "bold", size = 4, hjust = 0.5), 
-                                   ggplot() + theme_void() + annotate("text", x = 0.5, y = 0.5, label = "untreated\nforagers",family = "Liberation Serif", fontface = "bold", size = 4, hjust = 0.5),
+titlePlots <- cowplot::align_plots(ggplot() + theme_void() + annotate("text", x = 0.5, y = 0.5, label = "untreated\nnurses", family = "Liberation Serif",  size = 4, hjust = 0.5), #fontface = "bold",
+                                   ggplot() + theme_void() + annotate("text", x = 0.5, y = 0.5, label = "untreated\nforagers",family = "Liberation Serif", size = 4, hjust = 0.5), #fontface = "bold",
                                    align="h")
 titlePlots_untreated <- cowplot::plot_grid(titlePlots[[1]], titlePlots[[2]], ncol=2, rel_widths = c(0.28,0.24))
 
@@ -469,11 +463,8 @@ allplots1 <- cowplot::align_plots(plot_list[[1]] + fixed_aspect_theme  + remove_
                                   align="h")
 treated_grooming <- cowplot::plot_grid(
   cowplot::plot_grid(allplots1[[1]], allplots1[[2]], allplots1[[3]],
-                     ncol=3, rel_widths = c(0.24,0.24,0.24))
+                     ncol=3, rel_widths = c(0.24,0.25,0.265))
   , plot_comps1$leg, ncol=1, rel_heights = c(0.9, 0.1))
-# width_pixels <- 700
-# height_pixels <- 400
-
 
 ###################################################################################################################################
 ### comparing timeline of grooming and time_outside line_plots  ### 3 panels
@@ -489,12 +480,12 @@ YLIM_extra <- 0
 allplots1 <- cowplot::align_plots(plot_list[[1]] + theme(aspect.ratio = 0.5)  + remove_x_labs + guides(fill = "none") + theme(legend.position = "none") + labs(y = split_title(plot_list[[1]]$labels$y)),
                                   plot_list[[2]] + theme(aspect.ratio = 0.5)  + remove_x_labs + guides(fill = "none") + theme(legend.position = "none") + labs(y = split_title(plot_list[[2]]$labels$y)),
                                   plot_list[[3]] + theme(aspect.ratio = 0.5)                  + guides(fill = "none") + theme(legend.position = "none") + labs(y = split_title(plot_list[[3]]$labels$y)),
-                                  plot_list[[4]] + theme(aspect.ratio = 0.5)                  + guides(fill = "none")                                   ,
-                                  align="hv")
+                                  plot_list[[4]] + theme(aspect.ratio = 0.55)                  + guides(fill = "none")                                   ,
+                                  align="v")
 GroomVSTimeOut <- cowplot::plot_grid(
   cowplot::plot_grid(allplots1[[1]], allplots1[[2]], allplots1[[3]],plot_list[[4]],
-                     ncol=2, rel_widths = c(0.24,0.24,0.24,0.24))
-  , plot_comps1$leg, ncol=1, rel_heights = c(0.9, 0.1))
+                     ncol=2, rel_widths = c(0.24,0.24,0.24,0.20))
+  , plot_comps1$leg, ncol=1, rel_heights = c(0.9, 0.15))
 
 
 ###################################################################################################################################
@@ -529,42 +520,86 @@ collective_net_properties <- cowplot::plot_grid(
 ###################################################################################################################################
 # GRID PLOTS!! (add here the outputs of the models in them! stat_outcomes$formatted)
 
+#size for a good font size, for a 3 horizontal panels plot
+# width_pixels <- 450 (150 x panel)
+# height_pixels <- 300 (2/3 of width)
 
 SavePrint_plot(
   plot_obj = ind_net_degree,
   plot_name = "ind_net_degree",
-  plot_size = c(600/ppi, 400/ppi),
+  plot_size = c(430/ppi, 300/ppi),
   # font_size_factor = 4,
   dataset_name = "Grid",
   save_dir = figurefolder
 )
 
-# width_pixels <- 600
-# height_pixels <- 400
+SavePrint_plot(
+  plot_obj = prop_time_outside,
+  plot_name = "prop_time_outside",
+  plot_size = c(430/ppi, 300/ppi),
+  # font_size_factor = 4,
+  dataset_name = "Grid",
+  save_dir = figurefolder
+)
+
+# ISSUE WITH PVAL IN MODEL!!!!!!!!!!!!!!!!!!!!!!!!!
+SavePrint_plot(
+  plot_obj = ind_beh_measures, 
+  plot_name = "ind_beh_measures",
+  plot_size = c(330/ppi, 900/ppi), #extra length required to get y-axis labeled and unlabeled of same size
+  # font_size_factor = 4,
+  dataset_name = "Grid",
+  save_dir = figurefolder
+)
+
+# WHY NOW DIFF IS SIGNIFICANT? WHICH TRANSF IS MORE ADAPT? IT SHOULD NOT BE! LETTERS ARE WEIRD TOO
+# remove inter_Caste_grooming_duration
+SavePrint_plot(
+  plot_obj = treated_grooming, 
+  plot_name = "treated_grooming",
+  plot_size = c(430/ppi, 280/ppi), #extra length required to fix the different digits on y-axis
+  # font_size_factor = 4,
+  dataset_name = "Grid",
+  save_dir = figurefolder
+)
 
 
-ind_net_degree 
+SavePrint_plot(
+  plot_obj = GroomVSTimeOut, 
+  plot_name = "GroomVSTimeOut",
+  plot_size = c(520/ppi, 300/ppi), #extra length required to fix the different digits on y-axis
+  # font_size_factor = 4,
+  dataset_name = "Grid",
+  save_dir = figurefolder
+)
+ 
 
-prop_time_outside 
+SavePrint_plot(
+  plot_obj = collective_net_properties, 
+  plot_name = "collective_net_properties",
+  plot_size = c(450/ppi,480/ppi), #extra length required to get y-axis labeled and unlabeled of same size
+  # font_size_factor = 4,
+  dataset_name = "Grid",
+  save_dir = figurefolder
+)
 
-ind_beh_measures # ISSUE WITH PVAL IN MODEL!!!!!!!!!!!!!!!!!!!!!!!!!
 
-treated_grooming # WHY NOW DIFF IS SIGNIFICANT? WHICH TRANSF IS MORE ADAPT? IT SHOULD NOT BE! LETTERS ARE WEIRD TOO
-                     # remove inter_Caste_grooming_duration
-GroomVSTimeOut
 
-collective_net_properties
 
-ind_treated_grooming$barplot_delta_period_list$inter_caste_contact_duration #ADD PLOT
+
+
+
 
 
 warning("MAKE SURE THAT FOR THE INDIVIDUAL MEASURES OF UNTREATED WORKERS, THE DATASET RETAINED IS RIGHT")
-
 warning("inter_caste_contact_duration REMOVE FROM EVERYWHERE, or add nurses if can be added to the story!")
+ind_treated_grooming$barplot_delta_period_list$inter_caste_contact_duration #ADD PLOT
+
+
 
 ## posthoc letters looking weird:
 # - prop. time outside (treated nurses)
-# - duration grooming received (treated nurses)
+# - duration grooming received (treated nurses) # why now significant?
 # - duration grooming given to treated (unt. nurses)
 # - simulated_load (nurses - is there an issue with the matrix?)
 # - transmission_latency (foragers)
@@ -578,7 +613,6 @@ warning("inter_caste_contact_duration REMOVE FROM EVERYWHERE, or add nurses if c
 ###################################################################################################################################
 ### Simulated Load plots ##########################################################################################################
 ###################################################################################################################################
-
 
 root_path <- paste(disk_path,"/main_experiment",sep="") # root_path <- paste(disk_path,"/main_experiment_grooming/processed_data",sep="")
 data_path <- paste(root_path,"/transmission_simulations/pre_vs_post_treatment/experimentally_exposed_seeds",sep="")
@@ -684,15 +718,29 @@ individual_sim_properties <- cowplot::plot_grid(
   individual_sim_SL,
   individual_sim_TL,
   individual_sim_TR,
-  plot_comps1$leg, ncol=1, rel_heights = c(0.1,0.30,0.30,0.30, 0.05))
+  plot_comps1$leg, ncol=1, rel_heights = c(0.05,0.30,0.30,0.30, 0.05))
 
 
+#still lightly offset
+SavePrint_plot(
+  plot_obj = individual_sim_properties, 
+  plot_name = "individual_sim_properties",
+  plot_size = c(350/ppi, 900/ppi), #extra length required to get y-axis labeled and unlabeled of same size
+  # font_size_factor = 4,
+  dataset_name = "Grid",
+  save_dir = figurefolder
+)
+
+SavePrint_plot(
+  plot_obj = collective_sim_properties, 
+  plot_name = "collective_sim_properties",
+  plot_size = c(520/ppi, 120/ppi), #extra length required to get y-axis labeled and unlabeled of same size
+  # font_size_factor = 4,
+  dataset_name = "Grid",
+  save_dir = figurefolder
+)
 
 
-
-individual_sim_properties
-
-collective_sim_properties
 
 
 warning(paste("-Prevalence", "-Mean load", "-Load skewness","Can't be modeled",sep= "\n"))

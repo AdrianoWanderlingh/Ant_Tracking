@@ -3261,7 +3261,7 @@ SavePrint_plot <- function(plot_obj, plot_name, dataset_name, save_dir, plot_siz
     # issue with font_import(), loadfonts(device = "pdf")
     # More than one version of regular/bold/italic found for Liberation Serif. Skipping setup for this font.
     # Print the plot to the currently open device (the cumulative PDF file)
-    print(plot_obj)
+    #print(plot_obj)
   } else {
     cat("Error: The directory is not writable.")
   }
