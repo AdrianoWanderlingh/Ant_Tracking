@@ -13,9 +13,10 @@ digraph immune_genes_data_cleaning_pipeline {    # 'digraph' means 'directional 
   # graph statement
   #################
   graph [layout = dot,
-         splines=line,
+         #splines=line,
          rankdir = TB,            # layout top-to-bottom
-         fontsize = 10,
+         fontsize = 12,
+         ranksep = 0.7,  # Increase the rank separation value
          fontname = 'Times New Roman']
   
 
@@ -30,40 +31,15 @@ digraph immune_genes_data_cleaning_pipeline {    # 'digraph' means 'directional 
       color='DimGray'
 ]                      
   
-A   [label = 'Housekeeping\ngene', fillcolor ='Gray70'] 
-B1   [label = 'gene by gene\nmean Ct', fillcolor ='Gray70']
-B2  [label = 'discard\nall genes',
+A   [label = 'Housekeeping\ngene'] #, fillcolor ='Gray70'
+B1   [label = 'Gene by gene\nCt'] #, fillcolor ='Gray70'
+B2  [label = 'Discard\nall genes',
 fontcolor = red] 
-
-C1   [label = 'NA']
-C2   [label = ' ≥LOD']
-C3   [label = '<LOD']
-
-D1   [label = '2 NA']
-D2  [label = '1 NA']
-#D3   [label = 'impute',
-#fontcolor = red]
-D4   [label = 'Diff.Ct', fillcolor ='Gray70']
-#E1   [label = 'impute',
-#fontcolor = red]
-E2   [label = 'remaining Ct\n<(LOD - T.E.)',
-#fontsize=9
-]
-E3   [label = 'remaining Ct\n ≥(LOD - T.E.)',
-#fontsize=9
-]
-E7   [label = '≤Poisson\nThreshold']
-E8   [label = '>Poisson\nThreshold']
-E5   [label = 'valid:\nuse mean Ct',
-fontcolor = red]
+D4   [label = 'Diff.Ct'] #, fillcolor ='Gray70'
+E5   [label = 'Valid:\nuse mean Ct', fontcolor = red]
 E6   [label = 'Invalid\n(discard)',
 fontcolor = red]
-F1   [label = 'discard NA Ct',
-fontcolor = red]
-#F2   [label = 'impute',
-#fontcolor = red]
-IMP   [label = 'impute\nrelative conc.',
-fontcolor = red]
+IMP1   [label = 'Impute\nrelative conc.',fontcolor = red]
 J3 [label = '',fillcolor=white,color=white] #empty node used for spacing
 
 #Notes [label = 'Ct: Cycle Threshold; LOD: Limit of Detection; T.E.: Technical Error ', color = white]
@@ -73,35 +49,41 @@ J3 [label = '',fillcolor=white,color=white] #empty node used for spacing
 edge [color = 'DimGray', arrowhead = 'vee']
 A   -> B1 [label = 'valid']
 A   -> B2 [label = 'invalid']
-B1 -> C1
-B1 -> C2
-B1 -> C3
-C1 -> D1
-C1 -> D2
-#C2 -> D3
-C3 -> D4
-#D1 -> E1
-D2 -> E2
-D2 -> E3
-E2 -> F1
-D4 -> E7
-E7 -> E5
-D4 -> E8
-E8 -> E6 
-#E6 -> F3
-IMP -> J3 [color = white]
+B1 -> IMP1 [xlabel = 'mean≥LOD']
+B1 -> D4 [xlabel = 'mean<LOD']
+B1 -> IMP2 [label = '2 NA']
+B1 -> D2 [label = '1 NA']
+D2 -> IMP2 [label = '≥(LOD-T.E.)']
+D2 -> F1 [label = '<(LOD-T.E.)']
+D4 -> E5 [xlabel = '≤pipetting error\nthreshold']
+D4 -> E6 [label = '>pipetting error\nthreshold']
+IMP1 -> J3 [color = white]
 
   # grouped edge
-  {D1 C2 E3} -> IMP [label = '']
+  #{E3} -> IMP [label = '']
+
+
+ subgraph cluster_group {
+    label = 'Group'
+    #style = rounded;
+    color = black;
+    D2 [label = 'Non NA Ct'];
+    F1 [label = 'Discard NA Ct', fontcolor = red];
+    IMP2   [label = 'Impute\nrelative conc.',fontcolor = red]
+
+  }
 
 #ranking of parts of graph
-{rank = same; C1; C2; C3;}
-{rank = same; D1; D2; D4;}
-{rank = same; E2; E3;}
-{rank = same; IMP; J3; F1; E5; E6}
+{rank = same; D2; D4;}
+{rank = same; IMP1; IMP2; J3; F1; E5; E6} # 
 #{rank = sink; Notes; }
 }
 ")
+
+
+# Export the graph as a PNG image
+export_graph(graph, file_name = "graph.png")
+
 
 # # valid:\n mean-2sd<Ct<mean+2sd\nΔCt<0.5\nneither NA
 
