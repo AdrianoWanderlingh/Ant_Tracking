@@ -7,6 +7,7 @@
 rm(list=ls())
 
 USER <- "2A13_Office" # Nath_office 
+DISK <-  "DISK4" #"Seagate Portable Drive"
 
 if (USER == "2A13_Office") {
   usr <- "cf19810"
@@ -20,7 +21,7 @@ if (USER == "2A13_Office") {
 
 #####Overall parameters and functions ##########
 ####define folders
-disk_path    <- paste0("/media/",usr,"/DISK4/Lasius-Bristol_pathogen_experiment")
+disk_path    <- paste0("/media/",usr,"/",DISK,"/Lasius-Bristol_pathogen_experiment")
 figurefolder <- paste0(disk_path,"/figures/") #"~/figures"
   
 treatment_order <- c("control.small","control.big","pathogen.small","pathogen.big")
@@ -792,52 +793,65 @@ par(mar=par_mar_ori)
 Sys.sleep(2)
 
 
-# ### Pathogen-induced changes in simulated diseasetransmission ###
-# 
-# ######Open pdf Figure 3 #####
-# #pdf(file=paste(figurefolder,"/Figure3.pdf",sep=""),family=text_font,font=text_font,bg="white",width=double_col,height=page_height*0.45,pointsize=pointsize_more_than_2row2col)
-# ##### Set-up layout and plot parameters #####
-# par(pars)
-# ncoli <- 4
-# heits <- c(5/9,0.05,4/9)
-# widz <- c(0.075,0.45,0,0.45)
-# layout(matrix(c(rep(1,ncoli/2),rep(4,ncoli/2),
-#                 rep(5,ncoli),
-#                 rep(5,ncoli/4),rep(2,ncoli/4),rep(5,ncoli/4),rep(3,ncoli/4)
-# ), 3, ncoli, byrow = TRUE),heights=heits,widths = widz)
-# ######First, plot distribution and threshold identification#######
-# plot_distribution(experiments="main_experiment",desired_treatments=c("pathogen"))
-# ####Second, individual simulation results - comparison #######
-# root_path <- paste(disk_path,"/main_experiment",sep="")
-# queen <- T; treated <- F; nurses <- T; foragers <- T; 
-# unit_ori <- unit; unit <- 24
-# time_window <- 24
-# 
-# variable_list <- c("probability_high_level","probability_low_level")
-# names(variable_list) <- c("prob. receiving high load","prob. receiving low load")
-# transf_variable_list <- c("power3","sqrt")
-# predictor_list <- c("task_group","task_group")
-# analysis <- list(variable_list=variable_list,
-#                  transf_variable_list=transf_variable_list,
-#                  predictor_list=predictor_list,
-#                  violin_plot_param = list(c(1.5,0,-0.02,0.35,0.11),c(1.5,-0.02,-0.02,0.35,0.11)))
-# plot_before_vs_after(root_path=root_path, data_path=paste(root_path,"/transmission_simulations/pre_vs_post_treatment/experimentally_exposed_seeds",sep=""),analysis=analysis,status="all",collective=F,pool_plot=F,pattern="individual_simulation_results_observed",plot_untransformed=T,aligned=T)
-# unit <- unit_ori
-# # ####Third, add survival curve  #######
-# # par(pars)
-# # survival_analysis(experiment="survival_experiment",which_to_plot="second_only")
-# ####Fourth, add letters  #########
-# par(xpd=NA)
-# ##LETTERS
-# x_text1 <- grconvertX(0+1/80, from='ndc'); x_text2 <- grconvertX((sum(widz[1:2]))/(sum(widz))+1/80, from='ndc')
-# y_text1 <- grconvertY((1-1/80), from='ndc')
-# y_text2 <- grconvertY((1-heits[1]-1/80), from='ndc')
-# text(x_text1,y_text1,labels=panel_casse("a"),font=panel_font, cex=panel_cex,adj=c(0,1),xpd=NA)
-# text(x_text1,y_text2,labels=panel_casse("b"),font=panel_font, cex=panel_cex,adj=c(0,1),xpd=NA)
-# text(x_text2,y_text1,labels=panel_casse("c"),font=panel_font, cex=panel_cex,adj=c(0,1),xpd=NA)
-# par(xpd=F)
-# ####Fifth, Close figure 3 #######
-# #dev.off()
+### Pathogen-induced changes in simulated disease transmission ###
 
+######Open pdf Figure 3 #####
+#pdf(file=paste(figurefolder,"/Figure3.pdf",sep=""),family=text_font,font=text_font,bg="white",width=double_col,height=page_height*0.45,pointsize=pointsize_more_than_2row2col)
+##### Set-up layout and plot parameters #####
+par(pars)
+ncoli <- 4
+heits <- c(5/9,0.05,4/9)
+widz <- c(0.075,0.45,0,0.45)
+layout(matrix(c(rep(1,ncoli/2),rep(4,ncoli/2),
+                rep(5,ncoli),
+                rep(5,ncoli/4),rep(2,ncoli/4),rep(5,ncoli/4),rep(3,ncoli/4)
+), 3, ncoli, byrow = TRUE),heights=heits,widths = widz)
+######First, plot distribution and threshold identification#######
+plot_distribution(experiments="main_experiment",desired_treatments=c("pathogen"),seeds="treated_workers")
+plot_distribution(experiments="main_experiment",desired_treatments=c("pathogen"),seeds="random_workers") #desired_treatments may be changed to all
+plot_distribution(experiments="main_experiment",desired_treatments=c("pathogen"),seeds="nurses") 
+plot_distribution(experiments="main_experiment",desired_treatments=c("pathogen"),seeds="foragers")
+#"foragers", "nurses", "random_workers", "treated_workers"
+
+#dev.off()
+
+
+
+
+
+
+
+# THIS PART IS NOT USED AS THE HIGH-LOW LOAD PROBS ARE NOT CALCULATEDA
+# # ####Second, individual simulation results - comparison #######
+# # root_path <- paste(disk_path,"/main_experiment",sep="")
+# # queen <- T; treated <- F; nurses <- T; foragers <- T;
+# # unit_ori <- unit; unit <- 24
+# # time_window <- 24
+# # 
+# # variable_list <- c("probability_high_level","probability_low_level")
+# # names(variable_list) <- c("prob. receiving high load","prob. receiving low load")
+# # transf_variable_list <- c("power3","sqrt")
+# # predictor_list <- c("task_group","task_group")
+# # analysis <- list(variable_list=variable_list,
+# #                  transf_variable_list=transf_variable_list,
+# #                  predictor_list=predictor_list,
+# #                  violin_plot_param = list(c(1.5,0,-0.02,0.35,0.11),c(1.5,-0.02,-0.02,0.35,0.11)))
+# # plot_before_vs_after(root_path=root_path, data_path=paste(root_path,"/transmission_simulations/pre_vs_post_treatment/experimentally_exposed_seeds",sep=""),analysis=analysis,status="all",collective=F,pool_plot=F,pattern="individual_simulation_results_observed",plot_untransformed=T,aligned=T)
+# # unit <- unit_ori
+# # # ####Third, add survival curve  #######
+# # # par(pars)
+# # # survival_analysis(experiment="survival_experiment",which_to_plot="second_only")
+# # ####Fourth, add letters  #########
+# # par(xpd=NA)
+# # ##LETTERS
+# # x_text1 <- grconvertX(0+1/80, from='ndc'); x_text2 <- grconvertX((sum(widz[1:2]))/(sum(widz))+1/80, from='ndc')
+# # y_text1 <- grconvertY((1-1/80), from='ndc')
+# # y_text2 <- grconvertY((1-heits[1]-1/80), from='ndc')
+# # text(x_text1,y_text1,labels=panel_casse("a"),font=panel_font, cex=panel_cex,adj=c(0,1),xpd=NA)
+# # text(x_text1,y_text2,labels=panel_casse("b"),font=panel_font, cex=panel_cex,adj=c(0,1),xpd=NA)
+# # text(x_text2,y_text1,labels=panel_casse("c"),font=panel_font, cex=panel_cex,adj=c(0,1),xpd=NA)
+# # par(xpd=F)
+# # ####Fifth, Close figure 3 #######
+# # #dev.off()
 
 

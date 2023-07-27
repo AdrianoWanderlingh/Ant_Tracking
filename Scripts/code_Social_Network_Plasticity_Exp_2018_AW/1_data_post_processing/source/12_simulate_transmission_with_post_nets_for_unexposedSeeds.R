@@ -59,7 +59,8 @@ for (seed_file in seed_files ){
       summary_individual <- NULL
       
       interac_list <- input_files[grepl(interac_folder,input_files)]
-      if (seed_file!="treated_workers.txt"){interac_list <- interac_list[grepl("PreTreatment",interac_list)]}
+      #AW 27Jul2023: skip line below to have post analysis for all groups (not just treated_workers.txt)
+      #if (seed_file!="treated_workers.txt"){interac_list <- interac_list[grepl("PreTreatment",interac_list)]}
       for (interac in interac_list){
         print(interac)
         ####get colony info

@@ -2853,7 +2853,7 @@ plot_qpcr <- function(experiments){
   if (exists("predicted_value")){return(predicted_value)}else{return(NULL)} 
 }
 
-plot_distribution <- function(experiments,desired_treatments){
+plot_distribution <- function(experiments,desired_treatments,seeds){
   par_mar_ori <- par()$mar
   par(mar=par_mar_ori+c(0,0,0,0.5))
   if (experiments=="all"){
@@ -2871,8 +2871,11 @@ plot_distribution <- function(experiments,desired_treatments){
   xlabel <- substitute(sqrt ( xlabely),list(xlabely="Simulated load"))
   ####read data
   infection_data <- NULL
+  
+  seed <- paste0(seeds,"_seeds") #AW
+  
   for (experiment in experiments){
-    setwd(paste(disk_path,experiment,"transmission_simulations/pre_vs_post_treatment/experimentally_exposed_seeds",sep="/"))
+    setwd(paste(disk_path,experiment,"transmission_simulations/pre_vs_post_treatment/",seed,sep="/"))
     si_outcome <- read.table("individual_simulation_results_observed.txt",header=T,stringsAsFactors = T)
     si_outcome["ant_id"] <- as.character(interaction(experiment,si_outcome$colony,si_outcome$tag))
     
@@ -2996,6 +2999,7 @@ plot_distribution <- function(experiments,desired_treatments){
   par(xpd=T) 
   mtext(full_statuses_names[desired_treatments],side=3,line=stat_line,adj=0.5,cex=par("cex") *inter_cex,font=2)
   mtext(from_p_to_ptext(p_value),side=3,line=stat_line-1,adj=0.5,cex=par("cex") *max_cex,font=2,at=where_to_print_stat)
+  mtext(seeds,side=3,line=stat_line,adj=0.5,cex=par("cex") *max_cex,font=2,at=where_to_print_stat)
   
   # print("Thresholds at which after becomes lower than before")
   forplot["positive"] <- forplot$mean>=0
