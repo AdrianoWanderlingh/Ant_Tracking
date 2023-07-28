@@ -37,8 +37,9 @@ filter_capsules     <- function(collisions,capsule_matcher){
   
   
   ##finally,remove lines with empty collisions$types
-  collisions      <- collisions[-lines_to_remove,]
-  
+  if (length(lines_to_remove)>0){
+    collisions      <- collisions[-lines_to_remove,]
+  }
   return(collisions)
 }
 
@@ -155,24 +156,27 @@ interaction_detection <- function (e
     #################################################################################################
     ###collpase collisions into single dataframe (necessary for next filtering step) ################
     #################################################################################################
-    print("Collapsing collisions...")
-    collisions <- collapse_collisions(collisions)
-    print("Collisions collapsed.")
-    
-    #################################################################################################################################################
-    ###remove duplicates between collisions and all_coliisions (as there are a few frames overlapping between successive queries ) ##################
-    #################################################################################################################################################
-    if (!is.null(all_collisions)){
-      collisions <- collisions[which(as.numeric(collisions$time)>max(as.numeric(all_collisions$time),na.rm=T)),]
+    if (nrow(collisions$collisions)>0){
+      print("Collapsing collisions...")
+      collisions <- collapse_collisions(collisions)
+      # print("Collisions collapsed.")
+      
+      #################################################################################################################################################
+      ###remove duplicates between collisions and all_coliisions (as there are a few frames overlapping between successive queries ) ##################
+      #################################################################################################################################################
+      if (!is.null(all_collisions)){
+        collisions <- collisions[which(as.numeric(collisions$time)>max(as.numeric(all_collisions$time),na.rm=T)),]
+      }
+      
+      ##########################################################################################################################################
+      ###apply correct offset to frames_row_index to correct frame number (automatically restarts at 1 in fmQueryCollideFrames) ################
+      ##########################################################################################################################################
+      collisions$frame_number <- IF_frames[match.closest(x = collisions[,"time"],table = as.numeric(IF_frames$time)),"frame_num"]
+      
+      
+      all_collisions          <-  rbind(all_collisions,collisions)
+      
     }
-    
-    ##########################################################################################################################################
-    ###apply correct offset to frames_row_index to correct frame number (automatically restarts at 1 in fmQueryCollideFrames) ################
-    ##########################################################################################################################################
-    collisions$frame_number <- IF_frames[match.closest(x = collisions[,"time"],table = as.numeric(IF_frames$time)),"frame_num"]
-    
-    
-    all_collisions          <-  rbind(all_collisions,collisions)
     
     ###update start and end
     if (!extraction_complete){
@@ -187,59 +191,65 @@ interaction_detection <- function (e
   }
   
   collisions <- all_collisions; rm(list=c("all_collisions"));gc();mallinfo::malloc.trim(0L)
-  #######################################
-  ###filter on ant distances ############
-  #######################################
-  if (!is.null(distance_smaller_than)){
-    collisions <- filter_distance (collisions,distance_smaller_than,"smaller")
-  }
-  if (!is.null(distance_greater_than)){
-    collisions <- filter_distance (collisions,distance_greater_than,"greater")
-  }
   
-  #######################################
-  ###filter on ant angles ###############
-  #######################################
-  if (!is.null(angle_smaller_than)){
-    collisions <- filter_angle (collisions,angle_smaller_than,"smaller")
-  }
-  if (!is.null(angle_greater_than)){
-    collisions <- filter_angle (collisions,angle_greater_than,"greater")
-  }
-  
-  ###################################################################
-  ###assemble successive collisions into interactions ###############
-  ###################################################################
-  ###prepare collisions to be loaded into cpp function
-  collisions$time_second <- round(as.numeric(collisions$time),3)
- 
-   ##SLOW!!! :-( collisions$pair <- apply(collisions[,c("ant1","ant2")],1,function(x){paste(sort(x),collapse = "_") })
-  collisions <- within(collisions,pair <- paste(ant1,ant2,sep="_")) ###FAST :-)
-  collisions$pair <- match(collisions$pair,sort(unique(collisions$pair)))-1 ###necessary for c++
-  pair_list <- sort(unique(collisions$pair))
-  
-  print("About to start mergeing collisions into interaction list...")
-  if (length(pair_list)>chunk_size_for_merge){ ###if too many pairs, merge interactions by chunks
-    interactions <- NULL; 
-    n_chunks <- ceiling(length(pair_list)/chunk_size_for_merge)
-    for (chunk in 1:n_chunks){
-      pair_list_chunk  <- pair_list [   ( 1 + (chunk_size_for_merge * (chunk-1)) ) : (min(chunk *chunk_size_for_merge, length(pair_list)     )  )] ###selects the next chunk_size_for_merge pairs of ants
-      collisions_chunk <- collisions[which(collisions$pair %in%pair_list_chunk),]                                  ###subsets collision table to only contain those pairs
-      ###the merge_interactions.cpp programs expects successive pair IDs starting from 0, so we need to update the content of both collisions_chunks and pair_list_chunk
-      starting_pair    <- min(pair_list_chunk)                     ###first get the value of the first pair ID                                                 
-      collisions_chunk$pair <- collisions_chunk$pair - starting_pair     ###subtract        starting_pair from       collisions_chunk$pair                           
-      pair_list_chunk <- pair_list_chunk - starting_pair ###subtract        starting_pair from      pair_list_chunk            
-      ####merge interactions for that chunk
-      interactions <- rbind(interactions,merge_interactions(collisions_chunk, pair_list_chunk, max_distance_moved=max_distance_moved, max_time_gap=max_time_gap))
-      ###clear memory 
-      rm(list=c("pair_list_chunk","collisions_chunk","starting_pair"));mallinfo::malloc.trim(0L)
-     }
+  if (!is.null(collisions)){
+    #######################################
+    ###filter on ant distances ############
+    #######################################
+    if (!is.null(distance_smaller_than)){
+      collisions <- filter_distance (collisions,distance_smaller_than,"smaller")
+    }
+    if (!is.null(distance_greater_than)){
+      collisions <- filter_distance (collisions,distance_greater_than,"greater")
+    }
+    
+    #######################################
+    ###filter on ant angles ###############
+    #######################################
+    if (!is.null(angle_smaller_than)){
+      collisions <- filter_angle (collisions,angle_smaller_than,"smaller")
+    }
+    if (!is.null(angle_greater_than)){
+      collisions <- filter_angle (collisions,angle_greater_than,"greater")
+    }
+    
+    ###################################################################
+    ###assemble successive collisions into interactions ###############
+    ###################################################################
+    ###prepare collisions to be loaded into cpp function
+    collisions$time_second <- round(as.numeric(collisions$time),3)
+    
+    ##SLOW!!! :-( collisions$pair <- apply(collisions[,c("ant1","ant2")],1,function(x){paste(sort(x),collapse = "_") })
+    collisions <- within(collisions,pair <- paste(ant1,ant2,sep="_")) ###FAST :-)
+    collisions$pair <- match(collisions$pair,sort(unique(collisions$pair)))-1 ###necessary for c++
+    pair_list <- sort(unique(collisions$pair))
+    
+    print("Mergeing collisions into interaction list...")
+    if (length(pair_list)>chunk_size_for_merge){ ###if too many pairs, merge interactions by chunks
+      interactions <- NULL; 
+      n_chunks <- ceiling(length(pair_list)/chunk_size_for_merge)
+      for (chunk in 1:n_chunks){
+        pair_list_chunk  <- pair_list [   ( 1 + (chunk_size_for_merge * (chunk-1)) ) : (min(chunk *chunk_size_for_merge, length(pair_list)     )  )] ###selects the next chunk_size_for_merge pairs of ants
+        collisions_chunk <- collisions[which(collisions$pair %in%pair_list_chunk),]                                  ###subsets collision table to only contain those pairs
+        ###the merge_interactions.cpp programs expects successive pair IDs starting from 0, so we need to update the content of both collisions_chunks and pair_list_chunk
+        starting_pair    <- min(pair_list_chunk)                     ###first get the value of the first pair ID                                                 
+        collisions_chunk$pair <- collisions_chunk$pair - starting_pair     ###subtract        starting_pair from       collisions_chunk$pair                           
+        pair_list_chunk <- pair_list_chunk - starting_pair ###subtract        starting_pair from      pair_list_chunk            
+        ####merge interactions for that chunk
+        interactions <- rbind(interactions,merge_interactions(collisions_chunk, pair_list_chunk, max_distance_moved=max_distance_moved, max_time_gap=max_time_gap))
+        ###clear memory 
+        rm(list=c("pair_list_chunk","collisions_chunk","starting_pair"));mallinfo::malloc.trim(0L)
+      }
+    }else{
+      interactions       <- merge_interactions(collisions, pair_list, max_distance_moved=max_distance_moved, max_time_gap=max_time_gap)
+    }
+    interactions       <- interactions[order(interactions$end,interactions$start,interactions$ant1,interactions$ant2),] ### reorder the table, necessary if interaction mergeing was done by chunks
+    interactions$start <- as.POSIXct(interactions$start,  origin="1970-01-01", tz="GMT" )
+    interactions$end   <- as.POSIXct(interactions$end,  origin="1970-01-01", tz="GMT" )
+    
   }else{
-    interactions       <- merge_interactions(collisions, pair_list, max_distance_moved=max_distance_moved, max_time_gap=max_time_gap)
+    interactions <- data.frame()
   }
-  interactions       <- interactions[order(interactions$end,interactions$start,interactions$ant1,interactions$ant2),] ### reorder the table, necessary if interaction mergeing was done by chunks
-  interactions$start <- as.POSIXct(interactions$start,  origin="1970-01-01", tz="GMT" )
-  interactions$end   <- as.POSIXct(interactions$end,  origin="1970-01-01", tz="GMT" )
 
   return(interactions)
 }

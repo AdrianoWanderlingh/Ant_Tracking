@@ -39,7 +39,7 @@ if (BEH =="G"){
 WORKDIR <- "/media/bzniks/Seagate\ Portable\ Drive/ADRIANO/Ants_behaviour_analysis_EXTRAPOLATED"
 DATADIR <- "/media/bzniks/Seagate\ Portable\ Drive/ADRIANO/EXPERIMENT_DATA_EXTRAPOLATED"
 SCRIPTDIR <- "~/Dropbox/SeniorLectureship_Bristol/Students_postdocs/PhD_students/2019 Adriano Wanderlingh/code/PhD-exp1-data-analysis-main/ScriptsR_FINAL"
-SAVEOUTPUT <- "/media/bzniks/DATA"
+SAVEOUTPUT <- "/media/bzniks/FiveTB"
 BODYLENGTH_FILE <- paste(WORKDIR,"Data","/Mean_ant_length_per_TrackingSystem.txt",sep="/")
 MachineLearningOutcome_DIR <- file.path(SAVEOUTPUT, "MachineLearning_outcomes_FINAL")
 
@@ -111,7 +111,7 @@ names(classifier) <- chosen[,"classifier"]
 ###### LIST MYRMIDON FILES ON WHICH TO PERFORM GROOMING DETECTION ##################################
 ###############################################################################
 setwd(DATADIR)
-myrmidon_files <- list.files(pattern="_AutoOriented_withMetaData",recursive = T) #_NS
+myrmidon_files <- list.files(pattern="_AutoOriented_withMetaData",recursive = T) # using the pattern "_AutoOriented_withMetaData_NS" calls 41 out of 44 files
 myrmidon_files <- myrmidon_files[which(grepl(CAPSULE_FILE,myrmidon_files))]
 
 to_keep <- c(ls(),"to_keep","myrmidon_file")

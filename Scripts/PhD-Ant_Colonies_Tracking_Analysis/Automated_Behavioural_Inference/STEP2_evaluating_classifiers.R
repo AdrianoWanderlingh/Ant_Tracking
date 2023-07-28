@@ -16,7 +16,7 @@ if (USER=="Nathalie"){
 
 ####parameters
 measure         <- "Fbeta" ##""Fbeta" "CSI"                               ####which measure to do the selection on
-priority        <- "trends" ##~trends-overall
+priority        <- "overall" ##~trends-overall
 beta            <- 1                                                    ####For F score: which beta to use (CURRENT CHOICE IS BETWEEN 0.5 AND 1)
 second_measure  <- c("CSI","Fbeta")[which(c("CSI","Fbeta")!=measure)]     ####which second measure to use to break ties
 
