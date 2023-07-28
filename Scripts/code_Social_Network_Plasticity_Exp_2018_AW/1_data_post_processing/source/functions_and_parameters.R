@@ -42,7 +42,9 @@ return(tag)
 #   return(list(tag=tag,header_part=header_part))
 # }
 
-high_threshold <- 0.0411
+high_threshold <- 0.0411 * 0.5/0.3###Science paper: high threshold =0.0411 where 1 = load of treated
+                        ####In Adriano's experiment, spore concentration was the same but volume was 0.3 microliter instead of 0.5 microliter
+
 info           <- read.table(paste(data_path,"/original_data/info.txt",sep=""),header=T,stringsAsFactors = F)
 treated        <- read.table(paste(data_path,"/original_data/treated_worker_list.txt",sep=""),header=T,stringsAsFactors = F)
 task_groups    <- read.table(paste(data_path,"original_data/task_groups.txt",sep="/"),header=T,stringsAsFactors = F)

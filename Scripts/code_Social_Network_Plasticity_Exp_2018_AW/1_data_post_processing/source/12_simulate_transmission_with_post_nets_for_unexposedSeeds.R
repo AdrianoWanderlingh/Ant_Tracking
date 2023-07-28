@@ -45,10 +45,10 @@ for (seed_file in seed_files ){
     reorder         <- F
   }
   
-  #AW 26Jul2023: added condition to skip simulation if outputfolder is "/transmission_simulations/pre_vs_post_treatment/experimentally_exposed_seeds" or "/transmission_simulations/random_vs_observed"
-  if (outputfolder == paste(data_path,"/transmission_simulations/pre_vs_post_treatment/experimentally_exposed_seeds",sep="") || outputfolder == paste(data_path,"/transmission_simulations/random_vs_observed",sep="")) {
-    next
-  }
+  # #AW 26Jul2023: added condition to skip simulation if outputfolder is "/transmission_simulations/pre_vs_post_treatment/experimentally_exposed_seeds" or "/transmission_simulations/random_vs_observed"
+  # if (outputfolder == paste(data_path,"/transmission_simulations/pre_vs_post_treatment/experimentally_exposed_seeds",sep="") || outputfolder == paste(data_path,"/transmission_simulations/random_vs_observed",sep="")) {
+  #   next
+  # }
   
   if (!file.exists(outputfolder)){dir.create(outputfolder,recursive = T)}  
   
@@ -265,11 +265,11 @@ for (seed_file in seed_files ){
           }else{
             model                                                                  <- coxph(Surv(relative_contamination_time,contaminated)~1,data=simulations[which(simulations$tag==ant),])
             mean_data                                                              <- summary(survfit(model),rmean="common")$table
-            individual_level[which(individual_level$tag==ant),"transmission_latency"] <-  mean_data["*rmean"]
+            individual_level[which(individual_level$tag==ant),"transmission_latency"] <-  mean_data["rmean"]
             
             model                                                                  <- coxph(Surv(rank,contaminated)~1,data=simulations[which(simulations$tag==ant),])
             mean_data                                                              <- summary(survfit(model),rmean="common")$table
-            individual_level[which(individual_level$tag==ant),"transmission_rank"] <-  mean_data["*rmean"]
+            individual_level[which(individual_level$tag==ant),"transmission_rank"] <-  mean_data["rmean"]
             
           }
         }

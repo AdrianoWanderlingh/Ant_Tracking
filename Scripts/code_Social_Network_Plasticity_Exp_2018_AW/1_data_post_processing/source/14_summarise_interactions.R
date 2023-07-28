@@ -134,7 +134,7 @@ for (input_folder in input_folders){
     full_table[is.na(full_table$duration_min),"duration_min"] <- 0
     
     full_table                  <- merge(full_table,tag[c("tag","group")]); names(full_table)[names(full_table)=="group"] <- "status"
-    full_table                  <- merge(full_table,colony_task_group[c("tag","task_group")]); full_table[which(full_table$status=="treated"),"task_group"] <- "treated"
+    full_table                  <- merge(full_table,colony_task_group[c("tag","task_group")]); full_table[which(full_table$tag%in%colony_treated),"task_group"] <- "treated" #AW 27Jul23 updated after Linda's suggestion. It should only affect the selection of ants for the calculation of the inter_caste_duration
     if (!grepl("age",data_path)){
       full_table$age <- NA
     }else{
@@ -207,6 +207,15 @@ for (input_folder in input_folders){
         full_table[is.na(full_table$duration_grooming_given_to_treated_min_zone2),"duration_grooming_given_to_treated_min_zone2"] <- 0
       }else{
         full_table$duration_grooming_given_to_treated_min_zone2 <- 0 
+      }
+      #AW: N of occurences
+      try(aggregated7                 <- aggregate(na.rm=T, na.action="na.pass", duration_min~Receiver, FUN=length, data=interactions[!is.na(interactions$duration_min)&interactions$duration_min!= 0,]),silent=T)
+      if(exists("aggregated7")){
+        names(aggregated7)          <- c("tag","N_grooming_received")
+        full_table                  <- merge(full_table,aggregated7,all.x=T,all.y=T)
+        full_table[is.na(full_table$N_grooming_received),"N_grooming_received"] <- 0
+      }else{
+        full_table$N_grooming_received <- 0 
       }
       
       full_table                  <- merge(full_table,tag[c("tag","group")]); names(full_table)[names(full_table)=="group"] <- "status"

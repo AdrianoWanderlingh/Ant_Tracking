@@ -1597,7 +1597,7 @@ individual_ONE_analysis <- function(data_path=data_path,which_individuals,showPl
     rm(list=ls()[which(grepl("posthoc_groups_",ls()))])
     
     #plot
-    barplot_delta_period <- barplot_delta(dataset=data,predictor="treatment",post_hoc_outcomes=post_hoc_outcomes,stats_outcomes=stats_outcomes,i=i,type="individual",collective=F,plot_untransformed=T,diff_type="absolute_difference") #form_stat=NULL,
+    barplot_delta_period <- barplot_delta(dataset=data,predictor="treatment",post_hoc_outcomes=post_hoc_outcomes,stats_outcomes=stats_outcomes,i=i,type="individual",collective=F,plot_untransformed=F,diff_type="absolute_difference") #form_stat=NULL,
     if (showPlot) {print(barplot_delta_period)}
     
     barplot_delta_period_list[[variable_list[i]]]        <- barplot_delta_period 

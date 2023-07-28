@@ -10,11 +10,17 @@ merge_trajectory_segments <- function(positions,IF_frames){
     }
     
     ant_indices <- which(positions$trajectories_summary$antID==antID)
-    # if (length(ant_indices)==1){
-    #   new_positions[["trajectories_summary"]]      <- rbind(new_positions[["trajectories_summary"]],positions$trajectories_summary[ant_indices,])
-    #   new_positions[["trajectories"]] <- c(new_positions[["trajectories"]], list( positions$trajectories[[ant_indices]]      ))
-    # }else{
-      ###the new summary object should contain only one line per ant - and that line should correspond to the first trajectory segment in line
+    if (length(ant_indices)==1){
+      ###add frame number
+      ant_traj <- positions$trajectories_summary[ant_indices,]
+      ant_traj$frame_num <- IF_frames[match.closest(x=ant_traj$start , table=as.numeric(IF_frames$time)),"frame_num"]
+      # print(names(new_positions[["trajectories_summary"]]))
+      # print(names(ant_traj))
+      new_positions[["trajectories_summary"]]      <- rbind(new_positions[["trajectories_summary"]],ant_traj)
+      new_positions[["trajectories"]] <- c(new_positions[["trajectories"]], list( positions$trajectories[[ant_indices]]      ))
+      rm(list=c("ant_traj"))
+    }else{
+    ##the new summary object should contain only one line per ant - and that line should correspond to the first trajectory segment in line
       ant_summary       <- positions$trajectories_summary[ant_indices,]      ### extract all the lines corresponding to that ant in positions$trajectories_summary
       first_segment_idx <- which.min(ant_summary$start)                      ### find which one starts first 
       ant_summary$frame_num <- IF_frames[match.closest(x=ant_summary$start , table=as.numeric(IF_frames$time)),"frame_num"]
@@ -38,7 +44,7 @@ merge_trajectory_segments <- function(positions,IF_frames){
       }
       new_positions[["trajectories"]] [[length(new_positions[["trajectories"]] )]]    <- new_positions[["trajectories"]] [[length(new_positions[["trajectories"]] )]]   [which(!duplicated(new_positions[["trajectories"]] [[length(new_positions[["trajectories"]] )]]   $frame)),]
       new_positions[["trajectories"]] [[length(new_positions[["trajectories"]] )]]    <- new_positions[["trajectories"]] [[length(new_positions[["trajectories"]] )]]   [which(!names(new_positions[["trajectories"]] [[length(new_positions[["trajectories"]] )]]   )%in%c("dt_diff","frame_diff"))]
-     # }
+     }
     
     rm(list=ls()[which(ls()%in%c("ant_indices","ant_summary","first_segment_idx","ant_trajectory","ant_index"))])
     gc()
