@@ -54,6 +54,11 @@ require(dplyr)
 ######showtext_auto()#must be called to indicate that showtext is going to be automatically invoked to draw text whenever a plot is created.
 
 
+## to install a specifi version of a package when "Warning in install.packages :package ‘ XXX’ is not available for this version of R":
+# library(remotes)
+# remotes::install_version("MuMIn", version = "1.46.0")
+# remotes::install_version("sjPlot", version = "1.46.0")
+
 
 # To add the "Liberation Serif" font to the `pdfFonts` in Linux, you can use the `extrafont` package in R. Here are the steps:
 #   

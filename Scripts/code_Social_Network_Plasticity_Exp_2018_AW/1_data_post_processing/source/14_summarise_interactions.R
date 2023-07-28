@@ -208,7 +208,7 @@ for (input_folder in input_folders){
       }else{
         full_table$duration_grooming_given_to_treated_min_zone2 <- 0 
       }
-      #AW: N of occurences
+      #AW: N of occurrences
       try(aggregated7                 <- aggregate(na.rm=T, na.action="na.pass", duration_min~Receiver, FUN=length, data=interactions[!is.na(interactions$duration_min)&interactions$duration_min!= 0,]),silent=T)
       if(exists("aggregated7")){
         names(aggregated7)          <- c("tag","N_grooming_received")

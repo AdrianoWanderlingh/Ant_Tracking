@@ -150,9 +150,9 @@ ind_treated_beh_lineplot <- line_plot(data_path,which_individuals="treated",show
 root_path <- paste(disk_path,"/main_experiment_grooming",sep="") # root_path <- paste(disk_path,"/main_experiment_grooming",sep="")
 data_path=paste(root_path,"/processed_data/individual_behaviour/pre_vs_post_treatment",sep="")
 pattern="individual_behavioural_data"
-variable_list <-        c("duration_grooming_received_min", "inter_caste_contact_duration","prop_duration_grooming_received_outside_min") #GROOMING  ouside is negligibile as only 58/6016 events happen outside , "prop_duration_grooming_received_outside_min","duration_grooming_received_min_zone2"
-names(variable_list) <- c("duration grooming received (min)", "inter caste grooming duration","prop. duration grooming received outside (min)") # , "prop duration grooming received outside min","duration grooming received outside min"
-transf_variable_list <- c("log"                          ,"log"                         , "Box_Cox")   ######"none", "sqrt" "log","power2"
+variable_list <-        c("duration_grooming_received_min","N_grooming_received", "inter_caste_contact_duration","prop_duration_grooming_received_outside_min") #GROOMING  ouside is negligibile as only 58/6016 events happen outside , "prop_duration_grooming_received_outside_min","duration_grooming_received_min_zone2"
+names(variable_list) <- c("duration grooming received (min)","N grooming received", "inter caste grooming duration","prop. duration grooming received outside (min)") # , "prop duration grooming received outside min","duration grooming received outside min"
+transf_variable_list <- c("log"                             ,"none"               ,"log"                           , "Box_Cox")   ######"none", "sqrt" "log","power2"
 
 
 ind_treated_grooming <- individual_ONE_analysis(data_path,which_individuals="treated",showPlot=F) # "treated","queen","nurse","forager"
@@ -359,7 +359,9 @@ GroomingVsTimeOutside <- ggplot(grand_mean_data_scaled, aes(x = time_hours, y = 
 ### PLOT GRIDS ####################################################################################################################
 ###################################################################################################################################
 
-warning("ISSUE: SOME POST-HOCS OF IND_ONE_ANALYSIS LOOK WRONG (SEE DURATION_GROOMING_RECEIVED)")
+#TEMP: new var added!
+ind_treated_grooming$barplot_delta_period_list$N_grooming_received
+warning("ADD prob of low load and high load")
 
 ###################################################################################################################################
 ### ind_net_properties ### 
