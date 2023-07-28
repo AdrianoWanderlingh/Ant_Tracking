@@ -156,7 +156,7 @@ transf_variable_list <- c("log"                             ,"none"             
 
 
 ind_treated_grooming <- individual_ONE_analysis(data_path,which_individuals="treated",showPlot=F) # "treated","queen","nurse","forager"
-
+warning("adjust transformation for N grooming received")
 ind_treated_grooming_lineplot <- line_plot(data_path,which_individuals="treated",showPlot=F)
 
 ################    FOR UNTREATED INDIVIDUALS    ################    
@@ -187,7 +187,6 @@ transf_variable_list <- c("Box_Cox"        , "Box_Cox"                    , "Box
 ind_untreated_beh_nurse <- individual_ONE_analysis(data_path,which_individuals="nurse",showPlot=F) ## "treated","queen","nurse","forager"
 ind_untreated_beh_forag <- individual_ONE_analysis(data_path,which_individuals="forager",showPlot=F) ## "treated","queen","nurse","forager"
 
-
 #### GROOMING INTERACTIONS ####
 root_path <- paste(disk_path,"/main_experiment_grooming",sep="")
 data_path=paste(root_path,"/processed_data/individual_behaviour/pre_vs_post_treatment",sep="")
@@ -198,6 +197,12 @@ transf_variable_list <- c("log"        )   ######"none", "sqrt" "log","power2"
 
 ind_untreated_grooming_nurse <- individual_ONE_analysis(data_path,which_individuals="nurse",showPlot=F) ## "treated","queen","nurse","forager"
 ind_untreated_grooming_forag <- individual_ONE_analysis(data_path,which_individuals="forager",showPlot=F) ## "treated","queen","nurse","forager"
+
+
+ind_untreated_grooming_lineplot_nurse <- line_plot(data_path,which_individuals="nurse",showPlot=T)
+ind_untreated_grooming_lineplot_forag <- line_plot(data_path,which_individuals="forager",showPlot=T)
+
+warning("add it to the plot grid! it shows if treated are groomed by foragers or nurses")
 
 ###################################################################################################################################
 ###IV - individual analysis - for TWO types of individuals (e.g. nurses and foragers; or "untreated" and "treated") ###############
