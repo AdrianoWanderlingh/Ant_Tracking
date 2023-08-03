@@ -6,6 +6,9 @@
 
 ###Created by Nathalie Stroeymeyt
 
+#### NOTE: THIS VERSION HAS BEEN MODIFIED TO PERFORM POST NETWORK TRANSMISSION SIMULATIONS FOR THE OBSERVED NETWORKS FOR SEEDS OTHER THAN THE "EXPERIMENTALLY EXPOSED" ONES
+# a better option would have been to integrate these changes in the main transmission script but I had no time
+
 to_keep_ori <- to_keep
 
 Sys.setenv("PKG_CXXFLAGS"="-std=c++11")
@@ -45,12 +48,15 @@ for (seed_file in seed_files ){
     reorder         <- F
   }
   
-  # #AW 26Jul2023: added condition to skip simulation if outputfolder is "/transmission_simulations/pre_vs_post_treatment/experimentally_exposed_seeds" or "/transmission_simulations/random_vs_observed"
-  # if (outputfolder == paste(data_path,"/transmission_simulations/pre_vs_post_treatment/experimentally_exposed_seeds",sep="") || outputfolder == paste(data_path,"/transmission_simulations/random_vs_observed",sep="")) {
-  #   next
-  # }
+  #AW 26Jul2023: added condition to skip simulation if outputfolder is "/transmission_simulations/pre_vs_post_treatment/experimentally_exposed_seeds" or "/transmission_simulations/random_vs_observed"
+  if (outputfolder == paste(data_path,"/transmission_simulations/pre_vs_post_treatment/experimentally_exposed_seeds",sep="") || outputfolder == paste(data_path,"/transmission_simulations/random_vs_observed",sep="")) {
+    next
+  }
   
   if (!file.exists(outputfolder)){dir.create(outputfolder,recursive = T)}  
+  
+  #AW 26Jul2023: run these extra simulations only on the observed folders
+  interac_folders <- interac_folders[1]
   
   for (interac_folder in interac_folders){
     if (interac_folder!="observed"){interac_folder <- paste("random_",paste(rep(0,3-nchar(interac_folder)),collapse=""),interac_folder,sep="")}
