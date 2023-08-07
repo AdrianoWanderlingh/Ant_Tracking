@@ -43,6 +43,7 @@ var_names_ind <- c("transfmean_speed_BLpersec" = "GM Speed (bodylength/sec)",
                    "sum_moved_distance_BL" = "moved distance (bodylength)",
                    "chull_area_BL2" = "Convex Hull (bodylength²)"
 )
+
 var_names_pair <- c("duration_sec" = "Duration (sec)",
                     "mean_strghtline_pair_dist_BL" = "AM Straight-line Distance (bodylength)",
                     "mean_pair_body_orient_diff_abs" = "AM Absolute difference in body orientation",
@@ -52,12 +53,12 @@ var_names_pair <- c("duration_sec" = "Duration (sec)",
 #In this vector, GM stands for Geometric Mean, SD for Standard Deviation, RMS for Root Mean Square, AD for Angular Deviation, RMSD for Root Mean Square Deviation, and AM for Arithmetic Mean. You can use this vector to rename the variables in your plots as shown in the previous example.
 
 # Create a named vector for actor variables
-var_names_ind_ACT <- paste0(names(var_names_ind), "_ACT")
-names(var_names_ind_ACT) <- paste0(var_names_ind, " ACT")
+var_names_ind_ACT <- paste0(var_names_ind, " ACT")
+names(var_names_ind_ACT) <- paste0(names(var_names_ind), "_ACT")
 
 # Create a named vector for receiver variables
-var_names_ind_REC <- paste0(names(var_names_ind), "_REC")
-names(var_names_ind_REC) <- paste0(var_names_ind, " REC")
+var_names_ind_REC <- paste0(var_names_ind, " REC")
+names(var_names_ind_REC) <- paste0(names(var_names_ind), "_REC")
 
 # Combine the 3 vectors
 var_names_all <- c(var_names_ind_ACT, var_names_ind_REC,var_names_pair)
@@ -65,10 +66,9 @@ var_names_all <- c(var_names_ind_ACT, var_names_ind_REC,var_names_pair)
 
 
 
-
-
 #if (USER=="Supercomputer1") {
 WORKDIR <- "/home/cf19810/Ant_Tracking/Data/PhD-Ant_Colonies_Tracking_Analysis/Automated_Behavioural_Inference"
+#WORKDIR <- "/home/cf19810/Desktop/Final_Classifier_&_Scripts"
 DATADIR <- paste(WORKDIR,"MachineLearning_outcomes_FINAL",sep="/")
 #SCRIPTDIR <- paste(WORKDIR,"ScriptsR",sep="/")
 #EXPDATADIR <- "/media/bzniks/DISK4/ADRIANO/EXPERIMENT_DATA" #"/home/cf19810/Documents/Ants_behaviour_analysis/Data"
@@ -81,7 +81,7 @@ chosen <- read.table(paste(DATADIR,"/quality_scores_Fbeta_1_priorityoverall_CHOS
 
 
 # Get the list of files in the directory
-file_list <- list.files(DATADIR, full.names = TRUE)
+file_list <- list.files(DATADIR, full.names = TRUE,pattern = "\\.txt$")
 
 # Initialize an empty data frame to store the combined data
 all_methods <- data.frame()
@@ -142,14 +142,14 @@ imp <- as.data.frame(imp)
 imp$varnames <- rownames(imp) # row names to column
 rownames(imp) <- NULL
 #assign category
-imp$var_categ  <- ifelse(grepl('ACT', imp$varnames), 'ACT',
-                         ifelse(grepl('REC', imp$varnames), 'REC', "BOTH"))
+imp$var_categ  <- ifelse(grepl('ACT', imp$varnames), 'Actor',
+                         ifelse(grepl('REC', imp$varnames), 'Receiver', "Pair"))
 #remove transformation
 imp$varnames <- sub("\\..*", "", imp$varnames)
 
 # Add a new column to the summary table
 imp <- imp %>%
-  mutate(new_names = names(var_names_all[match(varnames, var_names_all)]))
+  mutate(new_names = var_names_all[match(varnames, names(var_names_all))])
 
 
 # First, sort the data frame by MeanDecreaseGini in descending order
@@ -157,8 +157,6 @@ imp_sorted <- imp[order(-imp$MeanDecreaseGini),]
 
 # Then, select the top 10 rows
 imp_top10 <- head(imp_sorted, 10)
-
-warning("UNDERSTAND HOW TO FIX THE BOTH VARS!!!")
 
 # Now, plot the data
 ggplot(imp_top10, aes(x=reorder(new_names, MeanDecreaseGini), y=MeanDecreaseGini, color=as.factor(var_categ))) + 
@@ -168,7 +166,7 @@ ggplot(imp_top10, aes(x=reorder(new_names, MeanDecreaseGini), y=MeanDecreaseGini
   theme_bw() +
   theme(legend.position="top") +
   ylab("Mean Decrease Gini") +
-  xlab("top 10 variables") +
+  xlab("top 10  most influential variables") +
   coord_flip()
 
 

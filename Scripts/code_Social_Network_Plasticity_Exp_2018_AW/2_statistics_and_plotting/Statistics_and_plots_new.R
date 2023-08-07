@@ -40,6 +40,8 @@ source(paste(source_path,"/analysis_parameters.R",sep=""))
 RUN_UNSCALED_NETS <- F
 
 fixed_aspect_theme <- theme(aspect.ratio = 2) #move to plotting_parmas.R
+fixed_aspect_theme_PRE <- theme(aspect.ratio = 4) #move to plotting_parmas.R
+
 
 # NOTES
 # plot_untransformed is always TRUE as the the variable fed to the plotting is transformed beforehand (see section: transform variable)
@@ -143,6 +145,7 @@ transf_variable_list <- c("power0.01"        )#,"none"                  ,"log"  
 
 ind_treated_beh <- individual_ONE_analysis(data_path,which_individuals="treated",showPlot=F) # "treated","queen","nurse","forager"
 
+#timeline
 ind_treated_beh_lineplot <- line_plot(data_path,which_individuals="treated",showPlot=F)
 
 
@@ -157,6 +160,7 @@ transf_variable_list <- c("log"                             ,"none"             
 
 ind_treated_grooming <- individual_ONE_analysis(data_path,which_individuals="treated",showPlot=F) # "treated","queen","nurse","forager"
 warning("adjust transformation for N grooming received")
+#timeline
 ind_treated_grooming_lineplot <- line_plot(data_path,which_individuals="treated",showPlot=F)
 
 ################    FOR UNTREATED INDIVIDUALS    ################    
@@ -175,6 +179,10 @@ transf_variable_list <- c("none")#,"power0.01")  ######"none", "sqrt" "log","pow
 ind_untreated_net_nurse <- individual_ONE_analysis(data_path,which_individuals="nurse",showPlot=F) ## "treated","queen","nurse","forager"
 ind_untreated_net_forag <- individual_ONE_analysis(data_path,which_individuals="forager",showPlot=F) ## "treated","queen","nurse","forager"
 
+# PRE period only (CONSTITUTIVE ORGANISATION)
+ind_untreated_net_nurse_PRE <- individual_ONE_analysis(data_path,which_individuals="nurse",pre_only=T,showPlot=F) ## "treated","queen","nurse","forager"
+ind_untreated_net_forag_PRE <- individual_ONE_analysis(data_path,which_individuals="forager",pre_only=T,showPlot=F) ## "treated","queen","nurse","forager"
+
 
 ### behavioural data
 root_path <- paste(disk_path,"/main_experiment",sep="")
@@ -187,18 +195,27 @@ transf_variable_list <- c("Box_Cox"        , "Box_Cox"                    , "Box
 ind_untreated_beh_nurse <- individual_ONE_analysis(data_path,which_individuals="nurse",showPlot=F) ## "treated","queen","nurse","forager"
 ind_untreated_beh_forag <- individual_ONE_analysis(data_path,which_individuals="forager",showPlot=F) ## "treated","queen","nurse","forager"
 
+# PRE period only (CONSTITUTIVE ORGANISATION)
+ind_untreated_beh_nurse_PRE <- individual_ONE_analysis(data_path,which_individuals="nurse",pre_only=T,showPlot=F) ## "treated","queen","nurse","forager"
+ind_untreated_beh_forag_PRE <- individual_ONE_analysis(data_path,which_individuals="forager",pre_only=T,showPlot=F) ## "treated","queen","nurse","forager"
+
+
 #### GROOMING INTERACTIONS ####
 root_path <- paste(disk_path,"/main_experiment_grooming",sep="")
 data_path=paste(root_path,"/processed_data/individual_behaviour/pre_vs_post_treatment",sep="")
 pattern="individual_behavioural_data"
 variable_list <-        c("duration_grooming_given_to_treated_min")
 names(variable_list) <- c("duration grooming given to treated (min)")
-transf_variable_list <- c("log"        )   ######"none", "sqrt" "log","power2"
+transf_variable_list <- c("Box_Cox"        )   ######"none", "sqrt" "log","power2"
 
 ind_untreated_grooming_nurse <- individual_ONE_analysis(data_path,which_individuals="nurse",showPlot=F) ## "treated","queen","nurse","forager"
 ind_untreated_grooming_forag <- individual_ONE_analysis(data_path,which_individuals="forager",showPlot=F) ## "treated","queen","nurse","forager"
 
+# PRE period only (CONSTITUTIVE ORGANISATION)
+ind_untreated_grooming_nurse_PRE <- individual_ONE_analysis(data_path,which_individuals="nurse",pre_only=T,showPlot=F) ## "treated","queen","nurse","forager"
+ind_untreated_grooming_forag_PRE <- individual_ONE_analysis(data_path,which_individuals="forager",pre_only=T,showPlot=F) ## "treated","queen","nurse","forager"
 
+#timeline
 ind_untreated_grooming_lineplot_nurse <- line_plot(data_path,which_individuals="nurse",showPlot=T)
 ind_untreated_grooming_lineplot_forag <- line_plot(data_path,which_individuals="forager",showPlot=T)
 
@@ -361,8 +378,11 @@ GroomingVsTimeOutside <- ggplot(grand_mean_data_scaled, aes(x = time_hours, y = 
 
 
 ###################################################################################################################################
-### PLOT GRIDS ####################################################################################################################
+############### CH5: PRE-POST DIFFERENCES PLOTS ###################################################################################
 ###################################################################################################################################
+
+
+### PLOT GRIDS ####################################################################################################################
 
 #TEMP: new var added!
 ind_treated_grooming$barplot_delta_period_list$N_grooming_received
@@ -421,7 +441,7 @@ plot_list <- list(ind_untreated_beh_nurse$barplot_delta_period_list$duration_of_
 YLIM_extra <- 0.05
 plot_comps1 <- multi_plot_comps(plot_list,ylim_extra=YLIM_extra)
 allplots1 <- cowplot::align_plots(plot_list[[1]] + ylim(plot_comps1$y_limits)    + fixed_aspect_theme  + remove_x_labs + guides(fill = "none") + labs(y = split_title(plot_list[[1]]$labels$y)),
-                                  plot_list[[2]] + ylim(plot_comps1$y_limits)   + fixed_aspect_theme  + remove_x_labs + guides(fill = "none") + remove_y_labs,
+                                  plot_list[[2]] + ylim(plot_comps1$y_limits)    + fixed_aspect_theme  + remove_x_labs + guides(fill = "none") + remove_y_labs,
                                   align="h")
 duration_of_contact_with_treated <- cowplot::plot_grid(allplots1[[1]], allplots1[[2]],
                    ncol=2, rel_widths = c(0.28,0.24))
@@ -860,5 +880,154 @@ plot_distribution(experiments="main_experiment",desired_treatments=c("pathogen")
 # # par(xpd=F)
 # # ####Fifth, Close figure 3 #######
 # # #dev.off()
+
+
+
+
+
+
+
+
+
+
+#####################################################################################
+##### CH4: 
+#####################################################################################
+
+## start with individual level measure as they don't scale.
+## large vs small in pre (2 treatments) - sum exposure treatments
+## subjects: nurses and foragers (individually)
+
+## this has no post-hocs to be performed 
+
+# Constitutive organisation compared to random (Treatment x Obs-Ran):
+# - intra_caste_over_inter_caste_WW_contact_duration,  QNurse_over_QForager_contact_duration 
+# 
+# Proxy of DOL (Treatment):
+# - task_assortativity, clustering, degree_mean, degree_maximum, density, diameter, efficiency, modularity (how to normalise given that it is only pre?) 
+# 
+# Individual behaviour 
+# - Prop. Time outside (foragers)
+# - Cross-worker variation in prop. Time outside 
+# 
+# Simulations outcomes (Treatment, Obs-Ran in Big, Obs-Ran in Small):
+# - Big vs Small, Random vs observed in big, Random vs observed in small
+# - Actual treated workers as seeds, Do results hold when using foragers as seeds?
+
+
+
+###################################################################################################################################
+############### CH4: PRE DIFFERENCES PLOTS ########################################################################################
+###################################################################################################################################
+
+
+### PLOT GRIDS ####################################################################################################################
+
+
+### ind_net_properties ### 
+## degree
+plot_list <- list(ind_untreated_net_nurse_PRE$barplot_delta_period_list$degree,
+                  ind_untreated_net_forag_PRE$barplot_delta_period_list$degree)
+
+YLIM_extra <- 20
+plot_comps1 <- multi_plot_comps(plot_list,ylim_extra=YLIM_extra)
+plot_comps1$y_limits <- c(0,plot_comps1$y_limits[2])
+allplots1 <- cowplot::align_plots(plot_list[[1]] + ylim(plot_comps1$y_limits)   + fixed_aspect_theme_PRE  +  ggtitle("nurses") + guides(fill = "none"),
+                                  plot_list[[2]] + ylim(plot_comps1$y_limits)   + fixed_aspect_theme_PRE  +  ggtitle("foragers") + guides(fill = "none") + remove_y_labs, #ylim(plot_comps1$y_limits) +
+                                  align="h")
+ind_net_degree_PRE <- cowplot::plot_grid(allplots1[[1]], allplots1[[2]],
+                                                       ncol=2, rel_widths = c(0.28,0.24))
+
+
+### ind_beh_measures### 2 panels
+# create text boxes for titles (to ensure equal size of all plotted objects)
+titlePlots <- cowplot::align_plots(ggplot() + theme_void() + annotate("text", x = 0.5, y = 0.5, label = "nurses", family = "Liberation Serif",  size = 4, hjust = 0.5), #fontface = "bold",
+                                   ggplot() + theme_void() + annotate("text", x = 0.5, y = 0.5, label = "foragers",family = "Liberation Serif", size = 4, hjust = 0.5), #fontface = "bold",
+                                   align="h")
+titlePlots_untreated <- cowplot::plot_grid(titlePlots[[1]], titlePlots[[2]], ncol=2, rel_widths = c(0.28,0.24))
+
+
+## duration_of_contact_with_treated_min
+plot_list <- list(ind_untreated_beh_nurse_PRE$barplot_delta_period_list$duration_of_contact_with_treated_min,
+                  ind_untreated_beh_forag_PRE$barplot_delta_period_list$duration_of_contact_with_treated_min)
+YLIM_extra <- 0.5
+plot_comps1 <- multi_plot_comps(plot_list,ylim_extra=YLIM_extra)
+#plot_comps1$y_limits <- c(0,plot_comps1$y_limits[2])
+allplots1 <- cowplot::align_plots(plot_list[[1]] + ylim(plot_comps1$y_limits)    + fixed_aspect_theme_PRE  + remove_x_labs + guides(fill = "none") + labs(y = split_title(plot_list[[1]]$labels$y)),
+                                  plot_list[[2]] + ylim(plot_comps1$y_limits)    + fixed_aspect_theme_PRE  + remove_x_labs + guides(fill = "none") + remove_y_labs,
+                                  align="h")
+duration_of_contact_with_treated_PRE <- cowplot::plot_grid(allplots1[[1]], allplots1[[2]],
+                                                       ncol=2, rel_widths = c(0.28,0.24))
+## inter_caste_contact_duration
+plot_list <- list(ind_untreated_beh_nurse_PRE$barplot_delta_period_list$inter_caste_contact_duration,
+                  ind_untreated_beh_forag_PRE$barplot_delta_period_list$inter_caste_contact_duration)
+YLIM_extra <- 0.8
+plot_comps1 <- multi_plot_comps(plot_list,ylim_extra=YLIM_extra)
+plot_comps1$y_limits <- c(0,plot_comps1$y_limits[2])
+allplots1 <- cowplot::align_plots(plot_list[[1]] + ylim(plot_comps1$y_limits)  + fixed_aspect_theme_PRE  + remove_x_labs + guides(fill = "none") + labs(y = split_title(plot_list[[1]]$labels$y)),# + ylim(plot_comps1$y_limits) 
+                                  plot_list[[2]] + ylim(plot_comps1$y_limits)  + fixed_aspect_theme_PRE  + remove_x_labs + guides(fill = "none") + remove_y_labs,# + ylim(plot_comps1$y_limits) 
+                                  align="h")
+inter_caste_contact_duration_PRE <- cowplot::plot_grid(allplots1[[1]], allplots1[[2]],
+                                                   ncol=2, rel_widths = c(0.28,0.24))
+
+## duration_grooming_given_to_treated_min
+plot_list <- list(ind_untreated_grooming_nurse_PRE$barplot_delta_period_list$duration_grooming_given_to_treated_min,
+                  ind_untreated_grooming_forag_PRE$barplot_delta_period_list$duration_grooming_given_to_treated_min)
+#YLIM_extra <- 0
+plot_comps1 <- multi_plot_comps(plot_list,ylim_extra=YLIM_extra)
+allplots1 <- cowplot::align_plots(plot_list[[1]] + ylim(plot_comps1$y_limits) + fixed_aspect_theme_PRE  + guides(fill = "none") + labs(y = split_title(plot_list[[1]]$labels$y)), # ylim(plot_comps1$y_limits)
+                                  plot_list[[2]] + ylim(plot_comps1$y_limits) + fixed_aspect_theme_PRE  + guides(fill = "none") + remove_y_labs, # ylim(plot_comps1$y_limits)
+                                  align="h")
+duration_grooming_given_to_treated_min_PRE <- cowplot::plot_grid(allplots1[[1]], allplots1[[2]],
+                                                             ncol=2, rel_widths = c(0.28,0.24))
+
+
+
+### COMBINE ind_beh_measures 2 panels together
+ind_beh_measures_PRE <- cowplot::plot_grid(
+  titlePlots_untreated,
+  duration_of_contact_with_treated_PRE,
+  inter_caste_contact_duration_PRE,
+  duration_grooming_given_to_treated_min_PRE,
+  plot_comps1$leg, ncol=1, rel_heights = c(0.08,0.30,0.30,0.30, 0.05))
+
+warning("- FIX OFFSET OF VARS BY FIXING PLOT PROPORTIONS  rel_widths = c(0.28,0.24)
+        \n- CHECK THAT DUR GROOMING GIVEN IS CORRECT, IT LOOKS SUPER HIGH")
+
+
+
+## prop_time_outside
+plot_list <- list(ind_untreated_beh_nurse_PRE$barplot_delta_period_list$prop_time_outside,
+                  ind_untreated_beh_forag_PRE$barplot_delta_period_list$prop_time_outside)
+
+YLIM_extra <- 10
+plot_comps1 <- multi_plot_comps(plot_list,ylim_extra=YLIM_extra)
+#plot_comps1$y_limits <- c(0,plot_comps1$y_limits[2])
+allplots1 <- cowplot::align_plots(plot_list[[1]] + ylim(plot_comps1$y_limits)   + fixed_aspect_theme_PRE  +  ggtitle("nurses") + guides(fill = "none"),
+                                  plot_list[[2]] + ylim(plot_comps1$y_limits)   + fixed_aspect_theme_PRE  +  ggtitle("foragers") + guides(fill = "none") + remove_y_labs, #ylim(plot_comps1$y_limits) +
+                                  align="h")
+prop_time_outside_PRE <- cowplot::plot_grid(allplots1[[1]], allplots1[[2]],
+                                         ncol=2, rel_widths = c(0.28,0.24))
+
+
+warning("- SIG STARS LOST BY NURSES AS TOO HIGH UP")
+
+
+#done
+ind_net_degree_PRE
+
+ind_beh_measures_PRE
+
+prop_time_outside_PRE
+
+
+
+
+## to add
+ind_untreated_grooming_lineplot_nurse
+ind_untreated_grooming_lineplot_forag
+
+
+
 
 
