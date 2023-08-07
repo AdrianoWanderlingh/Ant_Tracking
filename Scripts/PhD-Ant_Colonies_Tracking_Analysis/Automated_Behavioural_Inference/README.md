@@ -1,6 +1,8 @@
 # Ant Behaviours Classifier
 ### Automated_Behavioural_Inference
 
+⚠️⚠️⚠️ Across this guide and all the code there is a terminology error: the words "test" and "validation" are swapped everywhere. Here, "test" actually refers to the validation step, where the model parameters and configurations are checked. Once the final classifier is selected, it gets the final test step, which here is performed on STEP2b, under the dataset name "non_training".
+
 The Automated_Behavioural_Inference project is a comprehensive suite of scripts and functions for analyzing and inferring behaviours from tracking data of ant colonies. It provides functionalities for extracting movement variables, detecting and filtering interactions, predicting grooming behaviour, and evaluating the performance of machine learning classifiers. The project aims to automate the analysis process and provide insights into ant behaviours, improving efficiency and accuracy in studying ant colonies.
 
 <p align="center">
