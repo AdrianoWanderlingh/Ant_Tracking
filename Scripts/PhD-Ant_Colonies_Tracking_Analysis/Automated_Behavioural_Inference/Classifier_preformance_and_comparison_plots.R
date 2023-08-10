@@ -130,8 +130,10 @@ ggplot(data = oobData2, aes(x = trees, y = error, color = variable)) +
   geom_line() +
   #scale_x_discrete(name = "Class", labels = c("OOB", "Non-grooming", "Grooming"))
   scale_color_manual(name="class",
-                     labels=c("OOB", "Non-grooming", "Grooming"),
-                     values=c("black","brown1","forestgreen"))
+                     labels=c("Overall error", "Non-allogrooming", "Allogrooming"),
+                     values=c("black","brown1","forestgreen"))+
+  labs(x="N of trees", y= "OOB error")+
+  scale_x_continuous( expand = c(0, 0)) 
 
 ### Variables importance plot
 #measure of the Mean decrease Gini
