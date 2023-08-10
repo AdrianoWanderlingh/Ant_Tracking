@@ -13,6 +13,11 @@ to_keep_ori <- to_keep
 # library(outliers)
 #################################
 options(digits=16) ; options(digits.secs=6) ; options("scipen" = 10)
+# LS + NS mod on the 1Aug23: instead of using the duration only, the N of interactions can be used
+# it is relevant in measures as "N of grooming events"
+# in AW case, run it with "number" only for grooming interactions
+edge_weights <- "duration" ### "number" # LS: run once for duration of interactions and once for number of interactions
+
 
 ###remove output file
 if (file.exists(paste(data_path,"/processed_data/individual_behaviour/post_treatment/interactions_with_treated.txt",sep=""))){
@@ -33,7 +38,13 @@ if (!grepl("survival",data_path)){
 }
 
 queen_community_summary <- NULL
-to_keep <- c(ls(),"to_keep","input_folder","network_files","options","option","summary_collective","summary_individual","outputfolder","network_file","queenid")
+to_keep <- c(ls(),"to_keep","input_folder","network_files","options","option","summary_collective","summary_individual","outputfolder","network_file","queenid","edge_weights")
+
+#if grooming, perform analysis only on the observed cases
+if (grepl("grooming",input_path)) {
+  input_folders <- grep("observed", input_folderz, value=TRUE)
+}
+
 for (input_folder in input_folders){
   print(input_folder)
   setwd(input_path)
@@ -50,7 +61,8 @@ for (input_folder in input_folders){
   }
   for (option in options){
     print(option)
-    outputfolder <- paste(data_path,"/processed_data/network_properties",sep="")
+    #outputfolder <- paste(data_path,"/processed_data/network_properties",sep="")
+    outputfolder <- paste(data_path,"/processed_data/network_properties_edge_weights_",edge_weights,sep="")
     
     summary_collective <- NULL
     summary_individual <- NULL
@@ -187,7 +199,13 @@ for (input_folder in input_folders){
       if (!grepl("survival",data_path)){
         net <- graph.data.frame(interactions[c("Tag1","Tag2")],directed=F,vertices=actors)
         ### add edge weights
-        E(net)$weight <- interactions[,"duration_min"]
+        if (edge_weights=="number"){
+          E(net)$weight <- interactions[,"number"]
+        }else if (edge_weights=="duration"){
+          E(net)$weight <- interactions[,"duration_min"]        
+        }
+        
+        
         ###simplify graph (merge all edges involving the same pair of ants into a single one whose weight = sum of these weights)
         net <- simplify(net,remove.multiple=TRUE,remove.loop=TRUE,edge.attr.comb="sum")
         
@@ -339,9 +357,10 @@ for (input_folder in input_folders){
         if (!grepl("age",data_path)&option=="all_workers"){
           pre_treatment_behav_file <- paste(data_path,"/processed_data/individual_behaviour/pre_treatment/network_position_vs_time_outside.dat",sep="")
           pre_treatment_behav      <- read.table(pre_treatment_behav_file,header=T,stringsAsFactors = F)
-          pre_treatment_behav      <- merge(pre_treatment_behav,summary_individual[which(summary_individual$period=="pre"),c("colony","tag","time_hours","degree","aggregated_distance_to_queen")],all.x=T,all.y=T)
+          names(summary_individual)[which(names(summary_individual)=="aggregated_distance_to_queen")] <- paste("aggregated_distance_to_queen_edge_weights_",edge_weights,sep="")
+          pre_treatment_behav      <- merge(pre_treatment_behav,summary_individual[which(summary_individual$period=="pre"),c("colony","tag","time_hours","degree",paste("aggregated_distance_to_queen_edge_weights_",edge_weights,sep=""))],all.x=T,all.y=T) 
           pre_treatment_behav      <- pre_treatment_behav[order(pre_treatment_behav$colony,pre_treatment_behav$tag,pre_treatment_behav$time_hours),]
-          write.table(pre_treatment_behav, file=pre_treatment_behav_file,col.names=T,row.names=F,quote=F,append=F)
+          write.table(pre_treatment_behav, file=pre_treatment_behav_file,col.names=T,row.names=F,quote=F,append=F) # LS: this file adds columns to "network_position_vs_time_outside.dat" which already has the information of period_detail in it
         }
       }else{
         outputfolder3 <- paste(outputfolder,"random_vs_observed",sep="/")
