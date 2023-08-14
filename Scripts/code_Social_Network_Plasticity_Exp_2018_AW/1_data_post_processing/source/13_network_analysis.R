@@ -42,7 +42,7 @@ to_keep <- c(ls(),"to_keep","input_folder","network_files","options","option","s
 
 #if grooming, perform analysis only on the observed cases
 if (grepl("grooming",input_path)) {
-  input_folders <- grep("observed", input_folderz, value=TRUE)
+  input_folders <- grep("observed", input_folders, value=TRUE)
 }
 
 for (input_folder in input_folders){
