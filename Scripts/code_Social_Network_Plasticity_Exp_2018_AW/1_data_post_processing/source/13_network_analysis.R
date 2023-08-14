@@ -137,6 +137,7 @@ for (input_folder in input_folders){
       
       #### add a column contaning interaction duration in min
       interactions["duration_min"] <- (interactions$Stoptime - interactions$Starttime + (1/FRAME_RATE)) /60 ###duration in minutes (one frame = 0.125 second) #AW
+      interactions$N               <- 1 
       
       #### add a column containing the status of tag 1 and the status of tag2
       interactions[c("status_Tag1","status_Tag2")] <- "untreated"
@@ -148,26 +149,27 @@ for (input_folder in input_folders){
         
         ### AW: To overcome the "Error in aggregate.data.frame(lhs, mf[-1L], FUN = FUN, ...) : no rows to aggregate", create empty df if no rows to aggregate on
         aggregated1 <- tryCatch(
-          { aggregate(na.rm=T,na.action="na.pass",duration_min~Tag1+status_Tag2,FUN=sum,data=interactions[which(interactions$status_Tag2=="treated"),]) },
-          error = function(e) {data.frame(tag= integer(),partner_status=character(), duration_min=numeric())} # Return an empty data frame in case of an error
+          { aggregate(na.rm=T,na.action="na.pass",cbind(duration_min,N)~Tag1+status_Tag2,FUN=sum,data=interactions[which(interactions$status_Tag2=="treated"),]) },
+          error = function(e) {data.frame(tag= integer(),partner_status=character(), duration_min=numeric(), number_contacts=numeric())} # Return an empty data frame in case of an error
         )
         #aggregated1                 <- aggregate(na.rm=T,na.action="na.pass",duration_min~Tag1+status_Tag2,FUN=sum,data=interactions[which(interactions$status_Tag2=="treated"),])
-        names(aggregated1)          <- c("tag","partner_status","duration_min")
+        names(aggregated1)          <- c("tag","partner_status","duration_min","number_contacts")
         aggregated2 <- tryCatch(
-          { aggregate(na.rm=T,na.action="na.pass",duration_min~Tag2+status_Tag1,FUN=sum,data=interactions[which(interactions$status_Tag1=="treated"),]) },
-          error = function(e) {data.frame(tag= integer(),partner_status=character(), duration_min=numeric())} # Return an empty data frame in case of an error
+          { aggregate(na.rm=T,na.action="na.pass",cbind(duration_min,N)~Tag2+status_Tag1,FUN=sum,data=interactions[which(interactions$status_Tag1=="treated"),]) },
+          error = function(e) {data.frame(tag= integer(),partner_status=character(), duration_min=numeric(), number_contacts=numeric())} # Return an empty data frame in case of an error
         )
         #aggregated2                 <- aggregate(na.rm=T,na.action="na.pass",duration_min~Tag2+status_Tag1,FUN=sum,data=interactions[which(interactions$status_Tag1=="treated"),])
-        names(aggregated2)          <- c("tag","partner_status","duration_min")
+        names(aggregated2)          <- c("tag","partner_status","duration_min","number_contacts")
         aggregated                  <- rbind(aggregated1,aggregated2)
         aggregated <- tryCatch(
-          { aggregate(na.rm=T,na.action="na.pass",duration_min~tag+partner_status,FUN=sum,data=aggregated) },
-          error = function(e) {data.frame(tag= integer(),partner_status=character(), duration_min=numeric())} # Return an empty data frame in case of an error
+          { aggregate(na.rm=T,na.action="na.pass",cbind(duration_min,number_contacts)~tag+partner_status,FUN=sum,data=aggregated) },
+          error = function(e) {data.frame(tag= integer(),partner_status=character(), duration_min=numeric(),number_contacts=numeric())} # Return an empty data frame in case of an error
         )
         #aggregated                  <- aggregate(na.rm=T,na.action="na.pass",duration_min~tag+partner_status,FUN=sum,data=aggregated)
-        interactions_with_treated   <- merge(data.frame(tag=tag[which(tag$tag%in%alive),"tag"],stringsAsFactors = F),aggregated[c("tag","duration_min")],all.x=T)
+        interactions_with_treated   <- merge(data.frame(tag=tag[which(tag$tag%in%alive),"tag"],stringsAsFactors = F),aggregated[c("tag","duration_min","number_contacts")],all.x=T)
         interactions_with_treated[is.na(interactions_with_treated$duration_min),"duration_min"] <- 0
-        names(interactions_with_treated) <- c("tag","duration_of_contact_with_treated_min")
+        interactions_with_treated[is.na(interactions_with_treated$number_contacts),"number_contacts"] <- 0
+        names(interactions_with_treated) <- c("tag","duration_of_contact_with_treated_min","number_of_contact_with_treated")
         interactions_with_treated["colony"] <- colony
         interactions_with_treated["time_hours"] <- time_hours
         ###write results
@@ -175,8 +177,10 @@ for (input_folder in input_folders){
           behav <- read.table(paste(data_path,"/processed_data/individual_behaviour/pre_vs_post_treatment/individual_behavioural_data.txt",sep=""),header=T,stringsAsFactors = F)
           if (!"duration_of_contact_with_treated_min"%in%names(behav)){
             behav[c("duration_of_contact_with_treated_min")] <- NA
+            behav[c("number_of_contact_with_treated")] <- NA
           }
           behav[match(as.character(interaction(interactions_with_treated$colony,interactions_with_treated$tag,interactions_with_treated$time_hours)),as.character(interaction(behav$colony,behav$tag,behav$time_hours))),c("duration_of_contact_with_treated_min")]  <- interactions_with_treated$duration_of_contact_with_treated_min
+          behav[match(as.character(interaction(interactions_with_treated$colony,interactions_with_treated$tag,interactions_with_treated$time_hours)),as.character(interaction(behav$colony,behav$tag,behav$time_hours))),c("number_of_contact_with_treated")]        <- interactions_with_treated$number_of_contact_with_treated
           options(digits=3)
           write.table(behav,file=paste(data_path,"/processed_data/individual_behaviour/pre_vs_post_treatment/individual_behavioural_data.txt",sep=""), row.names=F, col.names=T,append=F,quote=F)
           options(digits=16)
@@ -185,7 +189,7 @@ for (input_folder in input_folders){
         if (period=="post"){
           outputfoldy <- paste(data_path,"/processed_data/individual_behaviour/post_treatment",sep="")
           if(!file.exists(outputfoldy)){dir.create(outputfoldy,recursive=T)}
-          int_with_treated <- data.frame(colony_size=colony_size,treatment=treatment,period=period,time_of_day=time_of_day,
+          int_with_treated <- data.frame(colony_size=colony_size,treatment=treatment,period=period, period_detail=period_detail, period_circadian=period_circadian, time_of_day=time_of_day,# LS: add period_detail & period_circadian here to keep the same columns for pre and post
                                          interactions_with_treated,stringsAsFactors = F)
           if (!file.exists(paste(data_path,"/processed_data/individual_behaviour/post_treatment/interactions_with_treated.txt",sep=""))){
             write.table(int_with_treated,file=paste(outputfoldy,"/interactions_with_treated.txt",sep=""),col.names=T,row.names=F,quote=F,append=F)

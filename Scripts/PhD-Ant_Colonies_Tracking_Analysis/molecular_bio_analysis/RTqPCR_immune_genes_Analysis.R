@@ -106,7 +106,7 @@ REPORT <- TRUE
 Report_stats <- list()
 
 ### TURN Defensine simulated trimming for pipeline testing on/off
-SIMULATION_TRIM <- FALSE
+SIMULATION_TRIM <- TRUE
 
 # Initialize a data frame to store results
 PipelineTesting <- data.frame(gene = character(), P.Status = numeric(), P.Treatment = numeric(),Estim.Status = numeric(),
@@ -557,6 +557,30 @@ for (IMPUTATION in c("QRILC","HM")) {
     }
     # it seems that genes with lower average expression are far more likely to be non-detects.
     # From this we can conclude that the non-detects do not occur completely at random.
+    
+    #----------------------------------
+    
+    #make tab for M&M section
+    mean_data_group <- genes_data %>%
+      group_by(gene,Ant_status) %>%
+      summarise(
+        prop.NA = (ifelse(all(is.na(Ct)), NA, sum(is.na(Ct)/length(Ct))))*100,
+        Num_NA = ifelse(all(is.na(Ct)), NA, sum(is.na(Ct))),
+        mean_Ct =  ifelse(all(is.na(Ct)), NA, mean(Ct, na.rm = TRUE)))
+    
+    mean_data_group <- data.frame(lapply(mean_data_group, function(x) if(is.numeric(x)) round(x, 1) else x)) 
+    
+    library(flextable)
+    library(officer)
+    # Create a flextable object 
+    ft <- flextable(mean_data_group) 
+    # Create a Word document 
+    doc <- read_docx()
+    # Insert the flextable into the document 
+    doc <- body_add_flextable(doc, value = ft) 
+    # Save the document 
+    print(doc, target = paste0("prop_missing_data_byGeneGroup",Sys.Date(),".docx")) 
+    #---------------------------------
     
     #First, the PCR reactions are run for a fixed number of cycles (typically 40), implying that the observed data are censored at the maximum cycle number. This is a type of non-random missingness in which the missing data mechanism depends on the unobserved value. Knowledge of the technology allows us to conclude that the data are at least subject to fixed censoring; however, as we will later show, the qPCR censoring mechanism may actually be a probabilistic function of the unobserved data.
     #https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4133581/
@@ -2360,21 +2384,29 @@ iterations_data <- rbind(iterations_data,imputed_iterations_data)
 # 
 # sor_results
 
+## RMSD is calculated on the imputed data only, not on all data (difference will be flattened if all data is considered as most of it won't change in any case)
+#iterations_data <- iterations_data[which(iterations_data$LogFun_Category=="trimmed"),]
+#NOTE: IF CALCULATED ONLY ON THE IMPUTED DATA, THE MEASURE CAN'T BE NORMALISED BY VARIANCE AS THE n OF MISSING CASES WILL DIFFER AND THE VARIANCE WILL LOWER WITH HIGHER AND HIGHER N OF MISSING CASES
+
 
 # Calculate the errors for each imputation method
-error_summary <- iterations_data %>%
+error_summary <- iterations_data %>% 
   filter(IMPUTATION != "none") %>%
   group_by(IMPUTATION, i) %>%
   summarise(
-    squared_error = (rel_conc - rel_conc_imputed)^2,
-    #absolute_error = abs(rel_conc - rel_conc_imputed),
+    squared_error = (rel_conc - rel_conc_imputed)^2, #skip NA values
+    rel_conc_var = var(rel_conc, na.rm = TRUE),
+    #absolute_error = abs(rel_conc - rel_conc_imputed),  
     k = unique(k),
     x0= unique(x0),
     propNA= unique(propNA)
   ) %>%
   group_by(IMPUTATION,i) %>%
   summarise(
-    RMSE = sqrt(mean(squared_error)),
+    RME = mean(squared_error, na.rm = TRUE), # calc mean
+    norm_RME = RME / first(rel_conc_var), # div by var
+    norm_RMSE = sqrt(norm_RME), # sqrt everything
+    #rank_norm_RMSE = rank(norm_RMSE),
     #MAE = mean(absolute_error),
     k = unique(k),
     x0= unique(x0),
@@ -2386,7 +2418,7 @@ error_summary$propNA <- factor(round(error_summary$propNA,1))
 
 # Combine MSE and MAE into a single long-format data frame
 error_summary_long <- error_summary %>%
-  pivot_longer(cols = c(RMSE), names_to = "error_type", values_to = "error_value")
+  pivot_longer(cols = c(norm_RMSE), names_to = "error_type", values_to = "error_value")
 
 # Calculate the mean and standard deviation of error_value (per all 3 k values) by propNA for each IMPUTATION
 error_summary_stats <- error_summary_long %>%
@@ -2396,6 +2428,8 @@ error_summary_stats <- error_summary_long %>%
     sd_error = sd(error_value),
     .groups = 'drop'
   )
+
+error_summary_stats$rank <- rank(error_summary_stats$mean_error)
 
 # Define a color palette
 color_palette <- RColorBrewer::brewer.pal(3, "Set1")
@@ -2418,16 +2452,19 @@ error_summary_stats$propNA <- as.numeric(as.character(error_summary_stats$propNA
 #transform prop in percent
 error_summary_stats$propNA <- error_summary_stats$propNA*100
 missing_data$propNA        <- missing_data$propNA*100
-# Create a plot with geom_line and geom_ribbon using the new color palette
-imputation_comparison <- ggplot(error_summary_stats, aes(x = propNA, y = mean_error, color = IMPUTATION, group = IMPUTATION)) +
+# RMSE SUM OF RANKS (see https://www.nature.com/articles/s41598-017-19120-0)
+imputation_comparison_ranks <- ggplot(error_summary_stats, aes(x = propNA, y = rank, color = IMPUTATION, group = IMPUTATION)) +
   geom_vline(xintercept = missing_data$propNA, colour="grey60",linetype="dashed") +
   geom_text(data = missing_data, aes(x = propNA, y = Inf, label = gene), hjust = -0.5, vjust = 1.4, size = 4,colour="grey30") +
   geom_line() +
-  geom_ribbon(aes(ymin = mean_error - sd_error, ymax = mean_error + sd_error, fill = IMPUTATION), alpha = 0.2) +
+  #geom_ribbon(aes(ymin = mean_error - sd_error, ymax = mean_error + sd_error, fill = IMPUTATION), alpha = 0.2) +
   labs(#title = "Comparison of QRILC and HM Imputation Methods",
        x = "% of missing data",
-       y = "RMSD",
-       shape = "steepness (k)") +
+       y = "RMSE Sum of Ranks",
+       shape = "steepness (k)",
+       color="Imputation",
+       fill="Imputation") +
+  #guides(group=guide_legend(title="Imputation"))+
   STYLE_CONT +
   #theme_minimal() +
   #facet_wrap(~error_type, ncol = 2) +
@@ -2435,7 +2472,25 @@ imputation_comparison <- ggplot(error_summary_stats, aes(x = propNA, y = mean_er
   scale_fill_manual(values = color_palette)+    # Apply the new color palette for ribbon
   scale_x_continuous(limits = c(40, 80), expand = c(0, 0))
 
-
+#RMSE
+imputation_comparison_ranks <- ggplot(error_summary_stats, aes(x = propNA, y = mean_error, color = IMPUTATION, group = IMPUTATION)) +
+  geom_vline(xintercept = missing_data$propNA, colour="grey60",linetype="dashed") +
+  geom_text(data = missing_data, aes(x = propNA, y = Inf, label = gene), hjust = -0.5, vjust = 1.4, size = 4,colour="grey30") +
+  geom_line() +
+  geom_ribbon(aes(ymin = mean_error - sd_error, ymax = mean_error + sd_error, fill = IMPUTATION), alpha = 0.2) +
+  labs(#title = "Comparison of QRILC and HM Imputation Methods",
+    x = "% of missing data",
+    y = "RMSE",
+    shape = "steepness (k)",
+    color="Imputation",
+    fill="Imputation") +
+  #guides(group=guide_legend(title="Imputation"))+
+  STYLE_CONT +
+  #theme_minimal() +
+  #facet_wrap(~error_type, ncol = 2) +
+  scale_color_manual(values = color_palette) + # Apply the new color palette for lines
+  scale_fill_manual(values = color_palette)+    # Apply the new color palette for ribbon
+  scale_x_continuous(limits = c(40, 80), expand = c(0, 0))
 
 SavePrint_plot(plot_obj = imputation_comparison,
                plot_name= "imputation_comparison",
