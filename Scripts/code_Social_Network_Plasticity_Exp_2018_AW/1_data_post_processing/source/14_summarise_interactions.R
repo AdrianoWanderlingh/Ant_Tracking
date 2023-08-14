@@ -27,6 +27,14 @@ if (!file.exists(outputfolder1)){dir.create(outputfolder1,recursive = T)}
 
 summary_dol <- NULL
 to_keep <- c(ls(),"to_keep","input_folder","network_file","network_files","summary_interactions","summary_interactions_grooming","summary_pairs","all_interactions")
+
+
+#if grooming, perform analysis only on the observed cases
+if (grepl("grooming",input_path)) {
+  input_folders <- grep("observed", input_folders, value=TRUE)
+}
+
+
 for (input_folder in input_folders){
   print(input_folder)
   setwd(input_path)
