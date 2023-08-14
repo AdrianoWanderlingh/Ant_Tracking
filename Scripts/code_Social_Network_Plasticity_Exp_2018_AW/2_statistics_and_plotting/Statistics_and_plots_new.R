@@ -7,7 +7,7 @@
 rm(list=ls())
 
 USER <- "2A13_Office" # Nath_office 
-DISK <-  "DISK4" #"Seagate Portable Drive"
+DISK <-  "Seagate Portable Drive" #"DISK4"
 
 if (USER == "2A13_Office") {
   usr <- "cf19810"
@@ -79,7 +79,7 @@ if(RUN_UNSCALED_NETS){
 
 ### network properties
 root_path <- paste(disk_path,"/main_experiment/processed_data",sep="") # root_path <- paste(disk_path,"/main_experiment_grooming/processed_data",sep="")
-data_path <- paste(root_path,"/network_properties/pre_vs_post_treatment/all_workers",sep="")
+data_path <- paste(root_path,"/network_properties_edge_weights_duration/pre_vs_post_treatment/all_workers",sep="")
 pattern="colony_data.txt"
 variable_list <- c("modularity","clustering","task_assortativity","efficiency","degree_mean","degree_maximum","density","diameter")
 names(variable_list) <- c("modularity","clustering","task assortativity","efficiency","mean degree","degree maximum","density","diameter")
@@ -103,7 +103,7 @@ coll_no_rescal_net <- collective_analysis_no_rescal(data_path,showPlot=F)
 
 ### network properties
 root_path <- paste(disk_path,"/main_experiment/processed_data",sep="") # root_path <- paste(disk_path,"/main_experiment_grooming/processed_data",sep="")
-data_path <- paste(root_path,"/network_properties/pre_vs_post_treatment/all_workers",sep="")
+data_path <- paste(root_path,"/network_properties_edge_weights_duration/pre_vs_post_treatment/all_workers",sep="")
 pattern="colony_data.txt"
 variable_list <- c("modularity","clustering","task_assortativity","efficiency","degree_mean","density") #,"degree_maximum","diameter"
 names(variable_list) <- c("modularity","clustering","task assortativity","efficiency","mean degree","density") # ,"degree maximum","diameter"
@@ -125,7 +125,7 @@ coll_rescal_net <- collective_analysis_rescal(data_path,showPlot=F)
 
 ### network properties
 root_path <- paste(disk_path,"/main_experiment",sep="") # root_path <- paste(disk_path,"/main_experiment_grooming",sep="")
-data_path=paste(root_path,"/processed_data/network_properties/pre_vs_post_treatment/all_workers",sep="")
+data_path=paste(root_path,"/processed_data/network_properties_edge_weights_duration/pre_vs_post_treatment/all_workers",sep="")
 pattern="individual_data"
 variable_list <-        c("degree")#,"aggregated_distance_to_queen") 
 names(variable_list) <- c("degree")#,"aggregated distance to queen")
@@ -170,7 +170,7 @@ ind_treated_grooming_lineplot <- line_plot(data_path,which_individuals="treated"
 
 ### network properties
 root_path <- paste(disk_path,"/main_experiment",sep="") # root_path <- paste(disk_path,"/main_experiment_grooming",sep="")
-data_path=paste(root_path,"/processed_data/network_properties/pre_vs_post_treatment/all_workers",sep="")
+data_path=paste(root_path,"/processed_data/network_properties_edge_weights_duration/pre_vs_post_treatment/all_workers",sep="")
 pattern="individual_data"
 variable_list <-        c("degree")#, "mean_aggregated_distance_to_treated")
 names(variable_list) <- c("degree")#,"mean aggregated distance to treated")
@@ -229,7 +229,7 @@ warning("add it to the plot grid! it shows if treated are groomed by foragers or
 # 
 # ### network properties
 # root_path <- paste(disk_path,"/main_experiment",sep="") # root_path <- paste(disk_path,"/main_experiment_grooming",sep="")
-# data_path=paste(root_path,"/processed_data/network_properties/pre_vs_post_treatment/all_workers",sep="")
+# data_path=paste(root_path,"/processed_data/network_properties_edge_weights_duration/pre_vs_post_treatment/all_workers",sep="")
 # pattern="individual_data"
 # variable_list <-        c("degree")#, "mean_aggregated_distance_to_treated")
 # names(variable_list) <- c("degree")#,"mean aggregated distance to treated")

@@ -15,7 +15,7 @@ choose_data_path <- function() {
     data_path <- paste0("/media/cf19810/",DISK,"/Lasius-Bristol_pathogen_experiment/main_experiment")
     print("ALL INTERACTIONS")
   } else if (choice == "2") {
-    data_path <- "/media/cf19810/DISK4/Lasius-Bristol_pathogen_experiment/main_experiment_grooming"
+    data_path <- paste0("/media/cf19810/",DISK,"/Lasius-Bristol_pathogen_experiment/main_experiment_grooming")
     print("GROOMING INTERACTIONS")
   } else {
     stop("Invalid choice entered. Please choose either '1' or '2'.")
