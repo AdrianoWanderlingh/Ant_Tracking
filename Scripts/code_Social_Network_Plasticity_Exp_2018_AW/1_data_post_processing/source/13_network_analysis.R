@@ -189,7 +189,7 @@ for (input_folder in input_folders){
         if (period=="post"){
           outputfoldy <- paste(data_path,"/processed_data/individual_behaviour/post_treatment",sep="")
           if(!file.exists(outputfoldy)){dir.create(outputfoldy,recursive=T)}
-          int_with_treated <- data.frame(colony_size=colony_size,treatment=treatment,period=period, period_detail=period_detail, period_circadian=period_circadian, time_of_day=time_of_day,# LS: add period_detail & period_circadian here to keep the same columns for pre and post
+          int_with_treated <- data.frame(colony_size=colony_size,treatment=treatment,period=period, time_of_day=time_of_day,
                                          interactions_with_treated,stringsAsFactors = F)
           if (!file.exists(paste(data_path,"/processed_data/individual_behaviour/post_treatment/interactions_with_treated.txt",sep=""))){
             write.table(int_with_treated,file=paste(outputfoldy,"/interactions_with_treated.txt",sep=""),col.names=T,row.names=F,quote=F,append=F)
@@ -204,7 +204,7 @@ for (input_folder in input_folders){
         net <- graph.data.frame(interactions[c("Tag1","Tag2")],directed=F,vertices=actors)
         ### add edge weights
         if (edge_weights=="number"){
-          E(net)$weight <- interactions[,"number"]
+          E(net)$weight <- interactions[,"N"]
         }else if (edge_weights=="duration"){
           E(net)$weight <- interactions[,"duration_min"]        
         }
@@ -364,7 +364,7 @@ for (input_folder in input_folders){
           names(summary_individual)[which(names(summary_individual)=="aggregated_distance_to_queen")] <- paste("aggregated_distance_to_queen_edge_weights_",edge_weights,sep="")
           pre_treatment_behav      <- merge(pre_treatment_behav,summary_individual[which(summary_individual$period=="pre"),c("colony","tag","time_hours","degree",paste("aggregated_distance_to_queen_edge_weights_",edge_weights,sep=""))],all.x=T,all.y=T) 
           pre_treatment_behav      <- pre_treatment_behav[order(pre_treatment_behav$colony,pre_treatment_behav$tag,pre_treatment_behav$time_hours),]
-          write.table(pre_treatment_behav, file=pre_treatment_behav_file,col.names=T,row.names=F,quote=F,append=F) # LS: this file adds columns to "network_position_vs_time_outside.dat" which already has the information of period_detail in it
+          write.table(pre_treatment_behav, file=pre_treatment_behav_file,col.names=T,row.names=F,quote=F,append=F)
         }
       }else{
         outputfolder3 <- paste(outputfolder,"random_vs_observed",sep="/")
@@ -432,7 +432,7 @@ if (!grepl("survival",data_path)){
   queen_community_summary <- aggregate(na.rm=T,na.action="na.pass",cbind(proportion_of_foragers,age)~.,FUN=mean,data=queen_community_summary)
   queen_community_summary <- queen_community_summary[order(queen_community_summary$randy,queen_community_summary$colony),]
   queen_community_summary$treatment <- queen_community_summary$randy
-  if (!file.exists(paste(data_path,"/processed_data/network_properties/random_vs_observed",sep=""))){dir.create(paste(data_path,"/processed_data/network_properties/random_vs_observed",sep=""),recursive=T)}
-  write.table(queen_community_summary,file=paste(data_path,"/processed_data/network_properties/random_vs_observed/queen_community.dat",sep=""),append=F,quote=F,row.names=F,col.names=T)
+  if (!file.exists(paste(outputfolder,"/random_vs_observed",sep=""))){dir.create(paste(outputfolder,"/random_vs_observed",sep=""),recursive=T)}
+  write.table(queen_community_summary,file=paste(outputfolder,"/random_vs_observed/queen_community.dat",sep=""),append=F,quote=F,row.names=F,col.names=T)
 }
 to_keep <- to_keep_ori

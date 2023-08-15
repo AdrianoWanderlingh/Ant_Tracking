@@ -29,7 +29,7 @@ summary_dol <- NULL
 to_keep <- c(ls(),"to_keep","input_folder","network_file","network_files","summary_interactions","summary_interactions_grooming","summary_pairs","all_interactions")
 
 
-#if grooming, perform analysis only on the observed cases
+#if grooming, perform analysis only on the observed cases # should not be necessary as it is already present in 13_network_properties
 if (grepl("grooming",input_path)) {
   input_folders <- grep("observed", input_folders, value=TRUE)
 }
@@ -164,7 +164,7 @@ for (input_folder in input_folders){
       
       full_table                  <- expand.grid(tag=tag[which(tag$final_status=="alive"),"tag"],stringsAsFactors = F)
       
-      try(aggregated1                 <- aggregate(na.rm=T,na.action="na.pass",duration_min~Receiver,FUN=sum,data=interactions),silent=T)
+      try(aggregated1                 <- aggregate(na.rm=T,na.action="na.pass",cbind(duration_min,N)~Receiver,FUN=sum,data=interactions),silent=T)
       if(exists("aggregated1")){
         names(aggregated1)          <- c("tag","duration_grooming_received_min","number_contacts_received")
         full_table                  <- merge(full_table,aggregated1,all.x=T,all.y=T)
@@ -175,7 +175,7 @@ for (input_folder in input_folders){
           full_table$number_contacts_received <- 0
           }
       
-      try(aggregated2                 <- aggregate(na.rm=T,na.action="na.pass",duration_min~Actor,FUN=sum,data=interactions[which(interactions$status_Receiver=="treated"),]),silent=T)
+      try(aggregated2                 <- aggregate(na.rm=T,na.action="na.pass",cbind(duration_min,N)~Actor,FUN=sum,data=interactions[which(interactions$status_Receiver=="treated"),]),silent=T)
       if(exists("aggregated2")){
         names(aggregated2)          <- c("tag","duration_grooming_given_to_treated_min","number_contacts_given_to_treated")
         full_table                  <- merge(full_table,aggregated2,all.x=T,all.y=T)
@@ -187,7 +187,7 @@ for (input_folder in input_folders){
       }
       
       
-      try(aggregated3                 <- aggregate(na.rm=T,na.action="na.pass",duration_min~Receiver,FUN=sum,data=interactions[which(interactions$ant1.zones==1),]),silent=T)
+      try(aggregated3                 <- aggregate(na.rm=T,na.action="na.pass",cbind(duration_min,N)~Receiver,FUN=sum,data=interactions[which(interactions$ant1.zones==1),]),silent=T)
       if(exists("aggregated3")){
         names(aggregated3)          <- c("tag","duration_grooming_received_min_zone1","number_contacts_received_zone1")
         full_table                  <- merge(full_table,aggregated3,all.x=T,all.y=T)
