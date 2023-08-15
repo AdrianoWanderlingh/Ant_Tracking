@@ -66,6 +66,7 @@ for (file in file_list){
     data$prop_duration_grooming_received_outside_min <- with(data,duration_grooming_received_min_zone2/(duration_grooming_received_min_zone1+duration_grooming_received_min_zone2) )
     write.table(data, file,col.names=T,row.names=F,quote=F,append=F)
   }
+  str(data)
 }
 
 
@@ -153,9 +154,9 @@ ind_treated_beh_lineplot <- line_plot(data_path,which_individuals="treated",show
 root_path <- paste(disk_path,"/main_experiment_grooming",sep="") # root_path <- paste(disk_path,"/main_experiment_grooming",sep="")
 data_path=paste(root_path,"/processed_data/individual_behaviour/pre_vs_post_treatment",sep="")
 pattern="individual_behavioural_data"
-variable_list <-        c("duration_grooming_received_min","N_grooming_received", "inter_caste_contact_duration","prop_duration_grooming_received_outside_min") #GROOMING  ouside is negligibile as only 58/6016 events happen outside , "prop_duration_grooming_received_outside_min","duration_grooming_received_min_zone2"
-names(variable_list) <- c("duration grooming received (min)","N grooming received", "inter caste grooming duration","prop. duration grooming received outside (min)") # , "prop duration grooming received outside min","duration grooming received outside min"
-transf_variable_list <- c("log"                             ,"none"               ,"log"                           , "Box_Cox")   ######"none", "sqrt" "log","power2"
+variable_list <-        c("duration_grooming_received_min","number_contacts_received","prop_duration_grooming_received_outside_min") #GROOMING  ouside is negligibile as only 58/6016 events happen outside , "prop_duration_grooming_received_outside_min","duration_grooming_received_min_zone2", , "inter_caste_contact_duration"
+names(variable_list) <- c("duration grooming received (min)","number contacts received","prop. duration grooming received outside (min)") # , "prop duration grooming received outside min","duration grooming received outside min"
+transf_variable_list <- c("log"                             ,"log"                     , "Box_Cox")   ######"none", "sqrt" "log","power2"
 
 
 ind_treated_grooming <- individual_ONE_analysis(data_path,which_individuals="treated",showPlot=F) # "treated","queen","nurse","forager"
@@ -481,7 +482,7 @@ ind_beh_measures <- cowplot::plot_grid(
 ###################################################################################################################################
 ### ind_grooming_received ### 3 panels
 plot_list <- list(ind_treated_grooming$barplot_delta_period_list$duration_grooming_received_min,
-                  ind_treated_grooming$barplot_delta_period_list$inter_caste_contact_duration,
+                  ind_treated_grooming$barplot_delta_period_list$number_contacts_received,
                   ind_treated_grooming$barplot_delta_period_list$prop_duration_grooming_received_outside_min)
 YLIM_extra <- 0
 plot_comps1 <- multi_plot_comps(plot_list,ylim_extra=YLIM_extra)
@@ -621,8 +622,6 @@ SavePrint_plot(
 
 warning("MAKE SURE THAT FOR THE INDIVIDUAL MEASURES OF UNTREATED WORKERS, THE DATASET RETAINED IS RIGHT")
 warning("inter_caste_contact_duration REMOVE FROM EVERYWHERE, or add nurses if can be added to the story!")
-ind_treated_grooming$barplot_delta_period_list$inter_caste_contact_duration #ADD PLOT
-
 
 
 ## posthoc letters looking weird:

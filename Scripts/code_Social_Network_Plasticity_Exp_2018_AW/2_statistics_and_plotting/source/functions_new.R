@@ -1439,7 +1439,7 @@ individual_ONE_analysis <- function(data_path=data_path,which_individuals,pre_on
     data$size      <- factor(data$size    , levels=size_order   [which(size_order%in%data$size )])
     data$exposure  <- factor(data$exposure , levels=exposure_order[which(exposure_order%in%data$exposure )])
     data$period    <- factor(data$period    , levels=period_order   [which(period_order%in%data$period )])
-    data$antID     <- factor( data$antID )
+    data$antID     <- factor( data$antID)
     
     
     ## if not pre_only
