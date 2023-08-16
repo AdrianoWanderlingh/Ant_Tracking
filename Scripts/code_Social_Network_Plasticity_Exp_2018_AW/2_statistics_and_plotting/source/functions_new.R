@@ -885,12 +885,16 @@ collective_analysis_no_rescal <- function(data_path=data_path,showPlot=T){
   for (file in file_list){
     data <- rbind(data,read.table(file,header=T,stringsAsFactors = F))  
   }
+  
+  print(names(data))
+  
   ##remove any duplicated line
   data <- data[which(!duplicated(data)),]
   
   ##2. Extract exposure and size from treatment column
   data$exposure <- unlist(lapply( data$treatment, function(x)  unlist(strsplit(x,split="\\.") )[1]  ))
   data$size     <- unlist(lapply( data$treatment, function(x)  unlist(strsplit(x,split="\\.") )[2]  ))
+  
   
   ###2. Loop over variables
   data_ori <- data
