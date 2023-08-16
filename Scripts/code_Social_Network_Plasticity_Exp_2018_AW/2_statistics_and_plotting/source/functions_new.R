@@ -952,7 +952,7 @@ collective_analysis_no_rescal <- function(data_path=data_path,showPlot=T){
       # If any VIF is > 10, assign p_interaction_treatment = 1, and try simpler model 
       if(any(vif_values[, "GVIF"] > 10)) {
         p_interaction_treatment <- 1
-        warning("model multicollinearity detected, try simpler model")
+        warning(paste0(variable_list[i],": model multicollinearity detected, try simpler model"))
       }
     }
     
@@ -1093,7 +1093,7 @@ collective_analysis_no_rescal <- function(data_path=data_path,showPlot=T){
     rm(list=ls()[which(grepl("posthoc_groups_",ls()))])
     
     #plot
-    barplot_delta_period <- barplot_delta(dataset=data,predictor="treatment",post_hoc_outcomes=post_hoc_outcomes,stats_outcomes=stats_outcomes,i=i,type="collective",collective=T,plot_untransformed=T,diff_type="") #form_stat=NULL,
+    barplot_delta_period <- barplot_delta(dataset=data,predictor="treatment",post_hoc_outcomes=post_hoc_outcomes,stats_outcomes=stats_outcomes,i=i,type="collective",collective=T,plot_untransformed=F,diff_type="") #form_stat=NULL,
     if (showPlot) {print(barplot_delta_period)}
     barplot_delta_period_list[[variable_list[i]]]        <- barplot_delta_period
     #names(barplot_delta_period_list[[i]]) <- variable_list[i]
@@ -1195,7 +1195,7 @@ collective_analysis_rescal <- function(data_path=data_path,showPlot=T){
       # If any VIF is > 10, assign p_interaction_treatment = 1, and try simpler model 
       if(any(vif_values[, "GVIF"] > 10)) {
         p_interaction_treatment <- 1
-        warning("model multicollinearity detected, try simpler model")
+        warning(paste0(variable_list[i],": model multicollinearity detected, try simpler model"))
       }
     }
     
@@ -1324,7 +1324,7 @@ collective_analysis_rescal <- function(data_path=data_path,showPlot=T){
     rm(list=ls()[which(grepl("posthoc_groups_",ls()))])
     
     #plot
-    barplot_delta_period <- barplot_delta(dataset=data,predictor="treatment",post_hoc_outcomes=post_hoc_outcomes,stats_outcomes=stats_outcomes,i=i,type="collective",collective=T,plot_untransformed=T,diff_type="") #form_stat=NULL,
+    barplot_delta_period <- barplot_delta(dataset=data,predictor="treatment",post_hoc_outcomes=post_hoc_outcomes,stats_outcomes=stats_outcomes,i=i,type="collective",collective=T,plot_untransformed=F,diff_type="") #form_stat=NULL,
     if (showPlot) {print(barplot_delta_period)}
     barplot_delta_period_list[[variable_list[i]]]        <- barplot_delta_period
   
@@ -1464,7 +1464,7 @@ individual_ONE_analysis <- function(data_path=data_path,which_individuals,pre_on
         # If any VIF is > 10, assign p_interaction_treatment = 1, and try simpler model 
         if(any(vif_values[, "GVIF"] > 10)) {
           p_interaction_treatment <- 1
-          warning("model multicollinearity detected, try simpler model")
+          warning(paste0(variable_list[i],": model multicollinearity detected, try simpler model"))
         }
       }
       
@@ -1614,24 +1614,22 @@ individual_ONE_analysis <- function(data_path=data_path,which_individuals,pre_on
       }else {
         model <- lmer(   variable ~ size + (1|time_of_day) + (1|colony) + (1|antID) ,data=data ,control = model_n_interations)
       }
+
+      
+      # Check if the model converged
+      if(length(summary(model)$optinfo$conv$lme4$messages) != 0) {
+        
+        warning(paste0(variable_list[i],": model failed to converge, changing default BOBYQA optimiser for the Nelder-Mead optimisation routine used by default in earlier 1.0.x previous versions"))
+        model <- lmer(   variable ~ size + (1|time_of_day) + (1|colony) + (1|antID) ,data=data , control = lmerControl(optimizer ="Nelder_Mead"))
+        # change optimizer https://stats.stackexchange.com/questions/242109/model-failed-to-converge-warning-in-lmer
+        
+      }
       
       anov  <- anova(model)
       p_size <- anov["size","Pr(>F)"]
       
       test_norm(residuals(model))
       
-      # Check if the model converged
-      if(length(summary(model)$optinfo$conv$lme4$messages) != 0) {
-        # If the model fails to converge, calculate VIF
-        # The Variance Inflation Factor (VIF) is a measure of multicollinearity. A rule of thumb is that if the VIF is greater than 5, then the explanatory variables are highly correlated, which can affect the stability and interpretability of the model
-        vif_values <- car::vif(model)
-        
-        # If any VIF is > 10, assign p_interaction_treatment = 1, and try simpler model 
-        if(any(vif_values[, "GVIF"] > 10)) {
-          p_interaction_treatment <- 1
-          warning("model multicollinearity detected, WHICH SIMPLER MODEL COULD BE IMPLEMENTED?")
-        }
-      }
       
       stats_outcomes <- rbind(stats_outcomes,data.frame(variable=variable_list[i],predictor="size",df=paste(round(anov["size","NumDF"]),round(anov["size","DenDF"]),sep=","),Fvalue=anov["size","F value"],pval=p_size,stringsAsFactors = F))
     }
@@ -1985,7 +1983,7 @@ individual_TWO_analysis <- function(data_path=data_path,which_individuals,showPl
     rm(list=ls()[which(grepl("posthoc_groups_",ls()))])
     
   
-    barplot_delta_period <- barplot_delta(dataset=data,predictor="treatment",post_hoc_outcomes=post_hoc_outcomes,stats_outcomes=stats_outcomes,i=i,type="individual",collective=F,plot_untransformed=T,diff_type="absolute_difference") #form_stat=NULL,
+    barplot_delta_period <- barplot_delta(dataset=data,predictor="treatment",post_hoc_outcomes=post_hoc_outcomes,stats_outcomes=stats_outcomes,i=i,type="individual",collective=F,plot_untransformed=F,diff_type="absolute_difference") #form_stat=NULL,
     if (showPlot) {print(barplot_delta_period)}
     
     barplot_delta_period_list[[variable_list[i]]]        <- barplot_delta_period
@@ -2139,7 +2137,7 @@ barplot_delta <-
            i, #variable number
            type,
            collective,
-           plot_untransformed,# better to set it to TRUE as it will match the post-hoc letters
+           plot_untransformed=F,# better to set it to FALSE as it will match the post-hoc letters!
            diff_type,
            pre_only=F) {
     #form_stat=NULL,

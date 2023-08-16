@@ -108,7 +108,7 @@ data_path <- paste(root_path,"/network_properties_edge_weights_duration/pre_vs_p
 pattern="colony_data.txt"
 variable_list <- c("modularity","clustering","task_assortativity","efficiency","degree_mean","density") #,"degree_maximum","diameter"
 names(variable_list) <- c("modularity","clustering","task assortativity","efficiency","mean degree","density") # ,"degree maximum","diameter"
-transf_variable_list <- c("log"       ,"sqrt"      ,"Box_Cox"              ,"log"       ,"log"        ,"log" ) # ,"log"   ,"power0.01"  ######"none", "sqrt" "log","power2"
+transf_variable_list <- c("sqrt"       ,"sqrt"      ,"Box_Cox"              ,"log"       ,"log"        ,"log" ) # ,"log"   ,"power0.01"  ######"none", "sqrt" "log","power2"
 # TRANSFORMATION NOTE: task_assortativity is hard to normalise (no transformation has the best result) - used Box_Cox
 
 coll_rescal_net <- collective_analysis_rescal(data_path,showPlot=F)
@@ -142,7 +142,7 @@ data_path=paste(root_path,"/processed_data/individual_behaviour/pre_vs_post_trea
 pattern="individual_behavioural_data"
 variable_list <-        c("prop_time_outside") #,"proportion_time_active", "average_bout_speed_pixpersec" ,"total_distance_travelled_pix", "inter_caste_contact_duration") #inter_caste_contact_duration?
 names(variable_list) <- c("prop. time outside") # ,"prop. time active", "average bout speed pixpersec" ,"total distance travelled pix", "inter caste contact duration")
-transf_variable_list <- c("power0.01"        )#,"none"                  ,"log"                          ,"log"                      ,"sqrt"                   )  ######"none", "sqrt" "log","power2"
+transf_variable_list <- c("power0.1"        )#,"none"                  ,"log"                          ,"log"                      ,"sqrt"                   )  ######"none", "sqrt" "log","power2"
 
 ind_treated_beh <- individual_ONE_analysis(data_path,which_individuals="treated",showPlot=F) # "treated","queen","nurse","forager"
 
@@ -191,10 +191,11 @@ data_path=paste(root_path,"/processed_data/individual_behaviour/pre_vs_post_trea
 pattern="individual_behavioural_data"
 variable_list <-        c("prop_time_outside","inter_caste_contact_duration","duration_of_contact_with_treated_min")
 names(variable_list) <- c("prop. time outside","inter caste contact duration","duration of contact with treated (min)")
-transf_variable_list <- c("Box_Cox"        , "Box_Cox"                    , "Box_Cox"            )   ######"none", "sqrt" "log","power2"
+transf_variable_list <- c("power0.1"        , "Box_Cox"                    , "log"            )   ######"none", "sqrt" "log","power2"
 
 ind_untreated_beh_nurse <- individual_ONE_analysis(data_path,which_individuals="nurse",showPlot=F) ## "treated","queen","nurse","forager"
 ind_untreated_beh_forag <- individual_ONE_analysis(data_path,which_individuals="forager",showPlot=F) ## "treated","queen","nurse","forager"
+print("note: prop. time outside for foragers has a high kurtosis (8) but this transformation works well for treated and nurses and the posthoc matches the plot so I'll keep it")
 
 # PRE period only (CONSTITUTIVE ORGANISATION)
 ind_untreated_beh_nurse_PRE <- individual_ONE_analysis(data_path,which_individuals="nurse",pre_only=T,showPlot=F) ## "treated","queen","nurse","forager"
@@ -207,7 +208,7 @@ data_path=paste(root_path,"/processed_data/individual_behaviour/pre_vs_post_trea
 pattern="individual_behavioural_data"
 variable_list <-        c("duration_grooming_given_to_treated_min")
 names(variable_list) <- c("duration grooming given to treated (min)")
-transf_variable_list <- c("Box_Cox"        )   ######"none", "sqrt" "log","power2"
+transf_variable_list <- c("power0.1"        )   ######"none", "sqrt" "log","power2"
 
 ind_untreated_grooming_nurse <- individual_ONE_analysis(data_path,which_individuals="nurse",showPlot=F) ## "treated","queen","nurse","forager"
 ind_untreated_grooming_forag <- individual_ONE_analysis(data_path,which_individuals="forager",showPlot=F) ## "treated","queen","nurse","forager"
@@ -219,8 +220,6 @@ ind_untreated_grooming_forag_PRE <- individual_ONE_analysis(data_path,which_indi
 #timeline
 ind_untreated_grooming_lineplot_nurse <- line_plot(data_path,which_individuals="nurse",showPlot=T)
 ind_untreated_grooming_lineplot_forag <- line_plot(data_path,which_individuals="forager",showPlot=T)
-
-warning("add it to the plot grid! it shows if treated are groomed by foragers or nurses")
 
 ###################################################################################################################################
 ###IV - individual analysis - for TWO types of individuals (e.g. nurses and foragers; or "untreated" and "treated") ###############
@@ -385,10 +384,6 @@ GroomingVsTimeOutside <- ggplot(grand_mean_data_scaled, aes(x = time_hours, y = 
 
 ### PLOT GRIDS ####################################################################################################################
 
-#TEMP: new var added!
-ind_treated_grooming$barplot_delta_period_list$N_grooming_received
-warning("ADD prob of low load and high load")
-
 ###################################################################################################################################
 ### ind_net_properties ### 
 ## degree
@@ -528,10 +523,14 @@ plot_list <- list(coll_rescal_net$barplot_delta_period_list$modularity,
 # Set the same y-axis limits for all plots
 YLIM_extra <- 0.01
 #have 2 scales: 1 for top row (measures expected to increase), 1 for bottom row (measures expected to decrease), 
-plot_compsA <- multi_plot_comps(plot_list[1:3],ylim_extra=YLIM_extra)
+plot_compsA <- multi_plot_comps(plot_list[3],ylim_extra=YLIM_extra)
+plot_compsA$y_limits[1] <- -plot_compsA$y_limits[2]  #minor adjustments to ensure alignment
 plot_compsB <- multi_plot_comps(plot_list[4:6],ylim_extra=YLIM_extra)
-allplots <- cowplot::align_plots(plot_list[[1]] + ylim(plot_compsA$y_limits) + fixed_aspect_theme  + remove_x_labs + guides(fill = "none") ,
-                                 plot_list[[2]] + ylim(plot_compsA$y_limits) + fixed_aspect_theme  + remove_x_labs + guides(fill = "none") ,
+plot_compsC <- multi_plot_comps(plot_list[1:2],ylim_extra=YLIM_extra)
+plot_compsC$y_limits[1] <- -plot_compsC$y_limits[2]  #minor adjustments to ensure alignment
+
+allplots <- cowplot::align_plots(plot_list[[1]] + ylim(plot_compsC$y_limits) + fixed_aspect_theme  + remove_x_labs + guides(fill = "none") ,
+                                 plot_list[[2]] + ylim(plot_compsC$y_limits) + fixed_aspect_theme  + remove_x_labs + guides(fill = "none") ,
                                  plot_list[[3]] + ylim(plot_compsA$y_limits) + fixed_aspect_theme  + remove_x_labs + guides(fill = "none") ,
                                  plot_list[[4]] + ylim(plot_compsB$y_limits) + fixed_aspect_theme  + remove_x_labs + guides(fill = "none") ,
                                  plot_list[[5]] + ylim(plot_compsB$y_limits) + fixed_aspect_theme  + remove_x_labs + guides(fill = "none") ,
@@ -618,13 +617,11 @@ SavePrint_plot(
 
 
 
-
-
-warning("MAKE SURE THAT FOR THE INDIVIDUAL MEASURES OF UNTREATED WORKERS, THE DATASET RETAINED IS RIGHT")
 warning("inter_caste_contact_duration REMOVE FROM EVERYWHERE, or add nurses if can be added to the story!")
 
 
 ## posthoc letters looking weird:
+## IT IS BECAUSE THE PLOTS WHERE NOT TRANSFORMED AS THE VARS!
 # - prop. time outside (treated nurses)
 # - duration grooming received (treated nurses) # why now significant?
 # - duration grooming given to treated (unt. nurses)
