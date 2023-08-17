@@ -155,12 +155,11 @@ root_path <- paste(disk_path,"/main_experiment_grooming",sep="") # root_path <- 
 data_path=paste(root_path,"/processed_data/individual_behaviour/pre_vs_post_treatment",sep="")
 pattern="individual_behavioural_data"
 variable_list <-        c("duration_grooming_received_min","number_contacts_received","prop_duration_grooming_received_outside_min") #GROOMING  ouside is negligibile as only 58/6016 events happen outside , "prop_duration_grooming_received_outside_min","duration_grooming_received_min_zone2", , "inter_caste_contact_duration"
-names(variable_list) <- c("duration grooming received (min)","number contacts received","prop. duration grooming received outside (min)") # , "prop duration grooming received outside min","duration grooming received outside min"
+names(variable_list) <- c("duration grooming received (min)","number grooming contacts received","prop. duration grooming received outside (min)") # , "prop duration grooming received outside min","duration grooming received outside min"
 transf_variable_list <- c("log"                             ,"log"                     , "Box_Cox")   ######"none", "sqrt" "log","power2"
 
 
 ind_treated_grooming <- individual_ONE_analysis(data_path,which_individuals="treated",showPlot=F) # "treated","queen","nurse","forager"
-warning("adjust transformation for N grooming received")
 #timeline
 ind_treated_grooming_lineplot <- line_plot(data_path,which_individuals="treated",showPlot=F)
 
@@ -379,6 +378,73 @@ GroomingVsTimeOutside <- ggplot(grand_mean_data_scaled, aes(x = time_hours, y = 
 
 
 ###################################################################################################################################
+### COMPARE  grooming given and duration of contacts with treated #################################################################
+###################################################################################################################################
+
+root_path <- paste(disk_path,"/main_experiment_grooming",sep="") # root_path <- paste(disk_path,"/main_experiment_grooming",sep="")
+data_path=paste(root_path,"/processed_data/individual_behaviour/pre_vs_post_treatment",sep="")
+pattern="individual_behavioural_data"
+variable_list <-        c("duration_grooming_given_to_treated_min") #GROOMING  ouside is negligibile as only 58/6016 events happen outside , "prop_duration_grooming_received_outside_min","duration_grooming_received_min_zone2"
+names(variable_list) <- c("duration grooming given to treated (min)") # , "prop duration grooming received outside min","duration grooming received outside min"
+#transf_variable_list <- c("log"                           )   ######"none", "sqrt" "log","power2"
+
+dur_groom_given_data <- read_data(data_path,which_individuals=c("nurse","forager"))
+dur_groom_given_data$duration_of_contact_with_treated_min <- NULL #make sure there are no conflicts
+
+
+root_path <- paste(disk_path,"/main_experiment",sep="") # root_path <- paste(disk_path,"/main_experiment_grooming",sep="")
+data_path=paste(root_path,"/processed_data/individual_behaviour/pre_vs_post_treatment",sep="")
+pattern="individual_behavioural_data"
+variable_list <-        c("duration_of_contact_with_treated_min") #,"proportion_time_active", "average_bout_speed_pixpersec" ,"total_distance_travelled_pix", "inter_caste_contact_duration") #inter_caste_contact_duration?
+names(variable_list) <- c("duration of contact with treated (min)") # ,"prop. time active", "average bout speed pixpersec" ,"total distance travelled pix", "inter caste contact duration")
+#transf_variable_list <- c("power0.01"        )#,"none"                  ,"log"                          ,"log"                      ,"sqrt"                   )  ######"none", "sqrt" "log","power2"
+
+dur_contact_treated_data <- read_data(data_path,which_individuals=c("nurse","forager"))
+
+#merge
+common_col_names <- intersect(names(dur_groom_given_data), names(dur_contact_treated_data))
+common_col_names <- common_col_names[!common_col_names %in% c("nb_frames_outside","nb_frames_inside","prop_time_outside", "proportion_time_active","average_bout_speed_pixpersec","total_distance_travelled_pix","inter_caste_contact_duration","inter_caste_contact_number"  )]
+CompareBehavs2 <- dplyr::left_join(dur_groom_given_data, dur_contact_treated_data, by = common_col_names[])
+
+# remove extra cols
+CompareBehavs2 <- CompareBehavs2 %>%
+  dplyr::select(colony, tag, antID, time_hours, colony_size, treatment, age, period, time_of_day, 
+                duration_grooming_given_to_treated_min, duration_of_contact_with_treated_min, task_group
+  )
+
+
+#transform data as above for comparability
+CompareBehavs2[!is.na(CompareBehavs2$duration_grooming_given_to_treated_min),"dur_groom_given_to_treat_min_power0.1"]  <- (CompareBehavs2[!is.na(CompareBehavs2$duration_grooming_given_to_treated_min),"duration_grooming_given_to_treated_min"] )^0.1
+CompareBehavs2[!is.na(CompareBehavs2$duration_of_contact_with_treated_min),"duration_of_contact_with_treated_min_log"]  <- log_transf(CompareBehavs2[!is.na(CompareBehavs2$duration_of_contact_with_treated_min),"duration_of_contact_with_treated_min"])
+
+
+# Create the plot
+#plotting by treatment is meaningless as they all overlap
+
+  ggplot(CompareBehavs2, aes(x=duration_of_contact_with_treated_min_log, 
+             y=dur_groom_given_to_treat_min_power0.1, 
+             color=period)) + 
+ # geom_point() +   # Scatter plot of points
+  geom_smooth(method='lm', se=T) +   # Linear regression line, without standard error shading
+  facet_grid(. ~ task_group) +   # Faceting by period and task_group
+  labs(title="Linear fit of duration_of_contact_with_treated_min vs duration_grooming_given_to_treated_min", 
+       x="Duration of Contact (min)", 
+       y="Duration of Grooming Given (min)") +
+  theme_minimal() #+
+   # STYLE_CONT
+
+
+
+
+
+
+
+
+
+
+
+
+###################################################################################################################################
 ############### CH5: PRE-POST DIFFERENCES PLOTS ###################################################################################
 ###################################################################################################################################
 
@@ -499,7 +565,7 @@ allplots1 <- cowplot::align_plots(plot_list[[1]] + fixed_aspect_theme  + remove_
 treated_grooming <- cowplot::plot_grid(
   cowplot::plot_grid(allplots1[[1]], allplots1[[2]], allplots1[[3]],
                      ncol=3, rel_widths = c(0.24,0.25,0.265))
-  , plot_comps1$leg, ncol=1, rel_heights = c(0.9, 0.1))
+  , plot_comps1$leg, ncol=1, rel_heights = c(0.8, 0.2))
 
 ###################################################################################################################################
 ### comparing timeline of grooming and time_outside line_plots  ### 3 panels
@@ -595,7 +661,7 @@ SavePrint_plot(
 SavePrint_plot(
   plot_obj = treated_grooming, 
   plot_name = "treated_grooming",
-  plot_size = c(430/ppi, 280/ppi), #extra length required to fix the different digits on y-axis
+  plot_size = c(430/ppi, 230/ppi), #extra length required to fix the different digits on y-axis
   # font_size_factor = 4,
   dataset_name = "Grid",
   save_dir = figurefolder
@@ -640,12 +706,37 @@ variable_list <-  c("Prevalence", "Mean_load", "Load_skewness", "Queen_load", "l
 names(variable_list) <-  c("Prevalence", "Mean load", "Load skewness", "Queen load", "logistic r","Prop. high level","Prop. low level")
 transf_variable_list <- c("none"       ,"none"        ,"none"           ,"log"      ,"log", "none"       ,"none"   )   ######"none", "sqrt" "log","power2"
 
-coll_no_rescal_sim <- collective_analysis_no_rescal(data_path,showPlot=F)
-warning(paste("-Prevalence", "-Mean load", "-Load skewness","-Prop. high level","-Prop. low level","don't meet normality regardless of transformation",sep= "\n"))
+coll_no_rescal_sim_EXP_seed <- collective_analysis_no_rescal(data_path,showPlot=F)
+warning(paste("-Prevalence", "-Mean load", "-Load skewness","-Prop. high level","-Prop. low level",
+              "don't meet normality regardless of transformation",sep= "\n"))
 # but "-Load skewness" "-Prop. high level","-Prop. low level" have a high Shapiro-Wilk normality test statistic val (>0.9)
 
 #https://stackoverflow.com/questions/68915173/how-do-i-fit-a-quasi-poisson-model-with-lme4-or-glmmtmb
 #model <- glmer(Prevalence ~ period*treatment + (1|colony) ,data=data, family = poisson)
+
+#### random_workers_seeds #### 
+data_path <- paste(root_path,"/transmission_simulations/pre_vs_post_treatment/random_workers_seeds",sep="")
+
+coll_no_rescal_sim_RAN_seed <- collective_analysis_no_rescal(data_path,showPlot=F)
+warning(paste("-Prevalence", "-Mean load", "-Load skewness",
+              "don't meet normality regardless of transformation",sep= "\n"))
+
+
+#### nurses_seeds #### 
+data_path <- paste(root_path,"/transmission_simulations/pre_vs_post_treatment/nurses_seeds",sep="")
+
+coll_no_rescal_sim_NUR_seed <- collective_analysis_no_rescal(data_path,showPlot=F)
+warning(paste("Prevalence", "Mean load","Prop. high level","Prop. low level",
+              "don't meet normality regardless of transformation",sep= "\n"))
+
+
+#### foragers_seeds #### 
+data_path <- paste(root_path,"/transmission_simulations/pre_vs_post_treatment/foragers_seeds",sep="")
+
+coll_no_rescal_sim_FOR_seed <- collective_analysis_no_rescal(data_path,showPlot=F)
+warning(paste("-Prevalence", "-Load skewness","Queen_load",
+              "don't meet normality regardless of transformation",sep= "\n"))
+
 
 ###################################################################
 ###            individual analysis                     ############
@@ -682,41 +773,12 @@ data_path <- paste(root_path,"/transmission_simulations/pre_vs_post_treatment/fo
 ind_untreated_sim_nurse_FOR_seed <- individual_ONE_analysis(data_path,which_individuals="nurse",showPlot=F) ## "treated","queen","nurse","forager"
 ind_untreated_sim_forag_FOR_seed <- individual_ONE_analysis(data_path,which_individuals="forager",showPlot=F) ## "treated","queen","nurse","forager"
 
+##"transmission rank" is a measure of the average order in which an individual becomes contaminated in the simulations, with a lower rank indicating earlier contamination. It can be interpreted as a measure of how quickly or easily an individual tends to become infected in the simulated disease transmission scenario.
 
 ###################################################################################################################################
 ### PLOT GRIDS ####################################################################################################################
 ###################################################################################################################################
 
-###################################################################################################################################
-### collective_sim_properties ### 
-plot_list <- list(coll_no_rescal_sim$barplot_delta_period_list$Prevalence,
-                  coll_no_rescal_sim$barplot_delta_period_list$Mean_load,
-                  coll_no_rescal_sim$barplot_delta_period_list$Load_skewness,
-                  coll_no_rescal_sim$barplot_delta_period_list$Queen_load,
-                  coll_no_rescal_sim$barplot_delta_period_list$logistic_r,
-                  coll_no_rescal_sim$barplot_delta_period_list$Prop_high_level,
-                  coll_no_rescal_sim$barplot_delta_period_list$Prop_low_level)
-# Set the same y-axis limits for all plots
-YLIM_extra <- 0.001
-# #have 2 scales: 1 for top row (measures expected to increase), 1 for bottom row (measures expected to decrease), 
-# plot_compsA <- multi_plot_comps(plot_list[1:2],ylim_extra=YLIM_extra)
-# plot_compsB <- multi_plot_comps(plot_list[3:4],ylim_extra=YLIM_extra)
-allplots <- cowplot::align_plots(plot_list[[1]]  + ylim(-0.009,0.009) + fixed_aspect_theme  + remove_x_labs + guides(fill = "none") ,
-                                 plot_list[[2]]  + ylim(-0.007,0.007) + fixed_aspect_theme  + remove_x_labs + guides(fill = "none") ,
-                                 plot_list[[3]]  + ylim(-0.4,0.4) + fixed_aspect_theme  + remove_x_labs + guides(fill = "none") ,
-                                 plot_list[[4]]  + ylim(-0.15,0.15)           + fixed_aspect_theme  + remove_x_labs + guides(fill = "none") ,
-                                 plot_list[[5]]                               + fixed_aspect_theme  + remove_x_labs + guides(fill = "none") ,
-                                 plot_list[[6]]                               + fixed_aspect_theme  + remove_x_labs + guides(fill = "none") ,
-                                 plot_list[[7]]                               + fixed_aspect_theme  + remove_x_labs + guides(fill = "none") ,
-                                 align="h")
-collective_sim_properties <- cowplot::plot_grid(
-  cowplot::plot_grid(allplots[[1]], allplots[[2]], allplots[[3]],allplots[[4]], allplots[[5]],allplots[[6]], allplots[[7]],
-                     ncol=4, rel_widths = c(0.1,0.1,0.1,0.1,0.1,0.1,0.1))
-  #, plot_compsB$leg
-  ,ncol=1, rel_heights = c(0.9, 0.1))
-
-# width_pixels <- 900 
-# height_pixels <- 250
 
 ###################################################################################################################################
 ### individual_sim_properties ###
@@ -729,6 +791,11 @@ for ( SEED in GROUP) {
   
   SEED_group <- paste(SEED,"seed",sep="_")
   
+  # create text boxes for seed
+  titlePlotsSEED <- ggplot() + theme_void() + annotate("text", x = 0.5, y = 0.5, label = paste("SEED",names(GROUP[which(GROUP %in% SEED)]),sep = " : "), family = "Liberation Serif",  size = 4, hjust = 0.5)
+  #titlePlots_untreated <- cowplot::plot_grid(titlePlots[[1]], titlePlots[[2]], ncol=2, rel_widths = c(0.28,0.24))
+  
+  #data
   IND_UNTREATED_SIM_nurse <- get(paste0("ind_untreated_sim_nurse_",SEED_group))
   IND_UNTREATED_SIM_forag <- get(paste0("ind_untreated_sim_forag_",SEED_group))
 
@@ -762,10 +829,6 @@ individual_sim_TR <- cowplot::plot_grid(allplots1[[1]], allplots1[[2]],
                                                              ncol=2, rel_widths = c(0.28,0.24))
 
 
-# create text boxes for seed
-titlePlotsSEED <- ggplot() + theme_void() + annotate("text", x = 0.5, y = 0.5, label = paste("SEED",names(GROUP[which(GROUP %in% SEED)]),sep = " : "), family = "Liberation Serif",  size = 4, hjust = 0.5)
-#titlePlots_untreated <- cowplot::plot_grid(titlePlots[[1]], titlePlots[[2]], ncol=2, rel_widths = c(0.28,0.24))
-
 ### COMBINE ind_beh_measures 2 panels together
 individual_sim_properties <- cowplot::plot_grid(
   titlePlotsSEED,
@@ -786,18 +849,59 @@ SavePrint_plot(
   save_dir = figurefolder
 )
 
-}
 
+###################################################################################################################################
+### collective_sim_properties ### 
 
+#data
+COLL_NO_RESCAL_SIM <- get(paste0("coll_no_rescal_sim_",SEED_group))
+
+plot_list <- list(COLL_NO_RESCAL_SIM$barplot_delta_period_list$Prevalence,
+                  COLL_NO_RESCAL_SIM$barplot_delta_period_list$Mean_load,
+                  COLL_NO_RESCAL_SIM$barplot_delta_period_list$Load_skewness,
+                  COLL_NO_RESCAL_SIM$barplot_delta_period_list$Queen_load,
+                  COLL_NO_RESCAL_SIM$barplot_delta_period_list$logistic_r,
+                  COLL_NO_RESCAL_SIM$barplot_delta_period_list$Prop_high_level,
+                  COLL_NO_RESCAL_SIM$barplot_delta_period_list$Prop_low_level)
+# Set the same y-axis limits for all plots
+YLIM_extra <- 0.001
+# #have 2 scales: 1 for top row (measures expected to increase), 1 for bottom row (measures expected to decrease), 
+# plot_compsA <- multi_plot_comps(plot_list[1:2],ylim_extra=YLIM_extra)
+# plot_compsB <- multi_plot_comps(plot_list[3:4],ylim_extra=YLIM_extra)
+allplots <- cowplot::align_plots(plot_list[[1]]  + ylim(-0.009,0.009) + fixed_aspect_theme  + remove_x_labs + guides(fill = "none") ,
+                                 plot_list[[2]]  + ylim(-0.007,0.007) + fixed_aspect_theme  + remove_x_labs + guides(fill = "none") ,
+                                 plot_list[[3]]  + ylim(-0.4,0.4) + fixed_aspect_theme  + remove_x_labs + guides(fill = "none") ,
+                                 plot_list[[4]]  + ylim(-0.15,0.15)           + fixed_aspect_theme  + remove_x_labs + guides(fill = "none") ,
+                                 plot_list[[5]]                               + fixed_aspect_theme  + remove_x_labs + guides(fill = "none") ,
+                                 plot_list[[6]]                               + fixed_aspect_theme  + remove_x_labs + guides(fill = "none") ,
+                                 plot_list[[7]]                               + fixed_aspect_theme  + remove_x_labs + guides(fill = "none") ,
+                                 align="h")
+collective_sim_properties <- cowplot::plot_grid(
+  cowplot::plot_grid(titlePlotsSEED, allplots[[1]], allplots[[2]], allplots[[3]],allplots[[4]], allplots[[5]],allplots[[6]], allplots[[7]],
+                     ncol=1, rel_widths = c(0.1,0.1,0.1,0.1,0.1,0.1,0.1))
+  #, plot_compsB$leg
+  ,ncol=1, rel_heights = c(0.9, 0.1))
+# width_pixels <- 200 
+# height_pixels <- 900
 
 SavePrint_plot(
   plot_obj = collective_sim_properties, 
-  plot_name = "collective_sim_properties",
-  plot_size = c(420/ppi, 240/ppi), #extra length required to get y-axis labeled and unlabeled of same size
+  plot_name = paste("collective_sim_properties",SEED,sep="_"),
+  plot_size = c(200/ppi, 900/ppi), #extra length required to get y-axis labeled and unlabeled of same size
   # font_size_factor = 4,
   dataset_name = "Grid",
   save_dir = figurefolder
 )
+
+}
+
+
+
+
+
+
+
+
 
 
 
