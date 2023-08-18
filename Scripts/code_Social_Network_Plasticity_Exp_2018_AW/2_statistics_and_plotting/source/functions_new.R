@@ -867,11 +867,437 @@ plot_regression <- function(data,time_point,analysis,n_cat_horiz,n_cat_vertic,po
   }
 }
 
+meta_analysis <- function(p_values,effects,std.errors){
+  ####Get effect signs
+  effect_signs <- sign(effects)
+  
+  ########## Create a vector of one-sided p-values for each possible effect direction each side
+  p_values_side1 <- p_values ###one-sided p testing whether observed is lower than random 
+  p_values_side2 <- 1-p_values ###one-sided p testing whether observed is higher than random 
+  
+  ############# Meanp method
+  ####Check which of the two effect direction is the one to keep
+  best_idx <- which(c(meanp(p_values_side1)$p,meanp(p_values_side2)$p)== min(meanp(p_values_side1)$p,meanp(p_values_side2)$p))
+  ####Get one-sided combined p-value and test statistics
+  p_value <-c(meanp(p_values_side1)$p,meanp(p_values_side2)$p)[best_idx]
+  z <- c(meanp(p_values_side1)$z,meanp(p_values_side2)$z)[best_idx]
+  ####convert back to 2-sided pvalue
+  two_sided_p_value <-  p_value*2
+  
+  p_values_meta_analysis <- data.frame(meta_statistic = z,one_sided_p=p_value,two_sided_p=two_sided_p_value)
+  return(p_values_meta_analysis)
+}
+
 
 
 #@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 #AW adapted Functions
 
+#old
+# plot_observed_vs_random <- function(experiments,variables,data_input=NULL,data_path,pattern,size=NULL){
+#   
+#   saved_plot <- list()
+#   
+#   if (is.null(data_input)) {
+#     ###read-in data###
+#     data <- NULL
+#     
+#     for (experiment in experiments){
+#       print(experiment)
+#       ### data files
+#       setwd(paste(disk_path,experiment,data_path,sep="/"))
+#       file_list <- list.files(pattern=pattern)
+#       temp <- NULL
+#       for (file in file_list){
+#         dat <- read.table(file,header=T,stringsAsFactors=F)
+#         dat <- dat[,which(names(dat)%in%c("randy","colony","treatment","period","time_hours","time_of_day",variables))]
+#         temp <- rbind(temp,dat)
+#         rm(list=c("dat"))
+#       }
+#       temp <- temp[,order(names(temp))]
+#       temp <- data.frame(experiment=experiment,temp,stringsAsFactors = F)
+#       if (!is.null(data)){
+#         if (!all(names(data)%in%names(temp))){
+#           temp[names(data)[which(!names(data)%in%names(temp))]] <- NA
+#           temp <- temp[,names(data)]
+#         }
+#       }
+#       
+#       data <- rbind(data,temp)
+#       rm(list=c("temp"))
+#       
+#     }
+#     
+#     ####modify period values to be simple and match what scatterplot function expects
+#     data["colony"] <- as.character(interaction(data$experiment,data$colony))
+#     
+#   }else{data <- data_input}
+#   
+#   #add info
+#   data$size     <- unlist(lapply( data$treatment, function(x)  unlist(strsplit(x,split="\\.") )[2]  ))
+#   data$size      <- factor(data$size    , levels=size_order   [which(size_order%in%data$size )])
+#   
+#   
+#   
+#   for (variable in variables){
+#     
+#     #split data by size
+#     if (exists("size")) {
+#       data <- data[which(data$size==size),]
+#     }
+#     
+#     data["variable"] <- data[,variable]
+#     data[which(!is.finite(data$variable)),"variable"] <- NA
+#     
+#     #####get random and observed mean
+#     randys <- aggregate(variable~colony+treatment+randy,FUN=mean,data=data[which(data$randy!="observed"),]);
+#     randys <- as.data.frame(as.matrix(randys));randys$variable <- as.numeric(as.character(randys$variable))
+#     #####then get mean, median and standard error
+#     randys <- aggregate(variable~colony+treatment,function(x)cbind(mean(x),median(x),std.error(x),length(x)),data=randys);
+#     randys <- as.data.frame(as.matrix(randys))
+#     names(randys)[names(randys)=="variable.1"] <- "random_mean";names(randys)[names(randys)=="variable.2"] <- "random_median";names(randys)[names(randys)=="variable.3"] <- "random_std.error";names(randys)[names(randys)=="variable.4"] <- "random_nb"
+#     
+#     ###do the same for observed
+#     observeds <- aggregate(variable~colony+treatment+randy,FUN=mean,data=data[which(data$randy=="observed"),])
+#     observeds <- as.data.frame(as.matrix(observeds));observeds$variable <- as.numeric(as.character(observeds$variable))
+#     observeds <- aggregate(variable~colony+treatment,function(x)cbind(mean(x),median(x),length(x)),data=observeds);
+#     observeds <- as.data.frame(as.matrix(observeds))
+#     names(observeds)[names(observeds)=="variable.1"] <- "observed_mean";names(observeds)[names(observeds)=="variable.2"] <- "observed_median";names(observeds)[names(observeds)=="variable.3"] <- "observed_nb"
+#     
+#     randys <- merge(randys,observeds);
+#     randys$colony <- as.character(randys$colony)
+#     randys$observed_mean <- as.numeric(as.character(randys$observed_mean))
+#     randys$random_mean <- as.numeric(as.character( randys$random_mean))
+#     randys$observed_median <- as.numeric(as.character(randys$observed_median))
+#     randys$random_median <- as.numeric(as.character( randys$random_median))
+#     randys$random_std.error <- as.numeric(as.character( randys$random_std.error))
+#     
+#     randys["deviation"] <- randys$observed_median-randys$random_median
+#     randys["relative_deviation"] <- (randys$observed_median-randys$random_median)/abs(randys$random_median)
+#     randys["p_value"] <- NA
+#     randys["variable"] <- variable
+#     randys["n_observed"] <- NA
+#     randys["n_random"] <- NA
+#     
+#     for (coli in unique(randys$colony)){
+#       random <- aggregate(variable~colony+treatment+randy,FUN=mean,data=data[which(data$colony==coli&data$randy!="observed"),])[,"variable"];
+#       observed <- aggregate(variable~colony+treatment+randy,FUN=mean,data=data[which(data$colony==coli&data$randy=="observed"),])[,"variable"];
+#       #####Get one-sided p: proportion of random values that are greater than observed values. Will be 0 if all values are lower and 1 if all values are greater
+#       one_sided_p <- length(which(random>observed))/length(random)
+#       
+#       randys[which(randys$colony==coli),"p_value"] <- one_sided_p
+#       randys[which(randys$colony==coli),"one_sided_p_value_obs_lower_than_rand"] <- 1-one_sided_p
+#       randys[which(randys$colony==coli),"one_sided_p_value_obs_greater_than_rand"] <- one_sided_p
+#       randys[which(randys$colony==coli),"effect_sign"] <- sign( randys[which(randys$colony==coli),"deviation"])
+#       randys[which(randys$colony==coli),"n_observed"] <- length(observed)
+#       randys[which(randys$colony==coli),"n_random"] <- length(random)
+#     }
+#     randys_toprint <- data.frame(variable=variable,randys[c("colony","treatment","deviation","relative_deviation","effect_sign","one_sided_p_value_obs_lower_than_rand","one_sided_p_value_obs_greater_than_rand")],stringsAsFactors = F)
+#     randys_toprint[which(randys_toprint$effect_sign==1),"effect_signs"] <- "+"
+#     randys_toprint[which(randys_toprint$effect_sign==-1),"effect_signs"] <- "-"
+#     randys_toprint[which(randys_toprint$effect_sign==0),"effect_signs"] <- "0"
+#     
+#     #####now the stats: meta-analysis
+#     p_values_meta_analysis <- meta_analysis(p_values = randys[,"p_value"],effects = randys[,"relative_deviation"],std.errors = randys[,"random_std.error"])
+#     
+#     #####modify randys for plot
+#     forplot <- data.frame(network="random",randys[c("colony","treatment","random_median")],stringsAsFactors=F); names(forplot)[grepl("median",names(forplot))] <- "median"
+#     forplot2 <- data.frame(network="observed",randys[c("colony","treatment","observed_median")],stringsAsFactors=F); names(forplot2)[grepl("median",names(forplot2))] <- "median"
+#     
+#     forplot <- aggregate(median~network+colony+treatment,FUN=mean,data=forplot)
+#     forplot2 <- aggregate(median~network+colony+treatment,FUN=mean,data=forplot2)
+#     forplot <- rbind(forplot,forplot2)
+#     forplot$network <- factor(forplot$network,levels = c("random","observed"))
+#     ###get colony ordering from observed
+#     col_medians <- aggregate(median~colony,FUN=median,data=forplot2)
+#     col_medians <- col_medians [order(col_medians$median),]
+#     col_list <- col_medians$colony
+#     colour_pal <- colorRampPalette(brewer.pal(11, "Spectral"))(length(col_list))
+#     par(bty="n",xaxt = "n")
+#     
+#     for (coli in rev(col_list)){
+#       if (coli==col_list[length(col_list)]){
+#         addy <- F
+#       }else{
+#         addy <- T
+#       }
+#       
+#       titl <- names(variables[variables==variable])
+#       if (grepl("delta",titl)){
+#         titl1 <- unlist(strsplit(titl,"delta"))[1]
+#         titl2 <- unlist(strsplit(titl,"delta"))[2]
+#         titl <- substitute(paste(labo,Delta,laby),list(labo=titl1,laby=titl2))
+#       }
+#       stripchart(median ~ network, data = forplot[forplot$colony==coli,],vertical = TRUE,pch=16,col=alpha(colour_pal[which(coli==col_list)],1),method = 'jitter', jitter = 0.3,ylim=c(min(c(0,forplot$median)),max(c(forplot$median))), main = "",ylab=titl,add=addy,bty="l",cex=0.5,cex.axis=min_cex,cex.lab=inter_cex)
+#     }
+#     ###make boxplot
+#     forplot3 <- data.frame(as.matrix(aggregate(median~network,function(x)cbind(mean(x),std.error(x)),data=forplot)),stringsAsFactors = F)
+#     names(forplot3) <- c("network","mean","se")
+#     
+#     
+#     boxplot(median ~ network, data = forplot, 
+#             outline = FALSE, notch=F,    ## avoid double-plotting outliers, if any
+#             main = "",yaxt="n",add=T,col=alpha("white",0),medlwd=line_max,boxlwd=line_min+0.5*(line_max-line_min),whisklwd=line_min,whisklty=1,staplelwd=line_min,boxwex=0.7,bty="l")
+#     
+#     par(xpd=T)
+#     
+#     ###add stat
+#     pval <- p_values_meta_analysis$two_sided_p
+#     one_sidedpval <- p_values_meta_analysis$one_sided_p
+#     statistic <- p_values_meta_analysis$meta_statistic
+#     
+#     print(paste(variable,": z=",statistic,"; one-sided p =",one_sidedpval,"; two-sided p =",pval))
+#     
+#     if (pval>0.05){p_cex <- inter_cex;adjust_line <- 0.3;fonty <- 1}else{p_cex <- max_cex*1.1;adjust_line <- 0; fonty <-  2}
+#     
+#     #add size title
+#     if(exists("size")){
+#       title(main=ifelse(size=="big","large",size),cex.main=p_cex,font.main=fonty,line=stat_line+adjust_line+1.5,xpd=T)
+#     }
+#     
+#     title(main=from_p_to_ptext(pval),cex.main=p_cex,font.main=fonty,line=stat_line+adjust_line,xpd=T)
+#     par(xpd=F)
+#     par(xaxt = "s")
+#     axis(side=1,at=c(1,2),labels=c(full_statuses_names["random"],""),tick=F,lty=0,cex.axis=inter_cex)
+#     axis(side=1,at=c(1,2),labels=c("",full_statuses_names["observed"]),tick=F,lty=0,cex.axis=inter_cex)
+#     
+#     
+#     # Capture the current plot
+#     saved_plot[[variable]] <- recordPlot()
+#     
+#   }
+#   return(saved_plot)
+# }
+
+plot_observed_vs_random <- function(experiments, variables, data_input = NULL, data_path, pattern) { #, size = NULL
+  
+  saved_plot <- list()
+  
+  
+  if (is.null(data_input)) {
+    ###read-in data###
+    starting_data <- NULL
+    
+    for (experiment in experiments){
+      print(experiment)
+      ### data files
+      setwd(paste(disk_path,experiment,data_path,sep="/"))
+      file_list <- list.files(pattern=pattern)
+      temp <- NULL
+      for (file in file_list){
+        dat <- read.table(file,header=T,stringsAsFactors=F)
+        dat <- dat[,which(names(dat)%in%c("randy","colony","treatment","period","time_hours","time_of_day",variables))]
+        temp <- rbind(temp,dat)
+        rm(list=c("dat"))
+      }
+      temp <- temp[,order(names(temp))]
+      temp <- data.frame(experiment=experiment,temp,stringsAsFactors = F)
+      if (!is.null(starting_data)){
+        if (!all(names(starting_data)%in%names(temp))){
+          temp[names(starting_data)[which(!names(starting_data)%in%names(temp))]] <- NA
+          temp <- temp[,names(starting_data)]
+        }
+      }
+      
+      starting_data <- rbind(starting_data,temp)
+      rm(list=c("temp"))
+      
+    }
+    
+    ####modify period values to be simple and match what scatterplot function expects
+    starting_data["colony"] <- as.character(interaction(starting_data$experiment,starting_data$colony))
+    
+  }else{starting_data <- data_input}
+  
+  #add info
+  starting_data$size     <- unlist(lapply( starting_data$treatment, function(x)  unlist(strsplit(x,split="\\.") )[2]  ))
+  starting_data$size      <- factor(starting_data$size    , levels=size_order   [which(size_order%in%starting_data$size )])
+  
+
+  for (variable in variables) {
+   
+    par(mfrow=c(1, 2))    # Set up two-panel layout
+
+    #save base data
+    ori_data <- starting_data
+    
+    # Find global y-axis limits
+    min_y <- min(ori_data[, variable], na.rm=TRUE)
+    max_y <- max(ori_data[, variable], na.rm=TRUE)
+    
+    # Loop through each size
+    for (current_size in unique(ori_data$size)) {
+      
+      # Subset data by size
+      data <- ori_data[ori_data$size == current_size, ]
+      
+      data["variable"] <- data[,variable]
+      data[which(!is.finite(data$variable)),"variable"] <- NA
+      
+      #####get random and observed mean
+      randys <- aggregate(variable~colony+treatment+randy,FUN=mean,data=data[which(data$randy!="observed"),]);
+      randys <- as.data.frame(as.matrix(randys));randys$variable <- as.numeric(as.character(randys$variable))
+      #####then get mean, median and standard error
+      randys <- aggregate(variable~colony+treatment,function(x)cbind(mean(x),median(x),std.error(x),length(x)),data=randys);
+      randys <- as.data.frame(as.matrix(randys))
+      names(randys)[names(randys)=="variable.1"] <- "random_mean";names(randys)[names(randys)=="variable.2"] <- "random_median";names(randys)[names(randys)=="variable.3"] <- "random_std.error";names(randys)[names(randys)=="variable.4"] <- "random_nb"
+      
+      ###do the same for observed
+      observeds <- aggregate(variable~colony+treatment+randy,FUN=mean,data=data[which(data$randy=="observed"),])
+      observeds <- as.data.frame(as.matrix(observeds));observeds$variable <- as.numeric(as.character(observeds$variable))
+      observeds <- aggregate(variable~colony+treatment,function(x)cbind(mean(x),median(x),length(x)),data=observeds);
+      observeds <- as.data.frame(as.matrix(observeds))
+      names(observeds)[names(observeds)=="variable.1"] <- "observed_mean";names(observeds)[names(observeds)=="variable.2"] <- "observed_median";names(observeds)[names(observeds)=="variable.3"] <- "observed_nb"
+      
+      randys <- merge(randys,observeds);
+      randys$colony <- as.character(randys$colony)
+      randys$observed_mean <- as.numeric(as.character(randys$observed_mean))
+      randys$random_mean <- as.numeric(as.character( randys$random_mean))
+      randys$observed_median <- as.numeric(as.character(randys$observed_median))
+      randys$random_median <- as.numeric(as.character( randys$random_median))
+      randys$random_std.error <- as.numeric(as.character( randys$random_std.error))
+      
+      randys["deviation"] <- randys$observed_median-randys$random_median
+      randys["relative_deviation"] <- (randys$observed_median-randys$random_median)/abs(randys$random_median)
+      randys["p_value"] <- NA
+      randys["variable"] <- variable
+      randys["n_observed"] <- NA
+      randys["n_random"] <- NA
+      
+      for (coli in unique(randys$colony)){
+        random <- aggregate(variable~colony+treatment+randy,FUN=mean,data=data[which(data$colony==coli&data$randy!="observed"),])[,"variable"];
+        observed <- aggregate(variable~colony+treatment+randy,FUN=mean,data=data[which(data$colony==coli&data$randy=="observed"),])[,"variable"];
+        #####Get one-sided p: proportion of random values that are greater than observed values. Will be 0 if all values are lower and 1 if all values are greater
+        one_sided_p <- length(which(random>observed))/length(random)
+        
+        randys[which(randys$colony==coli),"p_value"] <- one_sided_p
+        randys[which(randys$colony==coli),"one_sided_p_value_obs_lower_than_rand"] <- 1-one_sided_p
+        randys[which(randys$colony==coli),"one_sided_p_value_obs_greater_than_rand"] <- one_sided_p
+        randys[which(randys$colony==coli),"effect_sign"] <- sign( randys[which(randys$colony==coli),"deviation"])
+        randys[which(randys$colony==coli),"n_observed"] <- length(observed)
+        randys[which(randys$colony==coli),"n_random"] <- length(random)
+      }
+      randys_toprint <- data.frame(variable=variable,randys[c("colony","treatment","deviation","relative_deviation","effect_sign","one_sided_p_value_obs_lower_than_rand","one_sided_p_value_obs_greater_than_rand")],stringsAsFactors = F)
+      randys_toprint[which(randys_toprint$effect_sign==1),"effect_signs"] <- "+"
+      randys_toprint[which(randys_toprint$effect_sign==-1),"effect_signs"] <- "-"
+      randys_toprint[which(randys_toprint$effect_sign==0),"effect_signs"] <- "0"
+      
+      #####now the stats: meta-analysis
+      p_values_meta_analysis <- meta_analysis(p_values = randys[,"p_value"],effects = randys[,"relative_deviation"],std.errors = randys[,"random_std.error"])
+      
+      #####modify randys for plot
+      forplot <- data.frame(network="random",randys[c("colony","treatment","random_median")],stringsAsFactors=F); names(forplot)[grepl("median",names(forplot))] <- "median"
+      forplot2 <- data.frame(network="observed",randys[c("colony","treatment","observed_median")],stringsAsFactors=F); names(forplot2)[grepl("median",names(forplot2))] <- "median"
+      
+      forplot <- aggregate(median~network+colony+treatment,FUN=mean,data=forplot)
+      forplot2 <- aggregate(median~network+colony+treatment,FUN=mean,data=forplot2)
+      forplot <- rbind(forplot,forplot2)
+      forplot$network <- factor(forplot$network,levels = c("random","observed"))
+      ###get colony ordering from observed
+      col_medians <- aggregate(median~colony,FUN=median,data=forplot2)
+      col_medians <- col_medians [order(col_medians$median),]
+      col_list <- col_medians$colony
+      colour_pal <- colorRampPalette(brewer.pal(11, "Spectral"))(length(col_list))
+      par(bty="n",xaxt = "n")
+      
+      
+      # Set y-axis limits to be consistent across the two sizes
+      ylim = c(min_y, max_y)
+      
+      
+      for (coli in rev(col_list)){
+        if (coli==col_list[length(col_list)]){
+          addy <- F
+        }else{
+          addy <- T
+        }
+        
+        titl <- names(variables[variables==variable])
+        if (grepl("delta",titl)){
+          titl1 <- unlist(strsplit(titl,"delta"))[1]
+          titl2 <- unlist(strsplit(titl,"delta"))[2]
+          titl <- substitute(paste(labo,Delta,laby),list(labo=titl1,laby=titl2))
+        }
+        #stripchart(median ~ network, data = forplot[forplot$colony==coli,],vertical = TRUE,pch=16,col=alpha(colour_pal[which(coli==col_list)],1),method = 'jitter', jitter = 0.3,ylim=c(min(c(0,forplot$median)),max(c(forplot$median))), main = "",ylab=titl,add=addy,bty="l",cex=0.5,cex.axis=min_cex,cex.lab=inter_cex)
+        stripchart(median ~ network, data = forplot[forplot$colony==coli,],vertical = TRUE,pch=16,col=alpha(colour_pal[which(coli==col_list)],1),method = 'jitter', jitter = 0.3,ylim=ylim, main = "",ylab=titl,add=addy,bty="l",cex=0.5,cex.axis=min_cex,cex.lab=inter_cex)
+        
+         }
+      ###make boxplot
+      forplot3 <- data.frame(as.matrix(aggregate(median~network,function(x)cbind(mean(x),std.error(x)),data=forplot)),stringsAsFactors = F)
+      names(forplot3) <- c("network","mean","se")
+      
+      
+      boxplot(median ~ network, data = forplot, 
+              outline = FALSE, notch=F,    ## avoid double-plotting outliers, if any
+              main = "",yaxt="n",add=T,col=alpha("white",0),medlwd=line_max,boxlwd=line_min+0.5*(line_max-line_min),whisklwd=line_min,whisklty=1,staplelwd=line_min,boxwex=0.7,bty="l")
+      
+      par(xpd=T)
+      
+      ###add stat
+      pval <- p_values_meta_analysis$two_sided_p
+      one_sidedpval <- p_values_meta_analysis$one_sided_p
+      statistic <- p_values_meta_analysis$meta_statistic
+      
+      print(paste(variable,": z=",statistic,"; one-sided p =",one_sidedpval,"; two-sided p =",pval))
+      
+      if (pval>0.05){p_cex <- inter_cex;adjust_line <- 0.3;fonty <- 1}else{p_cex <- max_cex*1.1;adjust_line <- 0; fonty <-  2}
+      
+      #add size title
+        title(main=ifelse(current_size=="big","large",current_size),cex.main=p_cex,font.main=fonty,line=stat_line+adjust_line+1.5,xpd=T)
+  
+      
+      title(main=from_p_to_ptext(pval),cex.main=p_cex,font.main=fonty,line=stat_line+adjust_line,xpd=T)
+      par(xpd=F)
+      par(xaxt = "s")
+      axis(side=1,at=c(1,2),labels=c(full_statuses_names["random"],""),tick=F,lty=0,cex.axis=inter_cex)
+      axis(side=1,at=c(1,2),labels=c("",full_statuses_names["observed"]),tick=F,lty=0,cex.axis=inter_cex)
+      
+    }
+    # Capture the current plot
+    saved_plot[[variable]] <- recordPlot()
+    graphics.off() # Close all devices
+  }
+  #warning("THIS FUNCTION IS CURRENTLY BROKEN. it works when run line by line (e.g.the saved_plot[[variable]] is produced and displayed correctly) but it can't save objects correctly ")
+  return(saved_plot)
+}
+
+
+plot_age_dol <- function(experiments){
+  
+  plot_age_dol_list <- list()
+  for (experiment in experiments){
+    
+    data <- read.table(paste(disk_path,"/",experiment,"/processed_data/collective_behaviour/random_vs_observed/interactions.dat",sep=""),header=T,stringsAsFactors = F)
+    
+    #add info
+    data$size     <- unlist(lapply( data$treatment, function(x)  unlist(strsplit(x,split="\\.") )[2]  ))
+    data$size      <- factor(data$size    , levels=size_order   [which(size_order%in%data$size )])
+    
+    #analysis per size group
+    #for (SIZE in unique(data$size)) {
+    
+    #####second plot interaction frequencies, observed vs. random  ##############
+    variable_list <- c("intra_caste_over_inter_caste_WW_contact_duration","QNurse_over_QForager_contact_duration")
+    names(variable_list) <- c("Within/Between-task contact","Q-N/Q-F contacts")
+    
+    InteractFreq    <- plot_observed_vs_random(experiments=experiment,variables=variable_list,data_input=data) #,size=SIZE
+    
+    #plot_age_dol_list[[SIZE]] <- plot_age_dol_plot
+    
+    ####third plot assortativity ############
+    variable_list <- c("task_assortativity")
+    names(variable_list) <- c("Task assortativity")
+    TaskAssort <- plot_observed_vs_random(experiments=experiment,variables=variable_list,pattern="network_properties",data_path="/processed_data/network_properties_edge_weights_duration/random_vs_observed") # ,size=SIZE
+    
+  }
+  
+  plot_age_dol_list <- list(InteractFreq=InteractFreq,TaskAssort=TaskAssort)
+  
+  return(plot_age_dol_list)
+}
+
+
+############################################################################################################################
 model_n_interations <- lmerControl(optCtrl = list(maxfun = 2e5))
 
 #this function performs no rescaling but has if-statements to skip time_of_day for simulation data
@@ -3667,6 +4093,15 @@ STYLE <- list(#colScale, fillScale,
       panel.grid.minor = element_blank(),
       text = element_text(family = "Liberation Serif")
     ))
+  
+  
+  # for plots not involving the treatments
+  STYLE_generic <- list(
+    theme(
+      panel.grid.minor = element_blank(),
+      text = element_text(family = "Liberation Serif") 
+    ))#
+  
   
   
   remove <-

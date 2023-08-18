@@ -352,10 +352,12 @@ grand_mean_data_scaled <- grand_mean_data %>%
 
 
 # Wrap the legend labels
-grand_mean_data_scaled$variables <- str_wrap(grand_mean_data_scaled$variables, width = 20)  # Adjust the width as needed
+# grand_mean_data_scaled$variables <- str_wrap(grand_mean_data_scaled$variables, width = 20)  # Adjust the width as needed
+# #add colours for vars
+# colors <- brewer.pal(length(unique(grand_mean_data_scaled$variables)), "Set2")
 
 #plot fit
-GroomingVsTimeOutside <- ggplot(grand_mean_data_scaled, aes(x = time_hours, y = scaled_grand_mean,  fill = variables, color = variables, group = variables)) +
+GroomingVsTimeOutside <- ggplot(grand_mean_data_scaled, aes(x = time_hours, y = scaled_grand_mean, fill = variables, color= variables, group = variables)) +
   geom_smooth(data = subset(grand_mean_data_scaled, period == "pre"), method = "lm", se = T, linetype = "dashed") +
   geom_smooth(data = subset(grand_mean_data_scaled, period == "post"), method = "lm", se = T, linetype = "solid") +
   scale_x_continuous(limits = c(min(grand_mean_data_scaled$time_hours), max(grand_mean_data_scaled$time_hours)), expand = c(0, 0)) +
@@ -367,14 +369,20 @@ GroomingVsTimeOutside <- ggplot(grand_mean_data_scaled, aes(x = time_hours, y = 
   #geom_text(aes(x = 10, label = from_p_to_ptext(p_interaction_vars_time))) 
   annotate("text", x = 10, y = 3, label = from_p_to_ptext(p_interaction_vars_time)) +
   STYLE +
+  scale_fill_manual(values = c("#E69F00", "#56B4E9")) +
+  scale_color_manual(values = c("#E69F00", "#56B4E9")) + #inverting the order of scale fill and scale color breaks the plot
   theme(legend.position = c(.05, .95), # Position legend inside plot area
         legend.justification = c(0, 1), # Justify legend at top left
         legend.box.just = "left",
         legend.direction = "horizontal",
         legend.background = element_rect(fill='transparent'),
-        legend.title = element_blank()) + 
-  
-  guides(fill = guide_legend(nrow = 2,ncol = 1)) 
+        legend.title = element_blank()) +
+  guides(fill = guide_legend(nrow = 2,ncol = 1))
+
+
+
+
+
 
 
 ###################################################################################################################################
@@ -412,37 +420,70 @@ CompareBehavs2 <- CompareBehavs2 %>%
                 duration_grooming_given_to_treated_min, duration_of_contact_with_treated_min, task_group
   )
 
-
 #transform data as above for comparability
-CompareBehavs2[!is.na(CompareBehavs2$duration_grooming_given_to_treated_min),"dur_groom_given_to_treat_min_power0.1"]  <- (CompareBehavs2[!is.na(CompareBehavs2$duration_grooming_given_to_treated_min),"duration_grooming_given_to_treated_min"] )^0.1
-CompareBehavs2[!is.na(CompareBehavs2$duration_of_contact_with_treated_min),"duration_of_contact_with_treated_min_log"]  <- log_transf(CompareBehavs2[!is.na(CompareBehavs2$duration_of_contact_with_treated_min),"duration_of_contact_with_treated_min"])
+CompareBehavs2[!is.na(CompareBehavs2$duration_grooming_given_to_treated_min),"dur_groom_given_to_treat_min_log"]  <- log_transf(CompareBehavs2[!is.na(CompareBehavs2$duration_grooming_given_to_treated_min),"duration_grooming_given_to_treated_min"] )
+CompareBehavs2[!is.na(CompareBehavs2$duration_of_contact_with_treated_min),"dur_contact_with_treated_min_log"]  <- log_transf(CompareBehavs2[!is.na(CompareBehavs2$duration_of_contact_with_treated_min),"duration_of_contact_with_treated_min"])
 
+CompareBehavs2$duration_grooming_given_to_treated_min <- NULL
+CompareBehavs2$duration_of_contact_with_treated_min <- NULL
 
-# Create the plot
-#plotting by treatment is meaningless as they all overlap
+#check normality
+test_norm(CompareBehavs2$dur_groom_given_to_treat_min_log)
+test_norm(CompareBehavs2$dur_contact_with_treated_min_log)
 
-  ggplot(CompareBehavs2, aes(x=duration_of_contact_with_treated_min_log, 
-             y=dur_groom_given_to_treat_min_power0.1, 
-             color=period)) + 
- # geom_point() +   # Scatter plot of points
-  geom_smooth(method='lm', se=T) +   # Linear regression line, without standard error shading
-  facet_grid(. ~ task_group) +   # Faceting by period and task_group
-  labs(title="Linear fit of duration_of_contact_with_treated_min vs duration_grooming_given_to_treated_min", 
-       x="Duration of Contact (min)", 
-       y="Duration of Grooming Given (min)") +
-  theme_minimal() #+
-   # STYLE_CONT
+#check PEARSON correlation of vars, by group and period
+# Calculate correlation, slope, and mean positions for each combination
+calculated_values <- CompareBehavs2 %>%
+  group_by(task_group, period) %>%
+  summarise(correlation = cor(dur_contact_with_treated_min_log, dur_groom_given_to_treat_min_log),
+            slope = coef(lm(dur_groom_given_to_treat_min_log ~ dur_contact_with_treated_min_log))[2], #for plotting
+            mean_x = mean(dur_contact_with_treated_min_log, na.rm = TRUE),
+            mean_y = mean(dur_groom_given_to_treat_min_log, na.rm = TRUE)) %>%
+  ungroup()
 
+  # melt the dataframe to long format
+  CompareBehavs2_melt <- reshape(CompareBehavs2,
+                           varying = c("dur_groom_given_to_treat_min_log", "dur_contact_with_treated_min_log"),
+                           v.names = "measure",
+                           times =  c("dur_groom_given_to_treat_min_log", "dur_contact_with_treated_min_log"),
+                           timevar = "variables",
+                           direction = "long")
+  CompareBehavs2_melt$variables <- as.factor(CompareBehavs2_melt$variables)
+  #CompareBehavs2_melt$variables <- gsub("_", " ", CompareBehavs2_melt$variables)
+  
+  ###### MODEL post vs pre
+  mod1 <- lmer(measure ~ variables*period + (1|colony) + (1|antID) + (1|time_hours), data = CompareBehavs2_melt[which(CompareBehavs2_melt$task_group=="nurse"),])
+  mod2 <- lmer(measure ~ variables*period + (1|colony) + (1|antID) + (1|time_hours), data = CompareBehavs2_melt[which(CompareBehavs2_melt$task_group=="forager"),], control = lmerControl(optimizer ="Nelder_Mead"))
+  #output_lmer(mod1)
 
+  p_interaction_vars_nuse <- anova(mod1)["variables:period","Pr(>F)"]
+  p_interaction_vars_forag <- anova(mod2)["variables:period","Pr(>F)"]
+  
+  
+  CompareBehavs2$period <- fct_rev(CompareBehavs2$period)
+  
+  # Create the plot
+  #plotting by treatment is meaningless as they all overlap
+  GroomingVsContacts <- ggplot(CompareBehavs2, aes(x=dur_contact_with_treated_min_log, 
+                             y=dur_groom_given_to_treat_min_log, 
+                             color=period)) + 
+    # geom_point() +   # Scatter plot of points
+    geom_smooth(method='lm', se=T) +   # Linear regression line, without standard error shading
+    labs(title=" ", 
+         x="Duration of contact (min) (log)", 
+         y="Duration of grooming \ngiven (min) (log)") +
+    theme_minimal() +
+    annotate("text", x = -1, y = -1.5, label =  from_p_to_ptext(max(p_interaction_vars_nuse,p_interaction_vars_forag))) + #as they are the same, create stars once
+    geom_text(data=calculated_values, 
+              aes(x=mean_x+0.8, y=mean_y+0.1, label=sprintf("r = %.2f", correlation), angle=atan(slope)*180/pi),
+              hjust=-0.1, vjust=-0.1, check_overlap = TRUE, size=3,show.legend = FALSE) +
+    facet_grid(. ~ task_group) +
+    coord_fixed(ratio = 1) +
+    STYLE_generic 
+  # STYLE_CONT
+  
 
-
-
-
-
-
-
-
-
+  
 
 ###################################################################################################################################
 ############### CH5: PRE-POST DIFFERENCES PLOTS ###################################################################################
@@ -454,11 +495,7 @@ CompareBehavs2[!is.na(CompareBehavs2$duration_of_contact_with_treated_min),"dura
 
 #TO DO's  #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-
-warning("inter_caste_contact_duration REMOVE FROM EVERYWHERE, or add nurses if can be added to the story!")
-
 # stars not assigned (occasionally)
-# - inter caste contact duration (forager)
 
 
 ###################################################################################################################################
@@ -677,6 +714,16 @@ SavePrint_plot(
   save_dir = figurefolder
 )
  
+#it looks terrible
+SavePrint_plot(
+  plot_obj = GroomingVsContacts, 
+  plot_name = "GroomingVsContacts",
+  plot_size = c(700/ppi, 300/ppi),
+  # font_size_factor = 4,
+  dataset_name = "Grid",
+  save_dir = figurefolder
+)
+
 
 SavePrint_plot(
   plot_obj = collective_net_properties, 
@@ -1178,3 +1225,12 @@ SavePrint_plot(
 
 
 
+########################################################################
+####intra_caste_over_inter_caste_WW_contact_duration, QNurse_over_QForager_contact_duration 
+
+DOL_plots <- plot_age_dol(experiments=c("main_experiment"))
+
+DOL_plots
+
+####################### GRID RESULTS 
+warning("AND THEN PLOT and stats SMALL OBS VS BIG OBS (may require quite some rearrangement)")

@@ -47,8 +47,12 @@ require(cowplot)
 library(Cairo) # to ensure working export to pdf with non-standard fonts
 #font_add_google("Crimson Text", "crimson", db_cache = FALSE)
 require(dplyr)
+library(forcats)  # for fct_rev() reverses order of factors for plotting needs
 #font_import()
 #fonts()
+library(grid)
+library(gridBase)
+library(gridGraphics)
 
 ######library(showtext)
 ######showtext_auto()#must be called to indicate that showtext is going to be automatically invoked to draw text whenever a plot is created.
