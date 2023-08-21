@@ -1301,6 +1301,7 @@ plot_age_dol <- function(experiments){
 model_n_interations <- lmerControl(optCtrl = list(maxfun = 2e5))
 
 #this function performs no rescaling but has if-statements to skip time_of_day for simulation data
+# this function also tests the data from the random VS observed dataset, comparing observed big VS observed small (Rand is done in function plot_age_dol) 
 collective_analysis_no_rescal <- function(data_path=data_path,showPlot=T){
   
   ###1. read data
@@ -1363,6 +1364,11 @@ collective_analysis_no_rescal <- function(data_path=data_path,showPlot=T){
     data$size      <- factor(data$size    , levels=size_order   [which(size_order%in%data$size )])
     data$exposure  <- factor(data$exposure , levels=exposure_order[which(exposure_order%in%data$exposure )])
     data$period    <- factor(data$period    , levels=period_order   [which(period_order%in%data$period )])
+    
+    
+    
+    if (!grepl("interactions.dat",pattern)) { #random_vs_observed data
+      
     
     ###fit model - using treatment
     if (grepl("simulation_results",pattern)) { #simulation data won't have time_of_day
@@ -1519,9 +1525,30 @@ collective_analysis_no_rescal <- function(data_path=data_path,showPlot=T){
       }
       
     }
+    
+    }else{# if pre_only is TRUE
+      print("random VS observed stats")
+      
+      #keep only Obs
+      data <- data[which(data$randy=="observed"),]
+      
+      model <- lm(variable ~ size,data=data)
+      
+      
+      anov  <- anova(model)
+      p_size <- anov["size","Pr(>F)"]
+      
+      test_norm(residuals(model))
+      
+      stats_outcomes <- rbind(stats_outcomes,data.frame(variable=variable_list[i],predictor="size",df=paste(round(anov["size","Df"]),sep=","),Fvalue=anov["size","F value"],pval=p_size,stringsAsFactors = F))
+    
+    
+    }
+    
     rm(list=ls()[which(grepl("p_interaction",ls()))])
     rm(list=ls()[which(grepl("posthoc_groups_",ls()))])
     
+    if (!grepl("interactions.dat",pattern)) { #random_vs_observed data
     #plot
     barplot_delta_period <- barplot_delta(dataset=data,predictor="treatment",post_hoc_outcomes=post_hoc_outcomes,stats_outcomes=stats_outcomes,i=i,type="collective",collective=T,plot_untransformed=F,diff_type="") #form_stat=NULL,
     if (showPlot) {print(barplot_delta_period)}
@@ -1534,13 +1561,19 @@ collective_analysis_no_rescal <- function(data_path=data_path,showPlot=T){
     # 
     # rm(list = ls()[which(names(ls()) == "post_hoc_outcomes")])
     # rm(list = ls()[which(names(ls()) == "stats_outcomes")])
+    
+    }
   }
   rownames(stats_outcomes) <- NULL
   
   #add  formatted output
-  stats_outcomes$formatted <- paste0("(GLMM,treatment-induced changes (", stats_outcomes$variable,", ",stats_outcomes$predictor,"): F(",stats_outcomes$df,") = ", round(stats_outcomes$Fvalue,3), ", P ≤ ",format(from_p_to_prounded(stats_outcomes$pval),scientific=F))
-  
-  return(list(stats_outcomes=stats_outcomes,    post_hoc_outcomes=post_hoc_outcomes,  barplot_delta_period_list=barplot_delta_period_list))
+  if (!grepl("interactions.dat",pattern)) { #random_vs_observed data
+    stats_outcomes$formatted <- paste0("(GLMM,treatment-induced changes (", stats_outcomes$variable,", ",stats_outcomes$predictor,"): F(",stats_outcomes$df,") = ", round(stats_outcomes$Fvalue,3), ", P ≤ ",format(from_p_to_prounded(stats_outcomes$pval),scientific=F))
+    return(list(stats_outcomes=stats_outcomes,    post_hoc_outcomes=post_hoc_outcomes,  barplot_delta_period_list=barplot_delta_period_list))
+  }else{
+    stats_outcomes$formatted <- paste0("(LM,pre-treatment difference (", stats_outcomes$variable,", ",stats_outcomes$predictor,"): F(",stats_outcomes$df,") = ", round(stats_outcomes$Fvalue,3), ", P ≤ ",format(from_p_to_prounded(stats_outcomes$pval),scientific=F))
+    return(list(stats_outcomes=stats_outcomes))
+  }
 }
 
 #this function handles rescaling by pre-exposure mean for each size

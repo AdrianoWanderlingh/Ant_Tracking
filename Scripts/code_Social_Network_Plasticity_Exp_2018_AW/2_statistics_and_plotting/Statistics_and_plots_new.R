@@ -1228,9 +1228,27 @@ SavePrint_plot(
 ########################################################################
 ####intra_caste_over_inter_caste_WW_contact_duration, QNurse_over_QForager_contact_duration 
 
+## RANDOM VS OBSERVED (split by size)
+
 DOL_plots <- plot_age_dol(experiments=c("main_experiment"))
 
 DOL_plots
 
-####################### GRID RESULTS 
-warning("AND THEN PLOT and stats SMALL OBS VS BIG OBS (may require quite some rearrangement)")
+####################### GRID RESULTS
+
+
+### BIG VS SMALL (no random, no plot)
+
+#####second plot interaction frequencies, observed vs. random  ##############
+data_path <- paste(disk_path,"/main_experiment/processed_data/collective_behaviour/random_vs_observed",sep="")
+pattern="interactions.dat"
+variable_list <- c("intra_caste_over_inter_caste_WW_contact_duration","QNurse_over_QForager_contact_duration")
+names(variable_list) <- c("Within/Between-task contact","Q-N/Q-F contacts")
+transf_variable_list <- c("log"      ,"log"   )   ######"none", "sqrt" "log","power2"
+
+
+Constitutive_organisation_ratios <- collective_analysis_no_rescal(data_path,showPlot=F)
+
+Constitutive_organisation_ratios$stats_outcomes
+
+
