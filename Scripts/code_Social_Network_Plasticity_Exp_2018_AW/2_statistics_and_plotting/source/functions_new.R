@@ -2606,19 +2606,19 @@ barplot_delta <-
     #form_stat=NULL,
     
     if (pre_only!=TRUE) {
-    #get difference on RAW data
-    diff <-
-      create_diff(dataset,
-                  predictor,
-                  type,
-                  collective,
-                  plot_untransformed,
-                  diff_type) #form_stat=NULL,
-    diff["time"] <- "Delta"
+      #get difference on RAW data
+      diff <-
+        create_diff(dataset,
+                    predictor,
+                    type,
+                    collective,
+                    plot_untransformed,
+                    diff_type) #form_stat=NULL,
+      diff["time"] <- "Delta"
     } else{
-    diff <- dataset
-    diff$predictor <- diff[, predictor]
-    diff["time"] <- "pre"
+      diff <- dataset
+      diff$predictor <- diff[, predictor]
+      diff["time"] <- "pre"
     }
     
     if (!collective) {
@@ -2632,8 +2632,8 @@ barplot_delta <-
           data = diff
         )
     }
-
-
+    
+    
     #mean by colony (drop time_of_day)
     diff <-
       aggregate(
@@ -2683,282 +2683,282 @@ barplot_delta <-
     # rename vars
     
     if (pre_only!=TRUE) {
-    
-    # if interaction period*treatment
-    if (all(grepl(paste0(levels(dataset$treatment), collapse = "|"), names(post_hoc_outcomes[[variable_list[i]]])))
-      #all(names(post_hoc_outcomes[[variable_list[i]]]) == levels(dataset$treatment))
+      
+      # if interaction period*treatment
+      if (all(grepl(paste0(levels(dataset$treatment), collapse = "|"), names(post_hoc_outcomes[[variable_list[i]]])))
+          #all(names(post_hoc_outcomes[[variable_list[i]]]) == levels(dataset$treatment))
       ) {
-      print("period*treatment interaction significant")
-      
-      # Create the base ggplot object
-      plot_var <-
-        ggplot(means,
-               aes_string(x = "predictor", y = "mean", fill = "predictor")) +
-        STYLE +
-        colFill_treatment +
-        labs(y = paste("\u0394", names(variable_list[i]),
-                       ifelse(transf_variable_list[i] == "none", "", paste0("(", transf_variable_list[i], ")")), #transformation
-                       sep = " "), x = predictor)
-      
-      
-      # if there are two ants groups
-      if (any(grepl("task_group", stats_outcomes[which(stats_outcomes$variable == variable_list[i]),"predictor"])) ) {
-
-        col_geom <-         list( 
-          geom_errorbar(
-          aes_string(ymin = paste0("mean - se"), ymax = paste0("mean + se"),group="task_group"),
-          position = position_dodge2(width = 0.8, preserve = "single"),
-          color="black"
-        ) ,
-          geom_col(position = position_dodge2(width = 0.8, preserve = "single"), aes_string(col = "task_group"), size = 0.8
-                   ),
-        scale_color_manual(values = c("#00FFFF", "#FF00FF"))
-        )
-
-        plot_var <- plot_var + col_geom
-      } else {
+        print("period*treatment interaction significant")
         
-        col_geom <- list(
-          geom_errorbar(
-          aes_string(ymin = paste0("mean - se"), ymax = paste0("mean + se")),
-          position = position_dodge2(width = 0.8, preserve = "single")
-        ) ,
-          geom_col(position = position_dodge2(width = 0.8, preserve = "single"))
-        )
-        plot_var <- plot_var + col_geom
-      }
-      
-      
-      # add posthoc letters
-      if (variable_list[i] %in% names(post_hoc_outcomes)) {
+        # Create the base ggplot object
+        plot_var <-
+          ggplot(means,
+                 aes_string(x = "predictor", y = "mean", fill = "predictor")) +
+          STYLE +
+          colFill_treatment +
+          labs(y = paste("\u0394", names(variable_list[i]),
+                         ifelse(transf_variable_list[i] == "none", "", paste0("(", transf_variable_list[i], ")")), #transformation
+                         sep = " "), x = predictor)
+        
+        
         # if there are two ants groups
-        # first if: check if task_group appears in the predictors
-        # second if: return true if stats_outcomes$pval is lower than 0.05 for row that grep "task" in stats_outcomes$predictor
-        if (any(grepl("task_group", stats_outcomes[which(stats_outcomes$variable == variable_list[i]),"predictor"])
-            &  ifelse(grepl("task_group", stats_outcomes$predictor) & stats_outcomes$pval < 0.05, TRUE, FALSE))
-            ) {
-
-         reshaped_posthocs <- data.frame(predictor = names(post_hoc_outcomes[[variable_list[i]]]), letters = post_hoc_outcomes[[variable_list[i]]], stringsAsFactors = FALSE)
+        if (any(grepl("task_group", stats_outcomes[which(stats_outcomes$variable == variable_list[i]),"predictor"])) ) {
           
-         reshaped_posthocs$task_group <-  sub(".*\\.(.*)", "\\1", reshaped_posthocs$predictor)
-         reshaped_posthocs$predictor <- sub("\\.[^.]*$", "", reshaped_posthocs$predictor)
-         
-         warning("geom_text faulty, as it shows letters inverted in each treatment. temporary fix: coloured the letters to help readability")
-          additional_geoms <- list(geom_text(data = reshaped_posthocs,
-            aes(label = letters, x = predictor, y = max_mean_se, col  = task_group, group= task_group),
-            position = position_dodge2(width = 0.8, preserve = "single"),
-            vjust = -0.4
+          col_geom <-         list( 
+            geom_errorbar(
+              aes_string(ymin = paste0("mean - se"), ymax = paste0("mean + se"),group="task_group"),
+              position = position_dodge2(width = 0.8, preserve = "single"),
+              color="black"
+            ) ,
+            geom_col(position = position_dodge2(width = 0.8, preserve = "single"), aes_string(col = "task_group"), size = 0.8
+            ),
+            scale_color_manual(values = c("#00FFFF", "#FF00FF"))
+          )
+          
+          plot_var <- plot_var + col_geom
+        } else {
+          
+          col_geom <- list(
+            geom_errorbar(
+              aes_string(ymin = paste0("mean - se"), ymax = paste0("mean + se")),
+              position = position_dodge2(width = 0.8, preserve = "single")
+            ) ,
+            geom_col(position = position_dodge2(width = 0.8, preserve = "single"))
+          )
+          plot_var <- plot_var + col_geom
+        }
+        
+        
+        # add posthoc letters
+        if (variable_list[i] %in% names(post_hoc_outcomes)) {
+          # if there are two ants groups
+          # first if: check if task_group appears in the predictors
+          # second if: return true if stats_outcomes$pval is lower than 0.05 for row that grep "task" in stats_outcomes$predictor
+          if (any(grepl("task_group", stats_outcomes[which(stats_outcomes$variable == variable_list[i]),"predictor"])
+                  &  ifelse(grepl("task_group", stats_outcomes$predictor) & stats_outcomes$pval < 0.05, TRUE, FALSE))
+          ) {
+            
+            reshaped_posthocs <- data.frame(predictor = names(post_hoc_outcomes[[variable_list[i]]]), letters = post_hoc_outcomes[[variable_list[i]]], stringsAsFactors = FALSE)
+            
+            reshaped_posthocs$task_group <-  sub(".*\\.(.*)", "\\1", reshaped_posthocs$predictor)
+            reshaped_posthocs$predictor <- sub("\\.[^.]*$", "", reshaped_posthocs$predictor)
+            
+            warning("geom_text faulty, as it shows letters inverted in each treatment. temporary fix: coloured the letters to help readability")
+            additional_geoms <- list(geom_text(data = reshaped_posthocs,
+                                               aes(label = letters, x = predictor, y = max_mean_se, col  = task_group, group= task_group),
+                                               position = position_dodge2(width = 0.8, preserve = "single"),
+                                               vjust = -0.4
+            ))
+            plot_var <- plot_var + additional_geoms
+            
+            #normal condition (4 groups)
+          }else{
+            
+            reshaped_posthocs <- data.frame(predictor = names(post_hoc_outcomes[[variable_list[i]]]), letters = post_hoc_outcomes[[variable_list[i]]], stringsAsFactors = FALSE)
+            reshaped_posthocs <- merge(reshaped_posthocs,means)
+            
+            # adjust position of letters if vals are negative
+            reshaped_posthocs$se <- ifelse(reshaped_posthocs$mean+reshaped_posthocs$se<0,
+                                           0,
+                                           reshaped_posthocs$se)
+            reshaped_posthocs$mean <- ifelse(reshaped_posthocs$mean<0,0,reshaped_posthocs$mean)
+            
+            additional_geoms <- list(geom_text(data = reshaped_posthocs,
+                                               aes(label = letters, x = predictor, y = mean+se),
+                                               position = position_dodge2(width = 0.8, preserve = "single"),
+                                               vjust = -0.4
+            ))
+            
+            #   list(geom_text(
+            #   aes(label = post_hoc_outcomes[[variable_list[i]]][predictor], y = max_mean_se),
+            #   position = position_dodge2(width = 0.8, preserve = "single"),
+            #   vjust = -0.4
+            # ))
+            plot_var <- plot_var + additional_geoms
+          }
+        }
+        
+        # manage x axis labels
+        if (predictor == "treatment") {
+          scale_geom <- list(scale_x_discrete(
+            labels = function(x)
+              str_wrap(gsub("big", "large", gsub("\\.", " ", x)), width = 4)
+          ))
+          plot_var <- plot_var + scale_geom
+        } else{
+          scale_geom <- list(scale_x_continuous(
+            labels = function(x)
+              str_wrap(x, width = 4),
+            breaks = 1:length(levels(means$predictor)) + c(0, 0, 1, 1)
+          ))
+          plot_var <- plot_var + scale_geom
+        }
+        
+        
+      } else if (all(names(post_hoc_outcomes[[variable_list[i]]]) == levels(dataset$size))
+      ) {
+        print("Only period*size interaction significant")
+        
+        # Reorder the vector by size
+        treatment_order_size <-
+          treatment_order[order(grepl("small", treatment_order, fixed = TRUE), decreasing = TRUE)]
+        means$predictor <-
+          factor(means$predictor , levels = treatment_order_size[which(treatment_order_size %in% means$predictor)])
+        # Add a new variable for grouping and x-axis
+        means$group <-
+          ifelse(grepl("small", means$predictor), "small", "big")
+        #create a gap in the layout add a +1 to the big colonies
+        means$x_axis <-
+          as.numeric(means$predictor) + ifelse(means$group == "big", 1, 0)
+        
+        # Create the base ggplot object
+        plot_var <-
+          ggplot(means, aes(x = x_axis, y = mean, fill = predictor)) +
+          geom_errorbar(aes(ymin = mean - se, ymax = mean + se),
+                        position = position_dodge2(width = 0.8, preserve = "single")) +
+          geom_col(position = position_dodge2(width = 0.8, preserve = "single")) +
+          STYLE +
+          colFill_treatment +
+          labs(y = paste("\u0394", names(variable_list[i]),
+                         ifelse(transf_variable_list[i] == "none", "", paste0("(", transf_variable_list[i], ")")), #transformation
+                         sep = " "), x = predictor) +
+          theme(axis.text.x = element_text())
+        
+        # manage x axis labels
+        if (predictor == "treatment") {
+          scale_geom <- list(scale_x_continuous(
+            labels = function(x)
+              str_wrap(gsub("big", "large", gsub("\\.", " ", x)), width = 4),
+            breaks = 1:length(levels(means$predictor)) + c(0, 0, 1, 1)
+          ))
+          plot_var <- plot_var + scale_geom
+        } else{
+          scale_geom <- list(scale_x_continuous(
+            labels = function(x)
+              str_wrap(x, width = 4),
+            breaks = 1:length(levels(means$predictor)) + c(0, 0, 1, 1)
+          ))
+          plot_var <- plot_var + scale_geom
+        }
+        
+        
+        # Add bar with significant stars 
+        # (for more than 1 element in the ggplot if statement, there is the error: Error in `+.gg`:! Cannot add ggproto objects together )
+        if (variable_list[i] %in% names(post_hoc_outcomes)) {
+          additional_geoms <- list(geom_segment(
+            aes(
+              x = sum(x_axis[group == "small"]) / 2,
+              xend = sum(x_axis[group == "big"]) / 2,
+              y = abs(max_mean_se),
+              yend = abs(max_mean_se)
+            )
+          ),
+          geom_text(
+            aes(
+              x = mean(x_axis),
+              y = abs(max_mean_se + 1 / 2 * (max_mean_se)),
+              label = paste(from_p_to_ptext(stats_outcomes[which(
+                stats_outcomes$variable == variable_list[i] &
+                  stats_outcomes$predictor == "period:size"
+              ), "pval"]),collapse="")
+            )
           ))
           plot_var <- plot_var + additional_geoms
-
-          #normal condition (4 groups)
-        }else{
-          
-          reshaped_posthocs <- data.frame(predictor = names(post_hoc_outcomes[[variable_list[i]]]), letters = post_hoc_outcomes[[variable_list[i]]], stringsAsFactors = FALSE)
-          reshaped_posthocs <- merge(reshaped_posthocs,means)
-          
-          # adjust position of letters if vals are negative
-          reshaped_posthocs$se <- ifelse(reshaped_posthocs$mean+reshaped_posthocs$se<0,
-                                         0,
-                                         reshaped_posthocs$se)
-          reshaped_posthocs$mean <- ifelse(reshaped_posthocs$mean<0,0,reshaped_posthocs$mean)
-          
-        additional_geoms <- list(geom_text(data = reshaped_posthocs,
-                                           aes(label = letters, x = predictor, y = mean+se),
-                                           position = position_dodge2(width = 0.8, preserve = "single"),
-                                           vjust = -0.4
-        ))
-          
-        #   list(geom_text(
-        #   aes(label = post_hoc_outcomes[[variable_list[i]]][predictor], y = max_mean_se),
-        #   position = position_dodge2(width = 0.8, preserve = "single"),
-        #   vjust = -0.4
-        # ))
-        plot_var <- plot_var + additional_geoms
         }
-         }
-      
-      # manage x axis labels
-      if (predictor == "treatment") {
-        scale_geom <- list(scale_x_discrete(
-          labels = function(x)
-            str_wrap(gsub("big", "large", gsub("\\.", " ", x)), width = 4)
-        ))
-        plot_var <- plot_var + scale_geom
-      } else{
-        scale_geom <- list(scale_x_continuous(
-          labels = function(x)
-            str_wrap(x, width = 4),
-          breaks = 1:length(levels(means$predictor)) + c(0, 0, 1, 1)
-        ))
-        plot_var <- plot_var + scale_geom
-      }
-      
-      
-    } else if (all(names(post_hoc_outcomes[[variable_list[i]]]) == levels(dataset$size))
-               ) {
-      print("Only period*size interaction significant")
-      
-      # Reorder the vector by size
-      treatment_order_size <-
-        treatment_order[order(grepl("small", treatment_order, fixed = TRUE), decreasing = TRUE)]
-      means$predictor <-
-        factor(means$predictor , levels = treatment_order_size[which(treatment_order_size %in% means$predictor)])
-      # Add a new variable for grouping and x-axis
-      means$group <-
-        ifelse(grepl("small", means$predictor), "small", "big")
-      #create a gap in the layout add a +1 to the big colonies
-      means$x_axis <-
-        as.numeric(means$predictor) + ifelse(means$group == "big", 1, 0)
-      
-      # Create the base ggplot object
-      plot_var <-
-        ggplot(means, aes(x = x_axis, y = mean, fill = predictor)) +
-        geom_errorbar(aes(ymin = mean - se, ymax = mean + se),
-                      position = position_dodge2(width = 0.8, preserve = "single")) +
-        geom_col(position = position_dodge2(width = 0.8, preserve = "single")) +
-        STYLE +
-        colFill_treatment +
-        labs(y = paste("\u0394", names(variable_list[i]),
-                       ifelse(transf_variable_list[i] == "none", "", paste0("(", transf_variable_list[i], ")")), #transformation
-                       sep = " "), x = predictor) +
-        theme(axis.text.x = element_text())
-      
-      # manage x axis labels
-      if (predictor == "treatment") {
-        scale_geom <- list(scale_x_continuous(
-          labels = function(x)
-            str_wrap(gsub("big", "large", gsub("\\.", " ", x)), width = 4),
-          breaks = 1:length(levels(means$predictor)) + c(0, 0, 1, 1)
-        ))
-        plot_var <- plot_var + scale_geom
-      } else{
-        scale_geom <- list(scale_x_continuous(
-          labels = function(x)
-            str_wrap(x, width = 4),
-          breaks = 1:length(levels(means$predictor)) + c(0, 0, 1, 1)
-        ))
-        plot_var <- plot_var + scale_geom
-      }
-      
-      
-      # Add bar with significant stars 
-      # (for more than 1 element in the ggplot if statement, there is the error: Error in `+.gg`:! Cannot add ggproto objects together )
-      if (variable_list[i] %in% names(post_hoc_outcomes)) {
-        additional_geoms <- list(geom_segment(
-          aes(
-            x = sum(x_axis[group == "small"]) / 2,
-            xend = sum(x_axis[group == "big"]) / 2,
-            y = abs(max_mean_se),
-            yend = abs(max_mean_se)
-          )
-        ),
-        geom_text(
-          aes(
-            x = mean(x_axis),
-            y = abs(max_mean_se + 1 / 2 * (max_mean_se)),
-            label = paste(from_p_to_ptext(stats_outcomes[which(
-              stats_outcomes$variable == variable_list[i] &
-                stats_outcomes$predictor == "period:size"
-            ), "pval"]),collapse="")
-          )
-        ))
-        plot_var <- plot_var + additional_geoms
-      }
-      
-    } else if (
-      all(names(post_hoc_outcomes[[variable_list[i]]]) %in% levels(dataset$exposure)) #&&
-      #all(levels(dataset$exposure) %in% names(post_hoc_outcomes[[variable_list[i]]])) #extra recursivness
+        
+      } else if (
+        all(names(post_hoc_outcomes[[variable_list[i]]]) %in% levels(dataset$exposure)) #&&
+        #all(levels(dataset$exposure) %in% names(post_hoc_outcomes[[variable_list[i]]])) #extra recursivness
       ) {
-      print("Only period*exposure interaction significant")
-      
-      # Reorder the vector by size
-      treatment_order_exp <-
-        treatment_order[order(grepl("control", treatment_order, fixed = TRUE),
-                              decreasing = TRUE)]
-      means$predictor <-
-        factor(means$predictor , levels = treatment_order_exp[which(treatment_order_exp %in% means$predictor)])
-      # Add a new variable for grouping and x-axis
-      means$group <-
-        ifelse(grepl("control", means$predictor), "control", "pathogen")
-      #create a gap in the layout add a +1 to the pathogen colonies
-      means$x_axis <-
-        as.numeric(means$predictor) + ifelse(means$group == "pathogen", 1, 0)
-      
-      # Create the base ggplot object
-      plot_var <-
-        ggplot(means, aes(x = x_axis, y = mean, fill = predictor)) +
-        geom_errorbar(aes(ymin = mean - se, ymax = mean + se),
-                      position = position_dodge2(width = 0.8, preserve = "single")) +
-        geom_col(position = position_dodge2(width = 0.8, preserve = "single")) +
-        STYLE +
-        colFill_treatment +
-        labs(y = paste("\u0394", names(variable_list[i]),
-                       ifelse(transf_variable_list[i] == "none", "", paste0("(", transf_variable_list[i], ")")), #transformation
-                       sep = " "), x = predictor) +
-        theme(axis.text.x = element_text())
-      
-      # manage x axis labels
-      if (predictor == "treatment") {
-        scale_geom <- list(scale_x_continuous(
-          labels = function(x)
-            str_wrap(gsub("big", "large", gsub("\\.", " ", x)), width = 4),
-          breaks = 1:length(levels(means$predictor)) + c(0, 0, 1, 1)
-        ))
-        plot_var <- plot_var + scale_geom
-      } else{
-        scale_geom <- list(scale_x_continuous(
-          labels = function(x)
-            str_wrap(x, width = 4),
-          breaks = 1:length(levels(means$predictor)) + c(0, 0, 1, 1)
-        ))
-        plot_var <- plot_var + scale_geom
+        print("Only period*exposure interaction significant")
+        
+        # Reorder the vector by size
+        treatment_order_exp <-
+          treatment_order[order(grepl("control", treatment_order, fixed = TRUE),
+                                decreasing = TRUE)]
+        means$predictor <-
+          factor(means$predictor , levels = treatment_order_exp[which(treatment_order_exp %in% means$predictor)])
+        # Add a new variable for grouping and x-axis
+        means$group <-
+          ifelse(grepl("control", means$predictor), "control", "pathogen")
+        #create a gap in the layout add a +1 to the pathogen colonies
+        means$x_axis <-
+          as.numeric(means$predictor) + ifelse(means$group == "pathogen", 1, 0)
+        
+        # Create the base ggplot object
+        plot_var <-
+          ggplot(means, aes(x = x_axis, y = mean, fill = predictor)) +
+          geom_errorbar(aes(ymin = mean - se, ymax = mean + se),
+                        position = position_dodge2(width = 0.8, preserve = "single")) +
+          geom_col(position = position_dodge2(width = 0.8, preserve = "single")) +
+          STYLE +
+          colFill_treatment +
+          labs(y = paste("\u0394", names(variable_list[i]),
+                         ifelse(transf_variable_list[i] == "none", "", paste0("(", transf_variable_list[i], ")")), #transformation
+                         sep = " "), x = predictor) +
+          theme(axis.text.x = element_text())
+        
+        # manage x axis labels
+        if (predictor == "treatment") {
+          scale_geom <- list(scale_x_continuous(
+            labels = function(x)
+              str_wrap(gsub("big", "large", gsub("\\.", " ", x)), width = 4),
+            breaks = 1:length(levels(means$predictor)) + c(0, 0, 1, 1)
+          ))
+          plot_var <- plot_var + scale_geom
+        } else{
+          scale_geom <- list(scale_x_continuous(
+            labels = function(x)
+              str_wrap(x, width = 4),
+            breaks = 1:length(levels(means$predictor)) + c(0, 0, 1, 1)
+          ))
+          plot_var <- plot_var + scale_geom
+        }
+        # 
+        # Add bar with significant stars
+        # for more than 1 element in the ggplot if statement, there is the error: Error in `+.gg`:! Cannot add ggproto objects together )
+        if (variable_list[i] %in% names(post_hoc_outcomes)) {
+          
+          
+          additional_geoms <- list(geom_segment(
+            aes(
+              x = sum(x_axis[group == "control"]) / 2,
+              xend = sum(x_axis[group == "pathogen"]) / 2,
+              y = abs(max_mean_se),
+              yend = abs(max_mean_se)
+            )
+          ),
+          
+          geom_text(
+            aes(
+              x = mean(x_axis),
+              y = abs(max_mean_se + 1 / 2 * (max_mean_se)),
+              label = paste(from_p_to_ptext(stats_outcomes[which(
+                stats_outcomes$variable == variable_list[i] &
+                  stats_outcomes$predictor == "period:exposure"
+              ), "pval"]),collapse="")
+            )
+          ))
+          plot_var <- plot_var + additional_geoms #+ geom_text(aes(label = ''))
+          
+          # print(paste0("*****************************************
+          #              \nFAULTY GEOM!!!\n",stats_outcomes[which(
+          #       stats_outcomes$variable == variable_list[i] &
+          #         stats_outcomes$predictor == "period:exposure"
+          #     ), "pval"]))
+        }
+        
+      }else{
+        plot_var <- plot_var + geom_text(aes(label = '')) #add empty label
       }
-      # 
-      # Add bar with significant stars
-      # for more than 1 element in the ggplot if statement, there is the error: Error in `+.gg`:! Cannot add ggproto objects together )
-      if (variable_list[i] %in% names(post_hoc_outcomes)) {
-        
-        
-         additional_geoms <- list(geom_segment(
-          aes(
-            x = sum(x_axis[group == "control"]) / 2,
-            xend = sum(x_axis[group == "pathogen"]) / 2,
-            y = abs(max_mean_se),
-            yend = abs(max_mean_se)
-          )
-        ),
-        
-        geom_text(
-          aes(
-            x = mean(x_axis),
-            y = abs(max_mean_se + 1 / 2 * (max_mean_se)),
-            label = paste(from_p_to_ptext(stats_outcomes[which(
-              stats_outcomes$variable == variable_list[i] &
-                stats_outcomes$predictor == "period:exposure"
-            ), "pval"]),collapse="")
-          )
-        ))
-        plot_var <- plot_var + additional_geoms #+ geom_text(aes(label = ''))
-        
-        # print(paste0("*****************************************
-        #              \nFAULTY GEOM!!!\n",stats_outcomes[which(
-        #       stats_outcomes$variable == variable_list[i] &
-        #         stats_outcomes$predictor == "period:exposure"
-        #     ), "pval"]))
-      }
-
-    }else{
-      plot_var <- plot_var + geom_text(aes(label = '')) #add empty label
-    }
-    
-    if(!all(grepl(paste0(levels(dataset$treatment), collapse = "|"), names(post_hoc_outcomes[[variable_list[i]]])))){#not main int sig
-    if (all(names(post_hoc_outcomes[[variable_list[i]]]) == levels(dataset$size)) && # size is sign
-        all(names(post_hoc_outcomes[[variable_list[i]]]) %in% levels(dataset$exposure)) #exp is sign
+      
+      if(!all(grepl(paste0(levels(dataset$treatment), collapse = "|"), names(post_hoc_outcomes[[variable_list[i]]])))){#not main int sig
+        if (all(names(post_hoc_outcomes[[variable_list[i]]]) == levels(dataset$size)) && # size is sign
+            all(names(post_hoc_outcomes[[variable_list[i]]]) %in% levels(dataset$exposure)) #exp is sign
         ) {
-      warning("both period*exposure and period*size are significant. There is currently no plotting contidion for that")
-    }}
-    
+          warning("both period*exposure and period*size are significant. There is currently no plotting contidion for that")
+        }}
+      
     }else{ # if pre_only==TRUE
       
       # Create the base ggplot object
@@ -2974,34 +2974,35 @@ barplot_delta <-
                        ifelse(transf_variable_list[i] == "none", "", paste0("(", transf_variable_list[i], ")")), #transformation
                        sep = " "), x = predictor)
       
-
+      
       # Add significant stars 
       if (variable_list[i] %in% stats_outcomes$variable) {
         additional_geoms <- list(
-        geom_text(
-          aes(
-            x = mean(as.numeric(means$predictor)),
-            y = abs(max_mean_se), # + 1 / 2 * (max_mean_se)
-            label = paste(from_p_to_ptext(stats_outcomes[which(
-              stats_outcomes$variable == variable_list[i] &
-                stats_outcomes$predictor == "size"
-            ), "pval"]),collapse="")
-          )
-        ))
+          geom_text(
+            aes(
+              x = mean(as.numeric(means$predictor)),
+              y = abs(max_mean_se), # + 1 / 2 * (max_mean_se)
+              label = paste(from_p_to_ptext(stats_outcomes[which(
+                stats_outcomes$variable == variable_list[i] &
+                  stats_outcomes$predictor == "size"
+              ), "pval"]),collapse="")
+            )
+          ))
         plot_var <- plot_var + additional_geoms
       }
       
     }
-
+    
     
     #legend modifiers (2 rows and changed labs)
     plot_var <- plot_var +
-    guides(fill = guide_legend(nrow = 2))
+      guides(fill = guide_legend(nrow = 2))
     # +guides(fill = "none")   # remove treatment legend
-
+    
     
     return(plot_var)
   }
+
 
 
 
@@ -3392,7 +3393,7 @@ plot_qpcr <- function(experiments){
  #     ggtitle("Frequency Histogram of Simulated Load by Treatment")
  # )
   
-  predicted_value <- plot_regression(data=all_sim_qpcr_data,time_point="after",analysis=analysis,n_cat_horiz=20,n_cat_vertic=11,pool=c(F,F),collective=T,input_color=colour_palette_age,xmin=xmin,xmax=xmax,ymin=ymin,ymax=ymax,point_cex=1.5,predict=NULL) #high_threshold
+  predicted_value <- plot_regression(data=all_sim_qpcr_data,time_point="after",analysis=analysis,n_cat_horiz=20,n_cat_vertic=11,pool=c(F,F),collective=T,input_color=colour_palette_age,xmin=xmin,xmax=xmax,ymin=ymin,ymax=ymax,point_cex=1.5,predict=high_threshold)
   par(xpd=NA)
   if (varb =="simulated_load"){
     title(sub=expression(italic("(Prop. exposure dose)")),cex.sub=min_cex,font.sub=1,mgp=c(1,0.1,0))

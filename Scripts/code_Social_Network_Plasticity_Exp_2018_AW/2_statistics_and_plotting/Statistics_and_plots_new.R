@@ -956,7 +956,7 @@ SavePrint_plot(
 ### Experimentally measured and simulated M.brunneum transmission in pathogen-exposed colonies ###
 
 #TEMP (The green line highlights the value at which there is an inversion in the sign of the density difference. This value was used as athreshold to distinguish high from low simulated loads in allsubsequent analyses)
-# high_threshold <- 0.0258
+high_threshold <- 0.0258
  
 # logging not enough for qPCR data, as it has kurtois = 27.28894
 # sqrt                                                  27.46589
@@ -980,7 +980,7 @@ par_mar_ori <- par()$mar
 par(mar=par_mar_ori+c(1,0,1,1))
 widz <- c(2,1.5)
 layout(matrix(c(1,2),nrow=1),widths=widz)
-translated_high_threshold <- plot_qpcr(experiments=c("main_experiment")) #disabled the predict=high_threshold in plot_regression
+translated_high_threshold <- plot_qpcr(experiments=c("main_experiment"))
 to_keep <- c(to_keep,"translated_high_threshold")
 ####Add letters ####
 par(xpd=NA)
@@ -1117,26 +1117,43 @@ allplots1 <- cowplot::align_plots(plot_list[[1]] + ylim(plot_comps1$y_limits)   
 ind_net_degree_PRE <- cowplot::plot_grid(allplots1[[1]], allplots1[[2]],
                                                        ncol=2, rel_widths = c(0.28,0.24))
 
-
 ### ind_beh_measures### 2 panels
 # create text boxes for titles (to ensure equal size of all plotted objects)
-titlePlots <- cowplot::align_plots(ggplot() + theme_void() + annotate("text", x = 0.5, y = 0.5, label = "nurses", family = "Liberation Serif",  size = 4, hjust = 0.5), #fontface = "bold",
+titlePlots <- cowplot::align_plots(ggplot() + theme_void(), + annotate("text", x = 0.5, y = 0.5, label = "nurses", family = "Liberation Serif",  size = 4, hjust = 0.5), #fontface = "bold",
                                    ggplot() + theme_void() + annotate("text", x = 0.5, y = 0.5, label = "foragers",family = "Liberation Serif", size = 4, hjust = 0.5), #fontface = "bold",
                                    align="h")
 titlePlots_untreated <- cowplot::plot_grid(titlePlots[[1]], titlePlots[[2]], ncol=2, rel_widths = c(0.28,0.24))
 
 
-## duration_of_contact_with_treated_min
-plot_list <- list(ind_untreated_beh_nurse_PRE$barplot_delta_period_list$duration_of_contact_with_treated_min,
-                  ind_untreated_beh_forag_PRE$barplot_delta_period_list$duration_of_contact_with_treated_min)
-YLIM_extra <- 0.5
+## prop_time_outside
+plot_list <- list(ind_untreated_beh_nurse_PRE$barplot_delta_period_list$prop_time_outside,
+                  ind_untreated_beh_forag_PRE$barplot_delta_period_list$prop_time_outside)
+
+YLIM_extra <- 0.3
 plot_comps1 <- multi_plot_comps(plot_list,ylim_extra=YLIM_extra)
+plot_comps1$y_limits[1] <- 0
 #plot_comps1$y_limits <- c(0,plot_comps1$y_limits[2])
-allplots1 <- cowplot::align_plots(plot_list[[1]] + ylim(plot_comps1$y_limits)    + fixed_aspect_theme_PRE  + remove_x_labs + guides(fill = "none") + labs(y = split_title(plot_list[[1]]$labels$y)),
-                                  plot_list[[2]] + ylim(plot_comps1$y_limits)    + fixed_aspect_theme_PRE  + remove_x_labs + guides(fill = "none") + remove_y_labs,
+allplots1 <- cowplot::align_plots(plot_list[[1]] + ylim(plot_comps1$y_limits)   + fixed_aspect_theme_PRE  + guides(fill = "none"),
+                                  plot_list[[2]] + ylim(plot_comps1$y_limits)   + fixed_aspect_theme_PRE  + guides(fill = "none") + remove_y_labs, #ylim(plot_comps1$y_limits) +
                                   align="h")
-duration_of_contact_with_treated_PRE <- cowplot::plot_grid(allplots1[[1]], allplots1[[2]],
-                                                       ncol=2, rel_widths = c(0.28,0.24))
+prop_time_outside_PRE <- cowplot::plot_grid(allplots1[[1]], allplots1[[2]],
+                                            ncol=2, rel_widths = c(0.28,0.24))
+
+
+warning("- SIG STARS LOST BY NURSES AS TOO HIGH UP")
+
+
+# ## duration_of_contact_with_treated_min
+# plot_list <- list(ind_untreated_beh_nurse_PRE$barplot_delta_period_list$duration_of_contact_with_treated_min,
+#                   ind_untreated_beh_forag_PRE$barplot_delta_period_list$duration_of_contact_with_treated_min)
+# YLIM_extra <- 0.5
+# plot_comps1 <- multi_plot_comps(plot_list,ylim_extra=YLIM_extra)
+# #plot_comps1$y_limits <- c(0,plot_comps1$y_limits[2])
+# allplots1 <- cowplot::align_plots(plot_list[[1]] + ylim(plot_comps1$y_limits)    + fixed_aspect_theme_PRE  + remove_x_labs + guides(fill = "none") + labs(y = split_title(plot_list[[1]]$labels$y)),
+#                                   plot_list[[2]] + ylim(plot_comps1$y_limits)    + fixed_aspect_theme_PRE  + remove_x_labs + guides(fill = "none") + remove_y_labs,
+#                                   align="h")
+# duration_of_contact_with_treated_PRE <- cowplot::plot_grid(allplots1[[1]], allplots1[[2]],
+#                                                        ncol=2, rel_widths = c(0.28,0.24))
 ## inter_caste_contact_duration
 plot_list <- list(ind_untreated_beh_nurse_PRE$barplot_delta_period_list$inter_caste_contact_duration,
                   ind_untreated_beh_forag_PRE$barplot_delta_period_list$inter_caste_contact_duration)
@@ -1149,49 +1166,35 @@ allplots1 <- cowplot::align_plots(plot_list[[1]] + ylim(plot_comps1$y_limits)  +
 inter_caste_contact_duration_PRE <- cowplot::plot_grid(allplots1[[1]], allplots1[[2]],
                                                    ncol=2, rel_widths = c(0.28,0.24))
 
-## duration_grooming_given_to_treated_min
-plot_list <- list(ind_untreated_grooming_nurse_PRE$barplot_delta_period_list$duration_grooming_given_to_treated_min,
-                  ind_untreated_grooming_forag_PRE$barplot_delta_period_list$duration_grooming_given_to_treated_min)
-YLIM_extra <- 0.1
-plot_comps1 <- multi_plot_comps(plot_list,ylim_extra=YLIM_extra)
-plot_comps1$y_limits[1] <- 0
-allplots1 <- cowplot::align_plots(plot_list[[1]] + ylim(plot_comps1$y_limits) + fixed_aspect_theme_PRE  + guides(fill = "none") + labs(y = split_title(plot_list[[1]]$labels$y)), # ylim(plot_comps1$y_limits)
-                                  plot_list[[2]] + ylim(plot_comps1$y_limits) + fixed_aspect_theme_PRE  + guides(fill = "none") + remove_y_labs, # ylim(plot_comps1$y_limits)
-                                  align="h")
-duration_grooming_given_to_treated_min_PRE <- cowplot::plot_grid(allplots1[[1]], allplots1[[2]],
-                                                             ncol=2, rel_widths = c(0.28,0.24))
+# ## duration_grooming_given_to_treated_min
+# plot_list <- list(ind_untreated_grooming_nurse_PRE$barplot_delta_period_list$duration_grooming_given_to_treated_min,
+#                   ind_untreated_grooming_forag_PRE$barplot_delta_period_list$duration_grooming_given_to_treated_min)
+# YLIM_extra <- 0.1
+# plot_comps1 <- multi_plot_comps(plot_list,ylim_extra=YLIM_extra)
+# plot_comps1$y_limits[1] <- 0
+# allplots1 <- cowplot::align_plots(plot_list[[1]] + ylim(plot_comps1$y_limits) + fixed_aspect_theme_PRE  + guides(fill = "none") + labs(y = split_title(plot_list[[1]]$labels$y)), # ylim(plot_comps1$y_limits)
+#                                   plot_list[[2]] + ylim(plot_comps1$y_limits) + fixed_aspect_theme_PRE  + guides(fill = "none") + remove_y_labs, # ylim(plot_comps1$y_limits)
+#                                   align="h")
+# duration_grooming_given_to_treated_min_PRE <- cowplot::plot_grid(allplots1[[1]], allplots1[[2]],
+#                                                              ncol=2, rel_widths = c(0.28,0.24))
 
 
 
 ### COMBINE ind_beh_measures 2 panels together
 ind_beh_measures_PRE <- cowplot::plot_grid(
   titlePlots_untreated,
-  duration_of_contact_with_treated_PRE,
+  prop_time_outside_PRE,
+  #duration_of_contact_with_treated_PRE,
   inter_caste_contact_duration_PRE,
-  duration_grooming_given_to_treated_min_PRE,
-  ncol=1, rel_heights = c(0.08,0.30,0.30,0.30))
+  #duration_grooming_given_to_treated_min_PRE,
+  ncol=1, rel_heights = c(0.08,0.30,0.30))
 
 warning("- FIX OFFSET OF VARS BY FIXING PLOT PROPORTIONS  rel_widths = c(0.28,0.24)
         \n- Occasionally the sig stars are not plotted!!!! ")
 
 
 
-## prop_time_outside
-plot_list <- list(ind_untreated_beh_nurse_PRE$barplot_delta_period_list$prop_time_outside,
-                  ind_untreated_beh_forag_PRE$barplot_delta_period_list$prop_time_outside)
 
-YLIM_extra <- 0.3
-plot_comps1 <- multi_plot_comps(plot_list,ylim_extra=YLIM_extra)
-plot_comps1$y_limits[1] <- 0
-#plot_comps1$y_limits <- c(0,plot_comps1$y_limits[2])
-allplots1 <- cowplot::align_plots(plot_list[[1]] + ylim(plot_comps1$y_limits)   + fixed_aspect_theme_PRE  +  ggtitle("nurses") + guides(fill = "none"),
-                                  plot_list[[2]] + ylim(plot_comps1$y_limits)   + fixed_aspect_theme_PRE  +  ggtitle("foragers") + guides(fill = "none") + remove_y_labs, #ylim(plot_comps1$y_limits) +
-                                  align="h")
-prop_time_outside_PRE <- cowplot::plot_grid(allplots1[[1]], allplots1[[2]],
-                                         ncol=2, rel_widths = c(0.28,0.24))
-
-
-warning("- SIG STARS LOST BY NURSES AS TOO HIGH UP")
 
 
 #done
@@ -1205,19 +1208,19 @@ SavePrint_plot(
   save_dir = figurefolder
 )
 
-SavePrint_plot(
-  plot_obj = prop_time_outside_PRE,
-  plot_name = "prop_time_outside_PRE",
-  plot_size = c(230/ppi, 300/ppi),
-  # font_size_factor = 4,
-  dataset_name = "Grid",
-  save_dir = figurefolder
-)
+# SavePrint_plot(
+#   plot_obj = prop_time_outside_PRE,
+#   plot_name = "prop_time_outside_PRE",
+#   plot_size = c(230/ppi, 300/ppi),
+#   # font_size_factor = 4,
+#   dataset_name = "Grid",
+#   save_dir = figurefolder
+# )
 
 SavePrint_plot(
   plot_obj = ind_beh_measures_PRE, 
   plot_name = "ind_beh_measures_PRE",
-  plot_size = c(250/ppi, 900/ppi), #extra length required to get y-axis labeled and unlabeled of same size
+  plot_size = c(250/ppi, 600/ppi), #extra length required to get y-axis labeled and unlabeled of same size
   # font_size_factor = 4,
   dataset_name = "Grid",
   save_dir = figurefolder
@@ -1252,3 +1255,71 @@ Constitutive_organisation_ratios <- collective_analysis_no_rescal(data_path,show
 Constitutive_organisation_ratios$stats_outcomes
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+######### Results report
+
+
+# List objects matching the specified patterns from the environment
+patterns <- c("ind_untreated", "coll_rescal_net","coll_no_rescal_sim", "ind_treated","Constitutive_organisation_ratios")
+matching_objects <- ls(pattern = paste(patterns, collapse = "|"))
+
+# Define a custom sorting function
+custom_sort <- function(x) {
+  order_val <- c("PRE", "seed", "treated", "untreated")
+  order_idx <- sapply(order_val, function(val) grepl(val, x))
+  order_val[which(order_idx)][1]
+}
+
+# Sort matching_objects using the custom sorting function
+sorted_objects <- matching_objects[order(sapply(matching_objects, custom_sort))]
+
+vec <- NULL
+
+
+transform_vector <- function(input_vector) {
+  output_vector <- gsub("_", " ", input_vector)  # Remove underscores
+  output_vector <- gsub("ind", "individual", output_vector)
+  output_vector <- gsub("coll", "collective", output_vector)
+  output_vector <- gsub("sim", "simulation", output_vector)
+  output_vector <- gsub("net", "(network)", output_vector)
+  output_vector <- gsub("beh", "(behaviour)", output_vector)
+  output_vector <- gsub("forag", "forager", output_vector)
+  output_vector <- gsub("PRE", "period:PRE", output_vector)
+  output_vector <- gsub("EXP seed", "| seed:treated", output_vector)
+  output_vector <- gsub("RAN seed", "| seed:random", output_vector)
+  output_vector <- gsub("FOR seed", "| seed:forager", output_vector)
+  output_vector <- gsub("NUR seed", "| seed:nurse", output_vector)
+  return(output_vector)
+}
+
+
+# Loop through each matching object
+for (obj in sorted_objects) {
+  # Get the stats_outcomes$formatted element from the current object
+  formatted_element <- get(obj)[['stats_outcomes']][['formatted']]
+  formatted_name <- transform_vector(obj)
+  
+  # Construct the output string and print using cat()
+  output <- paste("####",formatted_name,"####", "\n", paste(formatted_element, collapse = '\n'), "\n\n")
+  vec <- c(vec,cat(output))
+}
