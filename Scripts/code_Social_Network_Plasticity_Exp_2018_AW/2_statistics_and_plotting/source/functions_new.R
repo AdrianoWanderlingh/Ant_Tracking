@@ -1,3 +1,6 @@
+
+all_workers <- c("treated","nurse","forager")
+
 clean <- function() {
   rm(list = ls(envir = .GlobalEnv)[!ls(envir = .GlobalEnv) %in% to_keep], envir = .GlobalEnv)
   no_print <- gc(verbose = F)
@@ -3578,6 +3581,247 @@ plot_distribution <- function(experiments,desired_treatments,seeds){
   par(mar=par_mar_ori)
 }
 
+
+
+
+
+# normalised entropy
+norm_entropy <- function(x) {
+  # Remove missing values from x
+  x <- x[!is.na(x)]
+  if (length(x) == 0) {
+    warning("Input vector contains no valid values.")
+    return(NA)
+  }
+  norm_entropy_value <-entropy(x)/entropy(rep(1,length(x)))
+  return(norm_entropy_value)
+}
+
+# Define a function to perform the dip test and extract the dip statistic
+perform_dip_test <- function(x) {
+  result <- dip.test(x[!is.na(x)])
+  return(result)
+}
+
+
+
+
+## entropy based on prop.time outside
+calculate_entropy <- function(data_path=data_path,which_individuals,number_permutations=100,pre_only=TRUE,showPlot=T){
+  # for ONE type of individuals (e.g. treated workers only, or queens only)
+  
+  ###1. read data
+  setwd(data_path)
+  file_list <- list.files(pattern=pattern)
+  print(file_list)
+  data <- NULL
+  for (file in file_list){
+    data <- rbind(data,read.table(file,header=T,stringsAsFactors = F))  
+  }
+  ##remove any duplicated line
+  data <- data[which(!duplicated(data)),]
+  
+  ##2a. Extract exposure and size from treatment column
+  data$exposure <- unlist(lapply( data$treatment, function(x)  unlist(strsplit(x,split="\\.") )[1]  ))
+  data$size     <- unlist(lapply( data$treatment, function(x)  unlist(strsplit(x,split="\\.") )[2]  ))
+  
+  ##2b. add information on task group
+  if (pattern %in% c("individual_behavioural_data", "individual_simulation_results_observed")) {
+    task_groups <- read.table(paste(root_path,"original_data",task_group_file,sep="/"),header=T,stringsAsFactors = F)
+    task_groups <- task_groups[which(!duplicated(task_groups)),]
+    data        <- merge(data,task_groups[c("colony","tag","task_group")],all.x=T,all.y=F)
+    
+  } else if (pattern=="individual_data") {
+    #make sure that the task_group is named correctly
+    data$task_group <- data$status 
+    data$status     <- NULL
+    treated_worker_list <- read.table(paste(root_path,"original_data","treated_worker_list.txt",sep="/"),header=T,stringsAsFactors = F)
+    treated_worker_list <- treated_worker_list[which(!duplicated(treated_worker_list)),]
+    treated_worker_list$status <- "treated"
+    data        <- merge(data,treated_worker_list[c("colony","tag","status")],all.x=T,all.y=F) 
+    data[which(is.na(data$status)),"status"] <- "untreated"
+  }
+  
+  data[which(data$status=="treated"),"task_group"] <- "treated"
+  
+  ##2c. keep only target individuals
+  data <- data[which(data$task_group%in%which_individuals),]
+  print(paste("",which_individuals,"",sep=" xxxxxxxxxx "))
+  
+  ##2c.1 keep only target period
+  if (pre_only==T) {
+    data <- data[which(data$period=="pre"),]
+    print(paste("","pre period only","",sep=" xxxxxxxxxx "))
+  }
+  
+  
+  ##2d.  ###add a unique antid column
+  data <- within(data,antID <- paste(colony,tag,sep="_"))
+  
+  data$untransformed_variable <- data$prop_time_outside
+  
+  
+  #hist(data$untransformed_variable, breaks = 100)
+  ###statistics
+  ###make sure treatment, exposure, size and period are factors with levels in the desired order
+  data$treatment <- factor(data$treatment , levels=treatment_order[which(treatment_order%in%data$treatment )])
+  data$size      <- factor(data$size    , levels=size_order   [which(size_order%in%data$size )])
+  data$exposure  <- factor(data$exposure , levels=exposure_order[which(exposure_order%in%data$exposure )])
+  data$period    <- factor(data$period    , levels=period_order   [which(period_order%in%data$period )])
+  data$antID     <- factor( data$antID)
+  
+  
+  #some plotting
+  data[!is.na(data$untransformed_variable),"variable"] <- log_transf(data[!is.na(data$untransformed_variable),"untransformed_variable"] )
+  
+  # ggplot(data, aes(y = variable,x=task_group, fill = size )) +
+  #   geom_violin() +
+  #   STYLE_generic
+  
+  
+  # Apply the dip test for each group
+  dip_results <- by(data$variable, data$size, perform_dip_test)
+  
+  label_stat <- (paste("Hartigans' dip test \nboth groups",dip_results$small$alternative,
+                       "\n small test stat. D =",round(dip_results$small$statistic,3),
+                       "\n big test stat. D =",round(dip_results$big$statistic,3),
+                       sep = " "))
+  
+  
+  Dip_plot <- ggplot(data, aes(x = variable, fill = size )) +
+    geom_density(alpha = 0.5) +
+    #geom_histogram(position = "identity", alpha = 0.5, bins = 10) +
+    labs(x = "Prop. time outside (log)",y = "Density") +
+    annotate("text", x = -1, y = 1, label = label_stat) +
+    STYLE_generic
+  
+  
+
+  # mean time outside for the full pre-period
+  data_mean <-
+    aggregate(na.rm = T,na.action = "na.pass",
+              untransformed_variable ~ colony_size + colony + size + tag + task_group + colony_size,
+              FUN = mean, data = data)
+  
+  # Calculate normalized entropy for each colony
+  entropy_data <- data_mean %>%
+    group_by(colony,size) %>%
+    summarise(norm_entropy = norm_entropy(untransformed_variable))
+  
+  print("##### Entropy by size ######")
+  model_lm <- lm(norm_entropy ~ size, data= entropy_data)
+  test_norm(residuals(model_lm))
+  pvalue <- Anova(model_lm)["size","Pr(>F)"]
+  print(Anova(model_lm))
+  
+  # Create a boxplot using ggplot
+  entropy_plot <- ggplot(entropy_data, aes(x = size, y = norm_entropy)) +
+    geom_boxplot() +
+    geom_point(aes(color = colony), position = position_jitter(width = 0.2)) +
+    annotate("text", x = 1.5, y = max(entropy_data$norm_entropy+0.05), label = from_p_to_ptext(pvalue)) +
+    labs(x = "Size",y = "Normalized Entropy",color = "Colony") +
+    guides(color = "none") +
+    theme_minimal() +
+    STYLE_generic
+  
+  
+  print("##### Entropy permutation test ######")
+  #### PERMUTATION TEST to check for difference in VARIANCE
+  ### Is the difference in variance depending only on the difference in sample size between Big and Small colonies?
+  ## permutation run in large colonies (~180) subsampled to small cols size (~30)
+  
+  # subset data by colony size
+  data_large <- data_mean[which(data_mean$size == "big") , ]
+  data_small <- data_mean[which(data_mean$size == "small"), ]
+  
+  large_colonies_list <- unique(data_large$colony)
+  
+  
+  # get the N of treated nurses in the small colonies
+  number_data_small <-  data_small$colony_size
+  
+  # set empty resampled df
+  overall_resampled_table <- NULL
+  
+  # set visual progress bar for permutations
+  pb <- txtProgressBar(min = 0, max = number_permutations, initial = 0) # set progress bar
+  
+  for (permutation in 1:number_permutations) {
+    setTxtProgressBar(pb, permutation)
+    ##### first randomly assign a small size to the large colonies
+    sampling_sizes <- sample(number_data_small, size = length(number_data_small), replace = F)
+    names(sampling_sizes) <- large_colonies_list
+    
+    # resample from the large colonies using the randomly assigned size
+    resampled_table <- NULL
+    for (colony in large_colonies_list) {
+      data_large_subset <- data_large[which(data_large$colony == colony), ]
+      sampled_indices <- sample(1:nrow(data_large_subset), size = sampling_sizes[colony], replace = F)
+      resampled_table <- rbind(resampled_table, data_large_subset[sampled_indices, ])
+    }
+    # generate permutation output
+    overall_resampled_table <- rbind(overall_resampled_table, data.frame(permutation = permutation, resampled_table))
+    # close progress bar
+    if (permutation == number_permutations) {
+      close(pb)
+    }
+  }
+  
+  
+  # Calculate normalized entropy for each permutation combination
+  entropy_data_perm <- overall_resampled_table %>%
+    group_by(colony,size,permutation) %>%
+    summarise(norm_entropy = norm_entropy(untransformed_variable))
+  
+  # Calculate normalized entropy for each permutation combination
+  entropy_data_small <- data_small %>%
+    group_by(colony,size) %>%
+    summarise(norm_entropy = norm_entropy(untransformed_variable))
+  
+  
+  # calculate SD per each permutation
+  standard_deviations_permuted <- aggregate(norm_entropy ~ size + permutation, FUN = sd,na.rm =T, data = entropy_data_perm)
+  names(standard_deviations_permuted)[which(names(standard_deviations_permuted) == "norm_entropy")] <- "sd"
+  mean_standard_deviations_permuted <- aggregate(sd ~ permutation, FUN = mean, data = standard_deviations_permuted)
+  
+  
+  observed_standard_deviations <- aggregate(norm_entropy ~ size , FUN = sd,na.rm =T, data = entropy_data_small)
+  names(observed_standard_deviations)[which(names(observed_standard_deviations) == "norm_entropy")] <- "sd"
+  mean_observed_sd_small <- mean(observed_standard_deviations$sd, na.rm = T)
+  
+  # Create the histogram
+  hist(mean_standard_deviations_permuted$sd,
+       xlab= paste("Mean SD of Entropy for",number_permutations,"sub-sampling permutations",sep=" "),
+       main= " ")
+  abline(v = mean_observed_sd_small, col = "red")
+  
+  prop_lower <- length(which(mean_standard_deviations_permuted$sd < mean_observed_sd_small)) / length(mean_standard_deviations_permuted$sd)
+  prop_higher <- length(which(mean_standard_deviations_permuted$sd > mean_observed_sd_small)) / length(mean_standard_deviations_permuted$sd)
+  prop_more_extreme <- min(prop_lower, prop_higher)
+  pval <- 2 * prop_more_extreme
+  
+  CI_95 <- quantile(mean_standard_deviations_permuted$sd, probs = c(0.025, 0.975))
+  CI_95
+  mean_observed_sd_small
+  
+  # report results
+  perm_result <- print(paste0("N. permutations=", number_permutations, " pval=", pval))
+  if (unname(CI_95["2.5%"]) < mean_observed_sd_small & mean_observed_sd_small < unname(CI_95["97.5%"])) {
+    print("the standard deviation of the SMALL colonies is INSIDE the distribution of permuted mean SD of the BIG colonies, therefore the observed difference in SD is only caused by the difference in sample sizes between Small and Big.")
+  } else {
+    print("the standard deviation of the SMALL colonies is OUTSIDE the distribution of permuted mean SD of the BIG colonies, therefore the observed difference in SD is REAL.")
+  }
+  
+  
+  
+  if (showPlot) {
+    print(Dip_plot)
+    print(entropy_plot)
+  }
+  
+  
+  return(list(Dip_plot=Dip_plot,    entropy_plot=entropy_plot,  perm_result=perm_result))
+}
 
 ########################################################################
 ##########  ADRIANO EXP1: ANALYSIS AND STYLING FUNCTIONS ###############
