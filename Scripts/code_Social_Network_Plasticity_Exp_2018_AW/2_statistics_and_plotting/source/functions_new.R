@@ -3789,11 +3789,6 @@ calculate_entropy <- function(data_path=data_path,which_individuals,number_permu
   names(observed_standard_deviations)[which(names(observed_standard_deviations) == "norm_entropy")] <- "sd"
   mean_observed_sd_small <- mean(observed_standard_deviations$sd, na.rm = T)
   
-  # Create the histogram
-  hist(mean_standard_deviations_permuted$sd,
-       xlab= paste("Mean SD of Entropy for",number_permutations,"sub-sampling permutations",sep=" "),
-       main= " ")
-  abline(v = mean_observed_sd_small, col = "red")
   
   prop_lower <- length(which(mean_standard_deviations_permuted$sd < mean_observed_sd_small)) / length(mean_standard_deviations_permuted$sd)
   prop_higher <- length(which(mean_standard_deviations_permuted$sd > mean_observed_sd_small)) / length(mean_standard_deviations_permuted$sd)
@@ -3812,7 +3807,13 @@ calculate_entropy <- function(data_path=data_path,which_individuals,number_permu
     print("the standard deviation of the SMALL colonies is OUTSIDE the distribution of permuted mean SD of the BIG colonies, therefore the observed difference in SD is REAL.")
   }
   
+  # Create the histogram
+  hist(mean_standard_deviations_permuted$sd,
+       xlab= paste("Mean SD of Entropy for",number_permutations,"sub-sampling permutations",sep=" "),
+       main= perm_result)
+  abline(v = mean_observed_sd_small, col = "red")
   
+  perm_hist <- recordPlot()
   
   if (showPlot) {
     print(Dip_plot)
@@ -3820,7 +3821,7 @@ calculate_entropy <- function(data_path=data_path,which_individuals,number_permu
   }
   
   
-  return(list(Dip_plot=Dip_plot,    entropy_plot=entropy_plot,  perm_result=perm_result))
+  return(list(Dip_plot=Dip_plot,    entropy_plot=entropy_plot,  perm_hist=perm_hist))
 }
 
 ########################################################################

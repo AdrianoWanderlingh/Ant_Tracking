@@ -32,6 +32,7 @@ require(lme4)
 require(car)
 require(MuMIn)
 require(diptest) #dip test for bimodularity
+require(entropy)
 
 # in case of installation issues, use mamba install r-PACKAGENAME
 

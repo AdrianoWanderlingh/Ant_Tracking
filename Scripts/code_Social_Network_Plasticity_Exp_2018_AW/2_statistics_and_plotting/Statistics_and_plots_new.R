@@ -226,8 +226,10 @@ root_path <- paste(disk_path,"/main_experiment",sep="") # root_path <- paste(dis
 data_path=paste(root_path,"/processed_data/individual_behaviour/pre_vs_post_treatment",sep="")
 pattern="individual_behavioural_data"
 
-Entropy_size <- calculate_entropy(data_path,which_individuals=all_workers,number_permutations=20,showPlot=F) # "treated","queen","nurse","forager"
+Entropy_size <- calculate_entropy(data_path,which_individuals=all_workers,number_permutations=500,showPlot=F) # "treated","queen","nurse","forager"
 
+Entropy_size$Dip_plot
+Entropy_size$entropy_plot
 
 ###################################################################################################################################
 ###IV - individual analysis - for TWO types of individuals (e.g. nurses and foragers; or "untreated" and "treated") ###############
