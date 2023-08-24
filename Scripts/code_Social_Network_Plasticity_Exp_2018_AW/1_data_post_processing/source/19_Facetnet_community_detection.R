@@ -212,7 +212,26 @@ clean()
 }
 
 
-warning("rewrite by calling the task_group file, faceting for colony. should also plot the results")
+#PLOT results
+task_groups_A    <- read.table("/media/cf19810/Seagate Portable Drive/Lasius-Bristol_pathogen_experiment/main_experiment/original_data/task_groups.txt",header=T,stringsAsFactors = F)
+
+task_groups_A$size     <- unlist(lapply( task_groups_A$treatment, function(x)  unlist(strsplit(x,split="\\.") )[2]  ))
+
+# Generate plots
+ggplot(task_groups_A, aes(x = Forager_score, colour = size)) + 
+  #geom_density(alpha = 0.6,size=1.5, adjust=1/1.2) + # 'adjust' changes the smoothing
+  geom_line(aes(color=size,group = colony), stat="density", size=1.5, alpha=0.15, adjust=1/1.2) +
+  geom_line(aes(color=size), stat="density", size=2.5, alpha=1, adjust=1/1.2) +
+  geom_vline(aes(xintercept = 0.5), linetype = "dashed",colour="grey20") + 
+  geom_vline(aes(xintercept = 1/4), linetype = "dashed",colour="grey20") + 
+  #facet_wrap(~ colony, scales = "free") +
+  theme_minimal() +
+  xlab("Social maturity")
+
+
+
+
+warning("rewrite table by calling the task_group file, faceting for colony")
 ## tally the agreement between the original and new (facetnet) task labels
 Agreement <- table(Combined$task_group, Combined$task_group_FACETNET_0.5); rownames(Agreement) <- paste("orig", rownames(Agreement),sep="_"); colnames(Agreement) <- paste("facet", colnames(Agreement), sep="_"); print(Agreement)
 
