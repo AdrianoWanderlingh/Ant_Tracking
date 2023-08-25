@@ -3689,12 +3689,15 @@ calculate_entropy <- function(data_path=data_path,which_individuals,number_permu
   
   
   Dip_plot <- ggplot(data, aes(x = variable, fill = size )) +
-    geom_density(alpha = 0.5) +
+    #geom_density(alpha = 0.5) +
+    geom_line(aes(color=size,group = colony), stat="density", size=1, alpha=0.15, adjust=1/1.2) +
+    geom_line(aes(color=size), stat="density", size=2, alpha=1, adjust=1/1.2) +
+    #geom_vline(aes(xintercept = 0.02), linetype = "dashed",colour="grey20") + 
     #geom_histogram(position = "identity", alpha = 0.5, bins = 10) +
     labs(x = "Prop. time outside (log)",y = "Density") +
-    annotate("text", x = -1, y = 1, label = label_stat) +
-    STYLE_generic
-  
+    annotate("text", x = -1.2, y = 1, label = label_stat) +
+    STYLE_generic +
+    theme_minimal()
   
 
   # mean time outside for the full pre-period

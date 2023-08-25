@@ -33,6 +33,9 @@ WORKDIR      <- paste(data_path,"/Soft_community_scores",sep="")
 
 to_keep <- c(ls(),"to_keep","network_files")
 
+#exclude faulty file for now
+network_files <- network_files[!grepl("colony07SP_pathogen.small_PreTreatment",network_files)]
+
 for (network_file in network_files){
   #### re-open the task_groups (where results are saved) as it gets updated at the end of the loop (the loaded version has to be the newest one)
   task_groups    <- read.table(paste(data_path,"original_data/task_groups.txt",sep="/"),header=T,stringsAsFactors = F)
@@ -94,7 +97,7 @@ for (ITER in 1:N_ITERATIONS)  {  ## the modularity of the found solutions vary q
   FACETNET_REP_OUTPUT_DIR_M <- paste(FACETNET_REP_folder, paste(Cassette,",m=",m,",Iteration=",ITER,sep=""), sep="/"); if (!file.exists(FACETNET_REP_OUTPUT_DIR_M)){dir.create(FACETNET_REP_OUTPUT_DIR_M)}
   ## check if the outputs already exist
   if ( file.exists( paste(FACETNET_REP_OUTPUT_DIR_M, "soft_comm_step_alpha0.5_nw0.csv", sep="/") ))
-    {print(paste("Facetnet output exists for m=",m,"modules, iteration #",ITER))
+    {cat(paste("Facetnet output exists for m=",m,"modules, up to iteration #",ITER),"\r")
     }else{cat(paste("Facetnet output missing for m=",m, "modules, iteration #",ITER),"\r")
     
       FACETNET_INPUT_brackers <- paste0("'",FACETNET_INPUT,"'") #make sure the command is not broken
@@ -215,13 +218,16 @@ clean()
 #PLOT results
 task_groups_A    <- read.table("/media/cf19810/Seagate Portable Drive/Lasius-Bristol_pathogen_experiment/main_experiment/original_data/task_groups.txt",header=T,stringsAsFactors = F)
 
+size_order      <- c("small","big")
 task_groups_A$size     <- unlist(lapply( task_groups_A$treatment, function(x)  unlist(strsplit(x,split="\\.") )[2]  ))
+task_groups_A$size      <- factor(task_groups_A$size    , levels=size_order   [which(size_order%in%task_groups_A$size )])
+
 
 # Generate plots
 ggplot(task_groups_A, aes(x = Forager_score, colour = size)) + 
   #geom_density(alpha = 0.6,size=1.5, adjust=1/1.2) + # 'adjust' changes the smoothing
-  geom_line(aes(color=size,group = colony), stat="density", size=1.5, alpha=0.15, adjust=1/1.2) +
-  geom_line(aes(color=size), stat="density", size=2.5, alpha=1, adjust=1/1.2) +
+  geom_line(aes(color=size,group = colony), stat="density", size=1, alpha=0.2, adjust=1/1.2) +
+  geom_line(aes(color=size), stat="density", size=2, alpha=1, adjust=1/1.2) +
   geom_vline(aes(xintercept = 0.5), linetype = "dashed",colour="grey20") + 
   geom_vline(aes(xintercept = 1/4), linetype = "dashed",colour="grey20") + 
   #facet_wrap(~ colony, scales = "free") +
@@ -231,9 +237,10 @@ ggplot(task_groups_A, aes(x = Forager_score, colour = size)) +
 
 
 
+
 warning("rewrite table by calling the task_group file, faceting for colony")
 ## tally the agreement between the original and new (facetnet) task labels
-Agreement <- table(Combined$task_group, Combined$task_group_FACETNET_0.5); rownames(Agreement) <- paste("orig", rownames(Agreement),sep="_"); colnames(Agreement) <- paste("facet", colnames(Agreement), sep="_"); print(Agreement)
+#Agreement <- table(Combined$task_group, Combined$task_group_FACETNET_0.5); rownames(Agreement) <- paste("orig", rownames(Agreement),sep="_"); colnames(Agreement) <- paste("facet", colnames(Agreement), sep="_"); print(Agreement)
 
 
 # TO DOS
