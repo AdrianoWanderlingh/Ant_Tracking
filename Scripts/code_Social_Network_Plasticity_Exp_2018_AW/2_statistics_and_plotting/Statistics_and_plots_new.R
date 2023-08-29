@@ -1248,20 +1248,22 @@ pattern="interactions.dat"
 variable_list        <- c("intra_caste_over_inter_caste_WW_contact_duration","QNurse_over_QForager_contact_duration")
 names(variable_list) <- c("Within/Between-task contact","Q-N/Q-F contacts")
 # DOL_plots <- plot_age_dol(data_path,experiments=c("main_experiment"))
-# DOL_plots
+
 dol_RandObs <- plot_observed_vs_random(data_path,experiments=c("main_experiment"))
 
-# BIG VS SMALL (no random, no plot)
-data_path <- paste(disk_path,"/main_experiment/processed_data/collective_behaviour/random_vs_observed",sep="")
-pattern="interactions.dat"
-variable_list <- c("intra_caste_over_inter_caste_WW_contact_duration","QNurse_over_QForager_contact_duration")
-names(variable_list) <- c("Within/Between-task contact","Q-N/Q-F contacts")
-transf_variable_list <- c("log"      ,"log"   )   ######"none", "sqrt" "log","power2"
-
-Constitutive_organisation_ratios <- collective_analysis_no_rescal(data_path,showPlot=F)
-Constitutive_organisation_ratios$stats_outcomes
+# solved by calculating cohen's d differences
+# # BIG VS SMALL (no random, no plot)
+# data_path <- paste(disk_path,"/main_experiment/processed_data/collective_behaviour/random_vs_observed",sep="")
+# pattern="interactions.dat"
+# variable_list <- c("intra_caste_over_inter_caste_WW_contact_duration","QNurse_over_QForager_contact_duration")
+# names(variable_list) <- c("Within/Between-task contact","Q-N/Q-F contacts")
+# transf_variable_list <- c("log"      ,"log"   )   ######"none", "sqrt" "log","power2"
+# 
+# Constitutive_organisation_ratios <- collective_analysis_no_rescal(data_path,showPlot=F)
+# Constitutive_organisation_ratios$stats_outcomes
 
 ### NETWORK MEASURES
+# Science 2018: S2. Constitutive properties of the ant social networks compared to randomized networks
 data_path <- paste(disk_path,"/main_experiment/processed_data/network_properties_edge_weights_duration/random_vs_observed",sep="")
 pattern="network_properties"
 variable_list        <- c("modularity","clustering","task_assortativity","efficiency","degree_mean","density")
@@ -1270,117 +1272,25 @@ names(variable_list) <- c("modularity","clustering","task assortativity","effici
 net_RandObs <- plot_observed_vs_random(data_path,experiments=c("main_experiment"))
 
 
-# colony level results
-# per each seed
-# plot_observed_vs_random
-# load, latency, rank, rate
-# skewness
-
-
 ######Extended data 3: simulation results from different seeds, obs vs. random, COLLECTIVE #####
-# THE PLOTTING ONLY WORKS FOR BLOCKS OF 3 VARS AS OF NOW....
-variable_list1  <- c("logistic_r","Mean_load","Load_skewness")
-names(variable_list1) <- c("Transmission rate","Mean simulated load (W)","Simulated load skewness (W)")
-
-variable_list2  <- c("Prop_high_level","Prop_low_level" ,"Queen_load")
-names(variable_list2) <- c("Prop high level","Prop low level","Simulated load (Q)")
-
-VAR_LIST <- list(variable_list1,variable_list2)
-
-for (variable_list in VAR_LIST) {
-#pdf(file=paste(figurefolder,"/Extended_data_3.pdf",sep=""),family=text_font,font=text_font,bg="white",width=  three_col,height=page_height*0.4,pointsize=pointsize_more_than_2row2col)
+# Science 2018: Fig. S3. Disease spread simulations over pre-treatment observed (Obs) and randomized (Rd) networks: colony-level results
+#SET seeds
 seeds <- c("random_workers","nurses","foragers")
 names(seeds) <- c("Seeds = random workers","Seeds = nurses","Seeds = foragers" )
-#seeds <- seeds[c(2,3,4,1)]
-nrep <- round(length(seeds)/2)
-ncols <- 7
-d <- 0.05
 
-par(pars)
-par_mar_ori <- par()$mar
-par(mar=par_mar_ori+c(-1,0,0,0))
-layout(
-  matrix(c(
-    rep(13,ncols),
-    c(1:3),13,c(4:6),
-    rep(13,ncols),
-    c(7:9),13,c(10:12)
-  )
-  ,
-  nrow=nrep+2,
-  ncol=ncols,
-  byrow = T
-  )
-  ,widths=c(rep((1-d)/6,3),d,rep((1-d)/6,3))
-  ,heights=c(d,(1-2*d)/2,d,(1-2*d)/2)
-)
+for (seed in seeds) {
+data_path <- paste(disk_path,"/main_experiment/transmission_simulations/random_vs_observed/",seed,sep="")
+pattern="collective_simulation_results_"
+variable_list  <- c("logistic_r","Mean_load","Load_skewness","Prop_high_level","Prop_low_level" ,"Queen_load")
+names(variable_list) <- c("Transmission rate","Mean simulated load (W)","Simulated load skewness (W)","Prop high level","Prop low level","Simulated load (Q)")
 
-for (seed in seeds){
-  full_statuses_names_ori <- full_statuses_names
-  full_statuses_names[full_statuses_names%in%c("Rand.","Obs.")] <- c("Rd","Obs")
-  print(seed)
-  
-  plot_observed_vs_random_ORI(experiments="main_experiment",variables=variable_list,data_path = paste("transmission_simulations/random_vs_observed/",seed,sep=""),pattern="collective_simulation_results_")
-  
-  ####plot title
-  par(xpd=NA)
-  x_text <- grconvertX(1/4+as.numeric(((which(seed==seeds)/2)-floor((which(seed==seeds)/2)))==0)/2, from='ndc')
-  y_text <- grconvertY((1 - 2*d/3 - (ceiling((which(seed==seeds)/2))-1)*(d+(1-2*d)/2)), from='ndc')
-  
-  text(x_text,y_text,labels=names(seeds[seeds==seed]),font=2, cex=max_cex,adj=c(0.5,0.5),xpd=NA)
-  # text(x_text,y_text,labels="The observed pre-exposure networks protect colonies from outside pathogens",font=2, cex=max_cex,adj=0.5,xpd=NA)
-  
-  ##if necessary, plot line
-  if (is.even(which(seed==seeds))){
-    
-    x_line <- grconvertX(1/2, from='ndc')
-    y_line1 <- grconvertY((1 - d - (ceiling((which(seed==seeds)/2))-1)*(d+(1-2*d)/2)), from='ndc') ####lower left = 0-0;top_right=1-1
-    y_line2 <- grconvertY((1 - d - (1-2*d)/2 - (ceiling((which(seed==seeds)/2))-1)*(d+(1-2*d)/2)), from='ndc')
-    segments(x_line,y_line1,x_line,y_line2)
-  }
-  par(xpd=F)
-  full_statuses_names <- full_statuses_names_ori
+sim_RandObs <- plot_observed_vs_random(data_path,experiments=c("main_experiment"),seedTitle=T)
 }
-par(mar=par_mar_ori)
-#dev.off()
-######## clean before next step###
-#clean(); 
-Sys.sleep(2)
-}
-
-
-
-
-
-
-
-
-
-
-
-
-#### experimentally exposed ####
-# data_path <- paste(disk_path,"/main_experiment/transmission_simulations/pre_vs_post_treatment/experimentally_exposed_seeds",sep="")
-# pattern="collective_simulation_results_observed"
-# variable_list  <- c("logistic_r","Prevalence","Mean_load","Load_skewness","Prop_high_level","Prop_low_level" ,"Queen_load")
-# names(variable_list) <- c("Transmission rate","Prevalence","Mean simulated load (W)","Simulated load skewness (W)","Prop high level","Prop low level","Simulated load (Q)")
-# 
-# 
-# sim_RandObs_EXP_seed <- plot_observed_vs_random(data_path,experiments=c("main_experiment"))
-
-
-# #before = OBSERVED
-# # Check if 'before' or 'after' is present in the 'period' column
-# data$period <- ifelse(grepl("before", data$period), "pre", 
-#                       ifelse(grepl("after", data$period), "post", data$period))
-# 
-
-
-
 
 
 
 ######Extended data 5: simulation results from different seeds, observed #####
+# Science 2018: Fig. S5. Disease spread simulations run over pre-treatment observed networks: effect of disease origin.
 seeds <- c("random_workers","nurses","foragers")
 names(seeds) <- c("R","N","F")
 #seeds <- seeds[c(2,3,4,5,6,1)]
@@ -1400,6 +1310,113 @@ par(mar=c(2.6,2,2.8,1))
 layout(matrix(c(1:(2*ceiling(length(variables)/2))), ceiling(length(variables)/2), 2, byrow = T))
 plot_seeds(experiments="main_experiment",seeds=seeds,variables=variables,transf=transf,color_pal=color_pal)
 #dev.off()
+
+
+
+
+
+
+
+
+
+
+
+#########
+
+
+#use Cohen's d to compare the difference between two groups relative to their expected (randomised) measure.
+
+
+################ EXAMPLE CODE TO BUILD FUNCTION TO LATER INSERT IN THE RAN VS OBS SCRIPT
+
+### DOL MEASURES
+# data_path <- paste(disk_path,"/main_experiment/processed_data/collective_behaviour/random_vs_observed",sep="")
+# pattern="interactions.dat"
+# variable_list        <- c("intra_caste_over_inter_caste_WW_contact_duration","QNurse_over_QForager_contact_duration")
+# names(variable_list) <- c("Within/Between-task contact","Q-N/Q-F contacts")
+# experiments=c("main_experiment")
+
+data_path <- paste(disk_path,"/main_experiment/processed_data/network_properties_edge_weights_duration/random_vs_observed",sep="")
+pattern="network_properties"
+variable_list        <- c("modularity","clustering","task_assortativity","efficiency","degree_mean","density")
+names(variable_list) <- c("modularity","clustering","task assortativity","efficiency","mean degree","density")
+
+
+setwd(data_path)
+file_list <- list.files(pattern=pattern)
+
+data_input <- NULL
+for (file in file_list){
+  data_input <- rbind(data_input,read.table(file,header=T,stringsAsFactors = F))}
+
+
+if (is.null(data_input)) {
+  ###read-in data###
+  starting_data <- NULL
+  for (experiment in experiments){
+    print(experiment)
+    ### data files
+    setwd(data_path)
+    file_list <- list.files(pattern=pattern)
+    temp <- NULL
+    for (file in file_list){
+      dat <- read.table(file,header=T,stringsAsFactors=F)
+      dat <- dat[,which(names(dat)%in%c("randy","colony","treatment","period","time_hours","time_of_day",variable_list))]
+      temp <- rbind(temp,dat)
+      rm(list=c("dat"))
+    }
+    temp <- temp[,order(names(temp))]
+    temp <- data.frame(experiment=experiment,temp,stringsAsFactors = F)
+    if (!is.null(starting_data)){
+      if (!all(names(starting_data)%in%names(temp))){
+        temp[names(starting_data)[which(!names(starting_data)%in%names(temp))]] <- NA
+        temp <- temp[,names(starting_data)]
+      }
+    }
+    
+    starting_data <- rbind(starting_data,temp)
+    rm(list=c("temp"))
+    
+  }
+  
+  ####modify period values to be simple and match what scatterplot function expects
+  starting_data["colony"] <- as.character(interaction(starting_data$experiment,starting_data$colony))
+  
+}else{starting_data <- data_input}
+
+
+
+starting_data$variable <-  starting_data[,which(names(starting_data)== variable_list[5])]
+
+#result <- compare_cohens_d(values=starting_data$variable, orig_perm_factor= as.factor(starting_data$randy), group_factor=starting_data$size)
+
+result <- compare_cohens_d(data=starting_data)
+
+
+
+# # Calculate differences within each group
+# #library(dplyr)
+# differences <- starting_data %>%
+#   group_by(size) %>%
+#   summarize(mean_diff = mean(variable[randy == "observed"] - variable[randy == "random"]),
+#             std_diff = sd(variable[randy == "observed"] - variable[randy == "random"]))
+# 
+#   
+# 
+# # Calculate pooled standard deviation of differences
+# pooled_std_diff <- sqrt(weighted.mean(differences$std_diff^2, differences$n - 1))
+# 
+# # Calculate Cohen's d for each group
+# differences <- differences %>%
+#   mutate(cohens_d = mean_diff / pooled_std_diff)
+# 
+# # Print the results
+# print(differences)
+
+
+
+
+
 
 
 
