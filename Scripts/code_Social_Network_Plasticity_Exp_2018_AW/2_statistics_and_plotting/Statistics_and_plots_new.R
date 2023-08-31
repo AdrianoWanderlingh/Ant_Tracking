@@ -390,11 +390,6 @@ GroomingVsTimeOutside <- ggplot(grand_mean_data_scaled, aes(x = time_hours, y = 
   guides(fill = guide_legend(nrow = 2,ncol = 1))
 
 
-
-
-
-
-
 ###################################################################################################################################
 ### COMPARE  grooming given and duration of contacts with treated #################################################################
 ###################################################################################################################################
@@ -1485,3 +1480,74 @@ for (obj in sorted_objects) {
   output <- paste("####",formatted_name,"####", "\n", paste(formatted_element, collapse = '\n'), "\n\n")
   vec <- c(vec,cat(output))
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+########## EXTRAS
+
+#----------------------------------
+# preferential groomers
+
+root_path <- paste(disk_path,"/main_experiment_grooming",sep="") # root_path <- paste(disk_path,"/main_experiment_grooming",sep="")
+data_path=paste(root_path,"/processed_data/individual_behaviour/pre_vs_post_treatment",sep="")
+pattern="individual_behavioural_data"
+variable_list <-        c("duration_grooming_received_min") #GROOMING  ouside is negligibile as only 58/6016 events happen outside , "prop_duration_grooming_received_outside_min","duration_grooming_received_min_zone2"
+names(variable_list) <- c("duration grooming received (min)") # , "prop duration grooming received outside min","duration grooming received outside min"
+#transf_variable_list <- c("log"                           )   ######"none", "sqrt" "log","power2"
+
+dur_groom_rec_data <- read_data(data_path,which_individuals=c("forager","nurse"))
+
+dur_groom_rec_data$task_group <- factor(dur_groom_rec_data$task_group , levels=task_group_order[which(task_group_order%in%dur_groom_rec_data$task_group )])
+
+
+# Define a function to calculate the proportion of top outliers
+calculate_top_outliers <- function(x) {
+  Q3 <- quantile(x, 0.75)
+  IQR <- IQR(x)
+  sum(x > Q3 + 1.5*IQR) / length(x)
+}
+
+# Calculate the proportion of top outliers per task_group and treatment in each colony
+outlier_data <- dur_groom_rec_data %>%
+  group_by(colony, task_group, treatment) %>%
+  summarise(proportion_outliers = calculate_top_outliers(duration_grooming_given_to_treated_min),
+            .groups = "drop")
+
+# Calculate the standard error
+outlier_data <- outlier_data %>%
+  group_by(task_group, treatment) %>%
+  summarise(mean_proportion = mean(proportion_outliers),
+            se = sd(proportion_outliers) / sqrt(n()),
+            .groups = "drop")
+
+# Plot the proportion of top outliers with standard errors
+ggplot(outlier_data, aes(x = treatment, y = mean_proportion, fill=treatment)) +
+  geom_errorbar(aes(ymin = mean_proportion - se, ymax = mean_proportion + se), width = 0.2) +
+  geom_bar(stat = "identity") +
+  facet_wrap(~task_group) +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+  labs(#title = "Proportion of Top Outliers per Treatment and Task Group",
+    x = "",
+    y = "Proportion of top 25% Groomers")+
+  colFill_treatment +
+  STYLE +
+  theme(axis.title.x=element_blank(), axis.text.x=element_blank(),
+        axis.ticks.x=element_blank())
+
