@@ -4658,9 +4658,9 @@ colScale_Colony <-
 #new_scale_fill() +
 # geom_line(aes(color = Sample)) +
 colScale_Treatment <-
-  scale_color_manual(name = "Treatment", values = myColors_Treatment) #for lines
+  scale_color_manual(name = "Treatment", values = myColors_Treatment,labels = function(x) str_to_title(gsub("big", "large", gsub("\\.", " ", x)))) #for lines
 colScale_treatment <-
-  scale_color_manual(name = "treatment", values = myColors_Treatment) #for lines
+  scale_color_manual(name = "treatment", values = myColors_Treatment,labels = function(x) str_to_title(gsub("big", "large", gsub("\\.", " ", x)))) #for lines
 ####FILL
 # geom_point(aes(color = Sample)) +
 colFill_Colony <-

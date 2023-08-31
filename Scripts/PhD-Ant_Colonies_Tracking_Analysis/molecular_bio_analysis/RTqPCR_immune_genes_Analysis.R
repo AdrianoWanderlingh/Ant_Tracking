@@ -414,6 +414,12 @@ for (IMPUTATION in c("QRILC","HM")) {
     ##### READ STARTING FILE
     # read the csv file
     genes_data <- read.csv(paste(WORKDIR, "Adriano_RTqPCR_immune_genes_MASTER_REPORT.csv", sep = "/"))
+    
+    genes_data$Treatment <- as.factor(genes_data$Treatment)
+    
+    levels(genes_data$Treatment)[levels(genes_data$Treatment) == "Big Sham"] <- "control.big"
+    levels(genes_data$Treatment)[levels(genes_data$Treatment) == "Small Sham"] <- "control.small"
+    
     genes_data$Sample_Plate <- as.factor(genes_data$Sample_Plate)
     #genes_data$mean_Tm <- NULL # problematic as present only in some reps and messes up some functions
     genes_data$gene <- as.factor(genes_data$gene)
@@ -1685,7 +1691,7 @@ genes_data$Category[genes_data$Category=="evaluate_abs_diff_Ct" & (genes_data$ab
         mod_Q_list[[i]][c("GROUP", "gene")] <- as.data.frame(str_split_fixed(names(mod_Q_list[i]), '-', 2))
       }
       mod_Q <- do.call(rbind.data.frame, mod_Q_list)
-      mod_Q$P.stars <- sapply(mod_Q$p, add_star)
+      mod_Q$P.stars <- sapply(mod_Q$p, from_p_to_ptext)
       
       
       if (PLOT) {
@@ -1741,18 +1747,16 @@ genes_data$Category[genes_data$Category=="evaluate_abs_diff_Ct" & (genes_data$ab
                 ggplot(data =  CLEAN_DATA[which(CLEAN_DATA$GROUP==GROUP),], 
                        aes(x = gene, y = rel_conc_imputed, color = Treatment)
                 ) +
-                  #geom_violin(aes(fill= Treatment), trim = FALSE,width =1.1, alpha = 0.6) +
-                  #geom_boxplot(aes(fill= Treatment),colour ="black", width = 0.1, alpha = 0.6, position = position_dodge(width = 1.1) )+
                   geom_boxplot(size = 0.8) + #aes(fill = Treatment),colour ="black", alpha = 0
-                  geom_point(position=position_jitterdodge()) + #,aes(fill = Treatment,color="black"), shape=21,size = 1, show.legend = FALSE
-                  colFill_Treatment +
-                  colScale_Treatment +
+                  geom_point(position=position_jitterdodge(),aes(fill = Treatment),color="black") + #,aes(fill = Treatment,color="black"), shape=21,size = 1, show.legend = FALSE
+                  colFill_treatment +
+                  colScale_treatment +
                   STYLE +
                   #ggtitle(paste(unique(CLEAN_DATA[which(CLEAN_DATA$GROUP==GROUP),"Ant_status"]), collapse = ", ")) +
                   #scale_y_continuous(labels = scales::percent, trans = "log10") +
                   scale_y_continuous(labels = function(x) format(x*100, digits=2, nsmall=2), trans = "log10") +
                   ylab("% relative gene expression") +
-                  geom_text(data = mod_Q[which(mod_Q$GROUP==GROUP),], aes(x = gene, y = 0.2, label = P.stars, fontface = "bold") , color = "black") #, position = position_jitterdodge(seed = 2) # jitterdodge in geom_text will need the grouping aesthetic (eg, colour) to be defined inside ggplot() +
+                  geom_text(data = mod_Q[which(mod_Q$GROUP==GROUP),], aes(x = gene, y = 0.2, label = P.stars) , color = "black") # , fontface = "bold", position = position_jitterdodge(seed = 2) # jitterdodge in geom_text will need the grouping aesthetic (eg, colour) to be defined inside ggplot() +
               )
               
             }
@@ -1815,8 +1819,8 @@ genes_data$Category[genes_data$Category=="evaluate_abs_diff_Ct" & (genes_data$ab
             
             #base model params
             base_model <- PipelineTesting[which(PipelineTesting$T.E.==3 & PipelineTesting$LOD==37 & PipelineTesting$imputation=="HM"& PipelineTesting$Invalids=="Invalids_DISCARD" &PipelineTesting$ALWAYS_DISCARD==T),]
-            base_model$P.Status.stars <- sapply(base_model$P.Status, add_star)
-            base_model$P.Treatment.stars <- sapply(base_model$P.Treatment, add_star)
+            base_model$P.Status.stars <- sapply(base_model$P.Status, from_p_to_ptext)
+            base_model$P.Treatment.stars <- sapply(base_model$P.Treatment, from_p_to_ptext)
             
             
             p1 <- ggplot(
@@ -1825,23 +1829,23 @@ genes_data$Category[genes_data$Category=="evaluate_abs_diff_Ct" & (genes_data$ab
                 ) +
                   #geom_violin(aes(fill= Treatment), trim = TRUE,width =1.1, alpha = 0.6) +
                   #geom_boxplot(aes(fill= Treatment),colour ="black", width = 0.1, alpha = 0.6, position = position_dodge(width = 1.1) )+
-                  #geom_point(position=position_jitterdodge(), size = 1, alpha = 0.3, show.legend = FALSE) +
+                  geom_point(position=position_jitterdodge(), size = 1, alpha = 0.3, show.legend = FALSE) +
                   #geom_boxplot(aes(colour = Treatment), lwd = 0.8, alpha = 0.2) +
               #geom_violin(trim = TRUE,width =1.1, alpha = 0.6) +
               stat_summary(
-                fun.data = mean_cl_normal, # The function used to calculate the confidence intervals
+                fun.data = mean_se, # The function used to calculate the st.errors
                 geom = "errorbar",
                 width = 0.4,
-                size = 0.8,
-                aes(color = Treatment), # Color the errorbar based on treatment
-                position = position_dodge(width = 0.8)
+                size = 0.7,
+                aes( group = Treatment), color = "black", # Color the errorbar based on treatment
+                position = position_dodge(width = 0.7)
                 ) +
               stat_summary( # To add a point for the mean
                 fun = mean,
                 geom = "point",
                 size = 1, # Customize the size
-                aes(color = Treatment, group = Treatment), # Map group aesthetic to treatment
-                position = position_dodge(width = 0.8)  
+                aes( group = Treatment),color = "black", # Map group aesthetic to treatment
+                position = position_dodge(width = 0.7)  
                 ) +
                   colFill_Treatment +
                   colScale_Treatment +
@@ -1849,35 +1853,48 @@ genes_data$Category[genes_data$Category=="evaluate_abs_diff_Ct" & (genes_data$ab
                   #ggtitle(paste(unique(CLEAN_DATA[which(CLEAN_DATA$GROUP==GROUP),"Ant_status"]), collapse = ", ")) +
               scale_y_continuous(labels = function(x) format(x*100, digits=2, nsmall=2), trans = "log10") +
               ylab("% relative gene expression") +                #geom_text(data = label_treatment[which(label_treatment$GROUP==GROUP),], aes(x = gene, y = 10, group = Treatment, label = V1, fontface = "bold"), position = position_jitterdodge(seed = 2)) # jitterdodge in geom_text will need the grouping aesthetic (eg, colour) to be defined inside ggplot() +
-            geom_text(data = base_model, aes(x = gene, y = 0.35, label = P.Treatment.stars, fontface = "bold") , color = "black") #, position = position_jitterdodge(seed = 2) # jitterdodge in geom_text will need the grouping aesthetic (eg, colour) to be defined inside ggplot() +
+            geom_text(data = base_model, 
+                      aes(y = 100.55, label = P.Treatment.stars, fontface = ifelse(grepl("\\*", P.Treatment.stars), "bold", "plain")),color = "black")
+          
             
+            #CLEAN_DATA$Ant_status <-  factor(CLEAN_DATA$Ant_status , levels = status_order[which(status_order %in% CLEAN_DATA$Ant_status)])
             
             
             # PLOT FOR NON-TREATED ANTS
             # ## plot by Ant_status
             p2 <- ggplot(
               data = CLEAN_DATA[which(CLEAN_DATA$GROUP==GROUP),],
-              aes(x = Ant_status, y = rel_conc_imputed)
+              aes(x = Ant_status, y = rel_conc_imputed, color=Ant_status)
             ) +
+              geom_point(position=position_jitter(width=0.2),size = 1, alpha = 0.3, show.legend = FALSE) +
               #geom_violin(trim = TRUE,width =1.1, alpha = 0.6) +
               stat_summary(
-                fun.data = mean_cl_normal, # The function used to calculate the confidence intervals
+                fun.data =  mean_se, # The function used to calculate the st.errors
                 geom = "errorbar",
                 width = 0.4,
-                size = 0.8
+                size = 0.7,
+                color = "black"
               ) +
               stat_summary( # To add a point for the mean
                 fun = mean,
                 geom = "point",
-                size = 1 # Customize the size
-              ) +
-              colFill_Treatment +
-              colScale_Treatment +
+                size = 0.7, # Customize the size
+                color = "black") +
+              #colFill_Treatment +
+              #colScale_Treatment +
               STYLE +
               #ggtitle(paste(unique(CLEAN_DATA[which(CLEAN_DATA$GROUP==GROUP),"Ant_status"]), collapse = ", ")) + #,subtitle = "95% C.I."
               scale_y_continuous(labels = function(x) format(x*100, digits=2, nsmall=2), trans = "log10") +
               ylab("% relative gene expression") +              facet_grid(. ~ gene)+
-              geom_text(data = base_model, aes(x = 1.5, y = 0.35, label = P.Status.stars, fontface = "bold") , color = "black") #, position = position_jitterdodge(seed = 2) # jitterdodge in geom_text will need the grouping aesthetic (eg, colour) to be defined inside ggplot() +
+              geom_text(data = base_model, aes(x = 1.5, y = 100.35, label = P.Status.stars, fontface = "plain") , color = "black") #, position = position_jitterdodge(seed = 2) # jitterdodge in geom_text will need the grouping aesthetic (eg, colour) to be defined inside ggplot() +
+            
+            
+            
+            warning("ORDER NURSE BEFORE FORAGER")
+            statuses_colours[which(names(statuses_colours)=="nurse")]
+            nurse #FDE725FF
+            forager #1F9E89FF
+            
             
 
             # arrange plots side by side
