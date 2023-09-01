@@ -13,6 +13,9 @@ m            <- 2   ## how many communities do we want to instruct FACETNET to s
 alpha        <- 0.5 ## used for modulating the `memory` - how much the community structure @ time t influences that at t+1 - only matters when we ask facetnet to pay attention to this...
 t_step       <- 0   ## not important
 N_ITERATIONS <- 50
+#
+DISPLAY_RESULTS <- F
+
 
 #define main dirs (THESE ARE ALSO DEFINED IN A_MAIN EXPERIMENT)
 if(!exists("DISK")){DISK <- "Seagate Portable Drive"}
@@ -22,19 +25,33 @@ source(paste(code_path,"/functions_and_parameters.R",sep=""))
 
 FACETNET_DIR <- "/home/cf19810/facetNet"  ## the Python script is here - can be anywhere, but this must point to it...
 
-input_path           <-  paste(data_path,"/intermediary_analysis_steps/full_interaction_lists/PreTreatment/observed",sep="")
-network_files <- list.files(path=paste(input_path),full.names=T)
+#input_path           <-  paste(data_path,"/intermediary_analysis_steps/full_interaction_lists/PreTreatment/observed",sep="")
+#network_files <- list.files(path=paste(input_path),full.names=T)
+input_path           <- paste(data_path,"/intermediary_analysis_steps/full_interaction_lists",sep="")
+setwd(input_path)  
+input_folders        <- list.dirs(recursive=T,path="PreTreatment",full.names=F)
+input_folders        <- input_folders[which(input_folders!="")]
+
 ## load the file containing the % time each ant spent outside
 TaskStats_File <- paste(data_path, "/processed_data/individual_behaviour/pre_treatment/network_position_vs_time_outside.dat", sep="/")
 TaskStats_all      <- read.table(TaskStats_File , header=T, stringsAsFactors = F)
 
 #where scores are saved
-WORKDIR      <- paste(data_path,"/Soft_community_scores",sep="")
+WORKDIR      <- paste(data_path,"/Soft_community_scores_duration",sep="")
 
-to_keep <- c(ls(),"to_keep","network_files")
+to_keep <- c(ls(),"to_keep","network_files","network_file","output_folders","output_folder")
 
-#exclude faulty file for now
-network_files <- network_files[!grepl("colony07SP_pathogen.small_PreTreatment",network_files)]
+
+for (input_folder in input_folders){
+  print(input_folder)
+  setwd(input_path)
+  network_files <- list.files(path=paste("PreTreatment/",input_folder,sep=""),full.names=T)
+
+  output_folder <- file.path(WORKDIR, input_folder)
+  if (!file.exists(output_folder)){dir.create(output_folder)}
+  
+## file in which queen community is not the same as the one where ants spend least time outside
+#network_files <- network_files[!grepl("colony07SP_pathogen.small_PreTreatment",network_files)]
 
 for (network_file in network_files){
   #### re-open the task_groups (where results are saved) as it gets updated at the end of the loop (the loaded version has to be the newest one)
@@ -57,7 +74,7 @@ for (network_file in network_files){
   print(basename(root_name)) #"\r",
   
   #MAKE A FOLDER PER COLONY
-  FACETNET_REP_folder <- paste(WORKDIR, paste(root_name,"_FACETNET_iters",sep=""), sep="/"); if (!file.exists(FACETNET_REP_folder)){dir.create(FACETNET_REP_folder)}
+  FACETNET_REP_folder <- file.path(output_folder, paste(root_name,"_FACETNET_iters",sep="")); if (!file.exists(FACETNET_REP_folder)){dir.create(FACETNET_REP_folder)}
   Module_File        <- paste(FACETNET_REP_folder, paste(Cassette,"Modularities.txt",sep=""), sep="/")
   
   ####get appropriate task_group list, treated list and tag
@@ -79,7 +96,10 @@ if (!file.exists("FACETNET_INPUT")){
   interactions <- subset(interactions, Tag1 %in% alive)
   interactions <- subset(interactions, Tag2 %in% alive)
   ## time-aggregated edge list
-  EdgeList              <- aggregate(Box ~ Tag1 + Tag2, FUN=length, data=interactions)  ; colnames(EdgeList)[ncol(EdgeList)] <- "Count"       ## pairwise contact count
+  #EdgeList              <- aggregate(Box ~ Tag1 + Tag2, FUN=length, data=interactions)  ; colnames(EdgeList)[ncol(EdgeList)] <- "Count"       ## pairwise contact count
+  EdgeList              <- aggregate(duration ~ Tag1 + Tag2, FUN=sum, data=interactions)  ; colnames(EdgeList)[ncol(EdgeList)] <- "duration"       ## pairwise contact count
+  
+  EdgeList$duration <- round(EdgeList$duration)
   
   ## DEFINE INPUT FILE - needs to be formatted for facetnet python to understand
   FACETNET_INPUT <- paste(FACETNET_REP_folder,"/",Cassette,"interactions_Time-aggregated_network,FACETNET_format.txt",sep="")
@@ -132,6 +152,7 @@ for (ITER in 1:N_ITERATIONS)  {  ## the modularity of the found solutions vary q
   }##ITER
 
 
+  if (input_folder=="observed") {
 ##### ##### ##### ##### ##### ##### ##### ##### ##### ##### ##### ##### ##### ##### ##### ##### ##### ##### 
 ##### PART 3: Find the top-modularity solution & assign biological labels to both communities # ##### #####
 ##### ##### ##### ##### ##### ##### ##### ##### ##### ##### ##### ##### ##### ##### ##### ##### ##### ##### 
@@ -166,13 +187,14 @@ if (file.exists(Module_File)){
   
   ## which community has the lower mean % time outside? --> THE NURSES
   Nurses_by_prop_time_outside <-  ClusterMeans$cluster_binary [which.min(ClusterMeans$prop_time_outside)]
-  ## which community contains the queen? ---> THE NURSES
-  Nurses_by_queen_affiliation <-  Combined$cluster_binary [ which(Combined$task_group=="queen") ]
-  
-  ##  check agreement between the 2 diagnosis methods - if they don't agree, we will need to discuss
-  if (Nurses_by_prop_time_outside != Nurses_by_queen_affiliation){
-    print("PROBLEM: community identification by % time outside DISAGREES with that by queen affiliation")}
-  else{  
+  # ## which community contains the queen? ---> THE NURSES
+  # Nurses_by_queen_affiliation <-  Combined$cluster_binary [ which(Combined$task_group=="queen") ]
+  # 
+  # COMMENTED OUT AS colony07SP_pathogen.small_PreTreatment has disagreement between time spent with queen and time outside
+  # ##  check agreement between the 2 diagnosis methods - if they don't agree, we will need to discuss
+  # if (Nurses_by_prop_time_outside != Nurses_by_queen_affiliation){
+  #   print("PROBLEM: community identification by % time outside DISAGREES with that by queen affiliation")}
+  # else{  
     ## the nurse community is the one that spends the least time outside and that includes the queen (assuming the 2 methods agree...)
     NURSE_COMMUNITY   <- ClusterMeans$cluster_binary [ which.min(ClusterMeans$prop_time_outside)]
     FORAGER_COMMUNITY <- ClusterMeans$cluster_binary [ which.max(ClusterMeans$prop_time_outside)]
@@ -187,11 +209,13 @@ if (file.exists(Module_File)){
     Combined$task_group_FACETNET_0.5 [which(Combined$Forager_score > Combined$Nurse_score)] <- "forager"
     Combined$task_group_FACETNET_0.5 [which(Combined$Forager_score < Combined$Nurse_score)] <- "nurse"
     Combined$task_group_FACETNET_0.5 [which(Combined$tag == queenid)] <- "queen"
-    }
-  
+    #}
+    
+    if(DISPLAY_RESULTS){
   ## tally the agreement between the original and new (facetnet) task labels
   Agreement <- table(Combined$task_group, Combined$task_group_FACETNET_0.5); rownames(Agreement) <- paste("orig", rownames(Agreement),sep="_"); colnames(Agreement) <- paste("facet", colnames(Agreement), sep="_"); print(Agreement)
-  
+    }
+    
 # Save output to the task_groups file
 Combined$colony <- colony
 
@@ -211,19 +235,68 @@ write.table(merged_data[, names(task_groups)],
             file=paste(data_path,"original_data/task_groups.txt",sep="/"),
             append = F, col.names = T, row.names = F, quote = F, sep = "\t")
 }
-clean()
+}
+}
+ clean()
 }
 
 
-#PLOT results
+if(DISPLAY_RESULTS){
+  library(dplyr)
+  library(ggplot2)
+##### ##### ##### ##### ##### ##### ##### ##### ##### ##### ##### ##### ##### ##### ##### ##### ##### ##### 
+##### ##### ##### #####  fetch best modularity values and save output   ##### ##### ##### ##### ##### #####
+##### ##### ##### ##### ##### ##### ##### ##### ##### ##### ##### ##### ##### ##### ##### ##### ##### ##### 
+# # Define directory and patterns
+folder_pattern <- "FACETNET_iters"
+file_pattern <- "interactionsModularities.txt"
+data <- NULL
+
+# Get list of folders matching the pattern
+randys <- list.dirs(WORKDIR, full.names = TRUE, recursive = FALSE)
+for(randy in randys){
+folders <- list.dirs(randy, full.names = TRUE, recursive = FALSE)
+folders <- folders[grep(folder_pattern, folders)]
+
+# Read and rbind files together
+data_list <- lapply(folders, function(folder) {
+  file_path <- list.files(folder, pattern = file_pattern, full.names = TRUE)
+  if(length(file_path) > 0) {
+    return(read.table(file_path, header = TRUE, stringsAsFactors = FALSE))
+  }
+  return(NULL)
+})
+
+data_randy <- do.call(rbind, data_list)
+data_randy$randy <- basename(randy)
+
+data_randy <- data_randy %>%
+  group_by(colony) %>%
+  filter(MODULARITY == max(MODULARITY)) %>%
+  ungroup()
+
+data_randy$randy <- basename(randy)
+
+data <- rbind(data, data_randy)
+}
+
+#save best modularity output
+write.table(data,
+            file=paste(data_path,
+                       paste0(basename(WORKDIR),"_modularity.txt"),
+                       sep="/"),
+            append = F, col.names = T, row.names = F, quote = F, sep = "\t")
+
+##### ##### ##### ##### ##### ##### ##### ##### ##### ##### ##### ##### ##### ##### ##### ##### ##### ##### 
+##### ##### ##### #####         PLOT results of OBSERVED ONLY           ##### ##### ##### ##### ##### #####
+##### ##### ##### ##### ##### ##### ##### ##### ##### ##### ##### ##### ##### ##### ##### ##### ##### ##### 
 task_groups_A    <- read.table("/media/cf19810/Seagate Portable Drive/Lasius-Bristol_pathogen_experiment/main_experiment/original_data/task_groups.txt",header=T,stringsAsFactors = F)
 
 size_order      <- c("small","big")
 task_groups_A$size     <- unlist(lapply( task_groups_A$treatment, function(x)  unlist(strsplit(x,split="\\.") )[2]  ))
 task_groups_A$size      <- factor(task_groups_A$size    , levels=size_order   [which(size_order%in%task_groups_A$size )])
 
-
-# Generate plots
+# Generate plots of Social Maturity
 ggplot(task_groups_A, aes(x = Forager_score, colour = size)) + 
   #geom_density(alpha = 0.6,size=1.5, adjust=1/1.2) + # 'adjust' changes the smoothing
   geom_line(aes(color=size,group = colony), stat="density", size=1, alpha=0.2, adjust=1/1.2) +
@@ -232,17 +305,50 @@ ggplot(task_groups_A, aes(x = Forager_score, colour = size)) +
   geom_vline(aes(xintercept = 1/4), linetype = "dashed",colour="grey20") + 
   #facet_wrap(~ colony, scales = "free") +
   theme_minimal() +
-  xlab("Social maturity")
+  xlab("Social maturity (duration contacts)")
 
+## CHECK WHEN THE BEST MODULARITY VALUE IS ACHIEVED
 
+data_obs <- data[which(data$randy=="observed"),]
 
+# Identify and rank the top modularity values for each colony
+threshold <- 0.95
 
+data_ranked <- data_obs %>%
+  group_by(colony) %>%
+  mutate(max_modularity = max(MODULARITY),
+         is_top = ifelse(MODULARITY >= max_modularity * threshold, 1, 0)) %>%
+  filter(is_top == 1) %>%
+  mutate(rank = dense_rank(desc(MODULARITY)))
 
-warning("rewrite table by calling the task_group file, faceting for colony")
-## tally the agreement between the original and new (facetnet) task labels
-#Agreement <- table(Combined$task_group, Combined$task_group_FACETNET_0.5); rownames(Agreement) <- paste("orig", rownames(Agreement),sep="_"); colnames(Agreement) <- paste("facet", colnames(Agreement), sep="_"); print(Agreement)
+# Count occurrences of each ITER for each rank
+iter_counts <- data_ranked %>%
+  group_by(ITER, rank) %>%
+  tally()
 
+# Dynamically generate breaks and labels for ranks
+max_rank <- max(iter_counts$rank)
+all_labels <- c("Best", "Second Best", "Third", "Fourth", "Fifth")  # Extend this list if more ranks are expected
+breaks_ranks <- 1:max_rank
+labels_ranks <- all_labels[1:max_rank]
 
-# TO DOS
-#test different thresholds?
-# - rerun qpcr script with new labs (merge from where those are saved)
+# Check if any NA labels and remove them
+valid_indices <- !is.na(labels_ranks)
+breaks_ranks <- breaks_ranks[valid_indices]
+labels_ranks <- labels_ranks[valid_indices]
+
+iter_counts <- iter_counts[which(iter_counts$rank<=5),]
+
+# Plot
+ggplot(iter_counts, aes(x = factor(ITER), y = n, fill = factor(rank))) +
+  geom_bar(stat = "identity") +
+  scale_fill_manual(values = colorRampPalette(c("lightblue", "blue"))(max(iter_counts$rank)),
+                    name = "Rank",
+                    breaks = breaks_ranks,
+                    labels = labels_ranks) +
+  labs(title = "Distribution of ITER for Top Modularity Ranks",
+       x = "ITER",
+       y = "Count") +
+  theme_minimal()
+}
+
