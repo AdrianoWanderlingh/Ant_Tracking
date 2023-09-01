@@ -1361,7 +1361,7 @@ plot_age_dol <- function(data_path=data_path,experiments){
   return(plot_age_dol_list)
 }
 
-#Compare Cohen's d for .... (COPY HERE)
+#Compare Mean Cohen's d standardised effect size
 compare_cohens_d <- function(data) {
 
   # Ensure inputs are in correct data structure format
@@ -3849,7 +3849,7 @@ calculate_entropy <- function(data_path=data_path,which_individuals,number_permu
   Dip_plot <- ggplot(data, aes(x = variable, fill = size )) +
     #geom_density(alpha = 0.5) +
     geom_line(aes(color=size,group = colony), stat="density", size=1, alpha=0.15, adjust=1/1.2) +
-    geom_line(aes(color=size), stat="density", size=2, alpha=1, adjust=1/1.2) +
+    geom_line(aes(color=size), stat="density", linewidth=2, alpha=1, adjust=1/1.2) +
     #geom_vline(aes(xintercept = 0.02), linetype = "dashed",colour="grey20") + 
     #geom_histogram(position = "identity", alpha = 0.5, bins = 10) +
     labs(x = "Prop. time outside (log)",y = "Density") +
@@ -4658,9 +4658,9 @@ colScale_Colony <-
 #new_scale_fill() +
 # geom_line(aes(color = Sample)) +
 colScale_Treatment <-
-  scale_color_manual(name = "Treatment", values = myColors_Treatment) #for lines
+  scale_color_manual(name = "Treatment", values = myColors_Treatment,labels = function(x) str_to_title(gsub("big", "large", gsub("\\.", " ", x)))) #for lines
 colScale_treatment <-
-  scale_color_manual(name = "treatment", values = myColors_Treatment) #for lines
+  scale_color_manual(name = "treatment", values = myColors_Treatment,labels = function(x) str_to_title(gsub("big", "large", gsub("\\.", " ", x)))) #for lines
 ####FILL
 # geom_point(aes(color = Sample)) +
 colFill_Colony <-
