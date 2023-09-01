@@ -21,16 +21,16 @@ colour_palette <- c(viridis(10, alpha = 1, begin = 0, end = 1, direction = -1, o
 colour_palette_workers <- viridis(10, alpha = 1, begin = 0, end = 1, direction = -1, option = "D")[1:5]
 colour_palette_age <- rep(GetColorHex("lightskyblue"),2)
 
-forager_colour <- colour_palette[1]
+forager_colour <- "#E69F00"#colour_palette[1]
 occasional_forager_colour <-  colour_palette[2]
-nurse_colour <- colour_palette[3]
+nurse_colour <- "#56B4E9"#colour_palette[3]
 untreated_colour <- GetColorHex("grey60")
 treated_colour <- GetColorHex("grey20")
 queen_colour <- colour_palette[5]#queen_colour <- "mediumorchid4"
 worker_colour <- colour_palette[2]
 control_colour <- GetColorHex("skyblue1")
 pathogen_colour <- GetColorHex("royalblue2")
-random_colour <- GetColorHex("rosybrown1")
+random_colour <- GetColorHex("grey60") #("rosybrown1")
 observed_colour <- GetColorHex("red4")
 high_load_colour <- GetColorHex("springgreen4")
 low_load_colour  <- GetColorHex("springgreen2")

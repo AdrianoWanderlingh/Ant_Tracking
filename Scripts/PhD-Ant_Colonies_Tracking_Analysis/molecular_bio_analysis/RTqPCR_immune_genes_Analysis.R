@@ -1747,15 +1747,14 @@ genes_data$Category[genes_data$Category=="evaluate_abs_diff_Ct" & (genes_data$ab
                 ggplot(data =  CLEAN_DATA[which(CLEAN_DATA$GROUP==GROUP),], 
                        aes(x = gene, y = rel_conc_imputed, color = Treatment)
                 ) +
-                  geom_boxplot(size = 0.8) + #aes(fill = Treatment),colour ="black", alpha = 0
-                  geom_point(position=position_jitterdodge(),aes(fill = Treatment),color="black") + #,aes(fill = Treatment,color="black"), shape=21,size = 1, show.legend = FALSE
+                  geom_boxplot(size = 0.7,aes(fill = Treatment),colour ="black", alpha = 0,lwd=0.5) + #aes(fill = Treatment),colour ="black", alpha = 0
+                  geom_point(position=position_jitterdodge(),aes(fill = Treatment), size = 1) + #,aes(fill = Treatment,color="black"), shape=21,size = 1, show.legend = FALSE
                   colFill_treatment +
                   colScale_treatment +
                   STYLE +
-                  #ggtitle(paste(unique(CLEAN_DATA[which(CLEAN_DATA$GROUP==GROUP),"Ant_status"]), collapse = ", ")) +
-                  #scale_y_continuous(labels = scales::percent, trans = "log10") +
-                  scale_y_continuous(labels = function(x) format(x*100, digits=2, nsmall=2), trans = "log10") +
+                  scale_y_continuous(labels = function(x) format(x*100, digits=2, nsmall=1,scientific = FALSE), trans = "log10") +
                   ylab("% relative gene expression") +
+                  theme(legend.position = "bottom", legend.direction = "horizontal") +
                   geom_text(data = mod_Q[which(mod_Q$GROUP==GROUP),], aes(x = gene, y = 0.2, label = P.stars) , color = "black") # , fontface = "bold", position = position_jitterdodge(seed = 2) # jitterdodge in geom_text will need the grouping aesthetic (eg, colour) to be defined inside ggplot() +
               )
               
@@ -1851,13 +1850,18 @@ genes_data$Category[genes_data$Category=="evaluate_abs_diff_Ct" & (genes_data$ab
                   colScale_Treatment +
                   STYLE +
                   #ggtitle(paste(unique(CLEAN_DATA[which(CLEAN_DATA$GROUP==GROUP),"Ant_status"]), collapse = ", ")) +
-              scale_y_continuous(labels = function(x) format(x*100, digits=2, nsmall=2), trans = "log10") +
+              scale_y_continuous(labels = function(x) format(x*100, digits=2, nsmall=1,scientific = FALSE), trans = "log10") +
               ylab("% relative gene expression") +                #geom_text(data = label_treatment[which(label_treatment$GROUP==GROUP),], aes(x = gene, y = 10, group = Treatment, label = V1, fontface = "bold"), position = position_jitterdodge(seed = 2)) # jitterdodge in geom_text will need the grouping aesthetic (eg, colour) to be defined inside ggplot() +
             geom_text(data = base_model, 
-                      aes(y = 100.55, label = P.Treatment.stars, fontface = ifelse(grepl("\\*", P.Treatment.stars), "bold", "plain")),color = "black")
+                      aes(y = 100.55, label = P.Treatment.stars, fontface = "plain"),color = "black")
           
             
-            #CLEAN_DATA$Ant_status <-  factor(CLEAN_DATA$Ant_status , levels = status_order[which(status_order %in% CLEAN_DATA$Ant_status)])
+            #CLEAN_DATA$AntTask <-  factor(CLEAN_DATA$AntTask , levels = status_order[which(status_order %in% CLEAN_DATA$AntTask)])
+            CLEAN_DATA$Ant_status <- as.factor(CLEAN_DATA$Ant_status)
+            CLEAN_DATA$Ant_status <- factor(CLEAN_DATA$Ant_status, levels = rev(levels(CLEAN_DATA$Ant_status)))
+            
+            NURSE_col <- statuses_colours["nurse"]; names(NURSE_col) <- NULL
+            FORAG_col <- statuses_colours["forager"]; names(FORAG_col) <- NULL
             
             
             # PLOT FOR NON-TREATED ANTS
@@ -1867,6 +1871,7 @@ genes_data$Category[genes_data$Category=="evaluate_abs_diff_Ct" & (genes_data$ab
               aes(x = Ant_status, y = rel_conc_imputed, color=Ant_status)
             ) +
               geom_point(position=position_jitter(width=0.2),size = 1, alpha = 0.3, show.legend = FALSE) +
+              scale_color_manual(values = c("untreated nurse" =NURSE_col , "untreated forager" =FORAG_col )) +
               #geom_violin(trim = TRUE,width =1.1, alpha = 0.6) +
               stat_summary(
                 fun.data =  mean_se, # The function used to calculate the st.errors
@@ -1884,19 +1889,11 @@ genes_data$Category[genes_data$Category=="evaluate_abs_diff_Ct" & (genes_data$ab
               #colScale_Treatment +
               STYLE +
               #ggtitle(paste(unique(CLEAN_DATA[which(CLEAN_DATA$GROUP==GROUP),"Ant_status"]), collapse = ", ")) + #,subtitle = "95% C.I."
-              scale_y_continuous(labels = function(x) format(x*100, digits=2, nsmall=2), trans = "log10") +
+              scale_y_continuous(labels = function(x) format(x*100, digits=2, nsmall=1,scientific = FALSE), trans = "log10") +
+              scale_x_discrete(labels = c("untreated\nnurse","untreated\nforager")) +
               ylab("% relative gene expression") +              facet_grid(. ~ gene)+
               geom_text(data = base_model, aes(x = 1.5, y = 100.35, label = P.Status.stars, fontface = "plain") , color = "black") #, position = position_jitterdodge(seed = 2) # jitterdodge in geom_text will need the grouping aesthetic (eg, colour) to be defined inside ggplot() +
             
-            
-            
-            warning("ORDER NURSE BEFORE FORAGER")
-            statuses_colours[which(names(statuses_colours)=="nurse")]
-            nurse #FDE725FF
-            forager #1F9E89FF
-            
-            
-
             # arrange plots side by side
             #immune_genes_plots <- grid.arrange(queen_plot ,p1, p2, ncol = 1)
             
