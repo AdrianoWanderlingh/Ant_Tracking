@@ -100,6 +100,7 @@ source(paste(scripts_path,"functions_new.R",sep="/"))
 ### TURN plots on/off
 EXPLORE_PLOT <- FALSE # exploratory plots
 PLOT         <- FALSE # stats plots
+TABLE         <- FALSE # data tables
 
 ### TURN stats report on/off
 REPORT <- TRUE
@@ -481,10 +482,16 @@ for (IMPUTATION in c("QRILC","HM")) {
       peaks <- peaks[which(peaks$V1>=0.2),"V2"]
       # Extract the corresponding x-coordinates from the smoothed curve
       shoulder_points <- data.frame(x = smoothed_curve$x[peaks], y = smoothed_curve$y[peaks])
+      shoulder_points <- shoulder_points[which(shoulder_points$y>30),]
       # Machine Limit_of_Detection
       Limit_of_Detection <- round(max(shoulder_points$y),0) #conservative threshold, rounds down to 37
       # Plot the curve
-      plot(sorted_vector, col = "black", type = "l", main = "Smoothed Curve of raw Ct values",sub=paste("upper Detection Threshold",Limit_of_Detection,sep=" " ),lwd=3)
+      #plot(sorted_vector, col = "black", type = "l", sub=paste("upper Detection Threshold",Limit_of_Detection,sep=" " ),lwd=3) # main = "Smoothed Curve of raw Ct values",
+      plot(sorted_vector, col = "black", type = "l",
+           lwd = 3,
+           xlab = "sorted values index",
+           ylab = "Ct",
+           family = "Liberation Serif")
       points(shoulder_points$x,shoulder_points$y , col = "red", pch = 19)
     }
     ########################################
@@ -566,6 +573,7 @@ for (IMPUTATION in c("QRILC","HM")) {
     
     #----------------------------------
     
+    if(TABLE){
     #make tab for M&M section
     mean_data_group <- genes_data %>%
       group_by(gene,Ant_status) %>%
@@ -587,6 +595,7 @@ for (IMPUTATION in c("QRILC","HM")) {
     # Save the document 
     print(doc, target = paste0("prop_missing_data_byGeneGroup",Sys.Date(),".docx")) 
     #---------------------------------
+    }
     
     #First, the PCR reactions are run for a fixed number of cycles (typically 40), implying that the observed data are censored at the maximum cycle number. This is a type of non-random missingness in which the missing data mechanism depends on the unobserved value. Knowledge of the technology allows us to conclude that the data are at least subject to fixed censoring; however, as we will later show, the qPCR censoring mechanism may actually be a probabilistic function of the unobserved data.
     #https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4133581/
@@ -600,6 +609,7 @@ for (IMPUTATION in c("QRILC","HM")) {
         Treatment = Treatment
       )
     mean_data_Col <- mean_data_Col %>% distinct()
+  
     
     if (EXPLORE_PLOT) {
       # Plot the distribution of NA by mean Ct per group
@@ -1285,6 +1295,7 @@ genes_data$Category[genes_data$Category=="evaluate_abs_diff_Ct" & (genes_data$ab
       ##################              SUMMARY TABLES      ################################
       ####################################################################################
       
+      if(TABLE){
       #table of invalid files for Florent
       #produce table of samples to reprocess
       Reprocess_table_GOI <- genes_data[which(genes_data$Category=="invalid" & genes_data$Ant_status!="queen" & genes_data$gene!="PO"),
@@ -1367,6 +1378,7 @@ genes_data$Category[genes_data$Category=="evaluate_abs_diff_Ct" & (genes_data$ab
       doc <- body_add_flextable(doc, value = ft)
       # Save the document
       print(doc, target = paste0(save_dir_plots,"rel_conc_imputed_",Sys.Date(),".docx"))
+      }
       
       #####################################################################################
       ##################              STATS & PLOTS        ################################
@@ -1926,19 +1938,102 @@ genes_data$Category[genes_data$Category=="evaluate_abs_diff_Ct" & (genes_data$ab
 #base model params (WARNING: THIS IS REPEATED IN UNTREATED_w PLOT!)
 base_model <- PipelineTesting[which(PipelineTesting$T.E.==3 & PipelineTesting$LOD==37 & PipelineTesting$imputation=="HM"& PipelineTesting$Invalids=="Invalids_DISCARD" &PipelineTesting$ALWAYS_DISCARD==T),]
 
-#####   STATS   #####
-for (GENE in unique(PipelineTesting$gene)) {
-  # one-sample t-test to determine if base model is statistically different from permutations
-  print(GENE)
-  PipelineTesting[which(PipelineTesting$gene==GENE),] %>%
-    summarise(
-      Estim.Status_test    = report_statistics(wilcox.test(Estim.Status, y = base_model$Estim.Status, alternative = "two.sided")),
-      P.Status_test        = report_statistics(wilcox.test(P.Status, y = base_model$P.Status, alternative = "two.sided")),
-      Estim.Treatment_test = report_statistics(wilcox.test(Estim.Treatment, y = base_model$Estim.Treatment, alternative = "two.sided")),
-      P.Treatment_test     = report_statistics(wilcox.test(P.Treatment, y = base_model$P.Treatment, alternative = "two.sided"))
-    ) %>%
-    print()
+# Given base_model definition
+base_model <- PipelineTesting[which(PipelineTesting$T.E. == 3 & 
+                                      PipelineTesting$LOD == 37 & 
+                                      PipelineTesting$imputation == "HM" & 
+                                      PipelineTesting$Invalids == "Invalids_DISCARD" & 
+                                      PipelineTesting$ALWAYS_DISCARD == TRUE), ]
+#remove the base for the text production
+PipelineTesting1 <- anti_join(PipelineTesting, base_model)
+
+# Function to compare the sign
+compare_sign <- function(x, y) {
+  return(sign(x) == sign(y))
 }
+
+# Function to compare significance (using 0.05 as threshold)
+compare_significance <- function(x, y) {
+  return((x < 0.05) == (y < 0.05))
+}
+
+# Get unique combinations of gene and imputation
+combinations <- unique(PipelineTesting1[, c("gene", "imputation")])
+combinations <- combinations[which(combinations$imputation=="HM"),]
+
+# Create an empty list to store the messages
+#output_messages <- list()
+concise_messages <- list()
+
+# Specified order for genes
+genes_order <- c("DEF", "HYM", "PO")
+
+# Loop through the specified order of genes and imputation combinations
+for (gene in genes_order) {
+  message_parts <- c()  # To store individual parts of the message for each gene
+  for (i in 1:nrow(combinations)) {
+    if (combinations$gene[i] != gene) next
+    
+    imputation <- combinations$imputation[i]
+    
+    # Subset data for the current combination
+    combination_data <- PipelineTesting[PipelineTesting$gene == gene & PipelineTesting$imputation == imputation, ]
+    
+    # If base_model has data for the combination
+    if (nrow(base_model[base_model$gene == gene & base_model$imputation == imputation, ]) > 0) {
+      # Check for status
+      matched_sign_status <- sapply(combination_data$Estim.Status, compare_sign, y = base_model$Estim.Status[base_model$gene == gene & base_model$imputation == imputation])
+      matched_p_status <- sapply(combination_data$P.Status, compare_significance, y = base_model$P.Status[base_model$gene == gene & base_model$imputation == imputation])
+      
+      # # Save the message for status
+      # output_messages[[length(output_messages) + 1]] <- sprintf("When comparing the model estimates and p-values for the effect of the status, %s imputation for the gene %s produced model estimates of the same sign in %d/%d of the cases and p-values consistent with the ones of the original dataset in %d/%d of the cases.", 
+      #                                                           imputation, gene, sum(matched_sign_status), length(matched_sign_status), sum(matched_p_status), length(matched_p_status))
+      # 
+      # # Check for treatment
+      # matched_sign_treatment <- sapply(combination_data$Estim.Treatment, compare_sign, y = base_model$Estim.Treatment[base_model$gene == gene & base_model$imputation == imputation])
+      # matched_p_treatment <- sapply(combination_data$P.Treatment, compare_significance, y = base_model$P.Treatment[base_model$gene == gene & base_model$imputation == imputation])
+      # 
+      # # Save the message for treatment
+      # output_messages[[length(output_messages) + 1]] <- sprintf("When comparing the model estimates and p-values for the effect of the treatment, %s imputation for the gene %s produced model estimates of the same sign in %d/%d of the cases and p-values consistent with the ones of the original dataset in %d/%d of the cases.", 
+      #                                                           imputation, gene, sum(matched_sign_treatment), length(matched_sign_treatment), sum(matched_p_treatment), length(matched_p_treatment))
+      # Add to message_parts for the current imputation method
+      message_parts <- c(message_parts, sprintf("effect of task group preserved %d/%d, p preserved %d/%d, effect of treatment preserved %d/%d, p preserved %d/%d", 
+                                                sum(matched_sign_status), length(matched_sign_status), sum(matched_p_status), length(matched_p_status),
+                                                sum(matched_sign_treatment), length(matched_sign_treatment), sum(matched_p_treatment), length(matched_p_treatment)))
+    }
+  }
+  
+  # Combine parts into a single message for the current gene
+  concise_messages[gene] <- paste(message_parts, collapse = ";")
+}
+
+# Combine gene-specific messages into the final concise report
+concise_report <- paste(sprintf("%s: %s", names(concise_messages), concise_messages), collapse = "; ")
+cat(concise_report, "\n")
+
+
+# # Print the saved messages in order
+# for (message in output_messages) {
+#   cat(message, "\n\n")
+# }
+
+
+
+
+
+# #####   STATS   #####
+# for (GENE in unique(PipelineTesting$gene)) {
+#   # one-sample t-test to determine if base model is statistically different from permutations
+#   print(GENE)
+#   PipelineTesting[which(PipelineTesting$gene==GENE),] %>%
+#     summarise(
+#       Estim.Status_test    = report_statistics(wilcox.test(Estim.Status, y = base_model$Estim.Status, alternative = "two.sided")),
+#       P.Status_test        = report_statistics(wilcox.test(P.Status, y = base_model$P.Status, alternative = "two.sided")),
+#       Estim.Treatment_test = report_statistics(wilcox.test(Estim.Treatment, y = base_model$Estim.Treatment, alternative = "two.sided")),
+#       P.Treatment_test     = report_statistics(wilcox.test(P.Treatment, y = base_model$P.Treatment, alternative = "two.sided"))
+#     ) %>%
+#     print()
+# }
  
 
 #####   PLOTS   #####
@@ -1947,30 +2042,42 @@ for (GENE in unique(PipelineTesting$gene)) {
 # Create a list of variable suffixes
 suffixes<- c("Status", "Treatment")
 eff_plot_list <- list()
+
+PipelineTesting_HMonly <- PipelineTesting[which(PipelineTesting$imputation=="HM"),]
+
 # Loop through the variables and create plots
 for (suffix in suffixes) {
   ESTIMATE <- paste0("Estim.", suffix)
   PVAL <- paste0("P.", suffix)
   
+  # Determine the appropriate labels based on the suffix
+  x_label <- ifelse(suffix == "Status", "task group effect size", "treatment effect size")
+  y_label <- ifelse(suffix == "Status", "task group p val.", "treatment p val.")
+  
+  
   # Create scatterplot of model estimates VS p-values
-  sp <- ggplot(data = PipelineTesting, aes_string(x = ESTIMATE, y = PVAL)) +
-    geom_point(aes(color = gene, shape=imputation), alpha = 0.9,size =2,position = position_jitter(width = 0.005, height = 0))  + # CAREFUL: there is a tiny amount of jitter for readability
+  sp <- ggplot(data = PipelineTesting_HMonly, aes_string(x = ESTIMATE, y = PVAL)) +
+    geom_point(aes(color = gene, shape=imputation), alpha = 0.9,size =2)  + # ,position = position_jitter(width = 0.005, height = 0) CAREFUL: there is a tiny amount of jitter for readability
     geom_point(data =  base_model, aes_string(x = ESTIMATE, y = PVAL), shape = 4, size = 3) +
     #geom_rug(aes(color = gene))+
     geom_hline(yintercept = 0.05, linetype = "dashed", color = "red")+
-    geom_text(data = base_model, aes_string(x = ESTIMATE, y = PVAL, label = "gene"), vjust = -0.1,hjust= +1.2 ) +
+    geom_text(data = base_model, aes_string(x = ESTIMATE, y = PVAL, label = "gene"), vjust = -0.4,hjust=  -0.4) +
+    labs(x = x_label, y = y_label) +
     geom_vline(xintercept = 0) +
+    expand_limits(x = c(min(PipelineTesting_HMonly[[ESTIMATE]]) - 0.1, max(PipelineTesting_HMonly[[ESTIMATE]]) + 0.3),
+                  y = c(min(PipelineTesting_HMonly[[PVAL]]) - 0.05, max(PipelineTesting_HMonly[[PVAL]]) + 0.05)) +
     #labs(x = "Model Estimates", y = "p-value") + #, title = "Model Estimates vs. P-values"
     theme_classic()  +
     scale_shape_manual(values = c(21, 24)) +
     scale_color_jco() +
     #theme(aspect.ratio=1) +
-    border()  
+    ggpubr::border()  +
+    STYLE_generic
   # Marginal histograms
-  xplot <- gghistogram(PipelineTesting, ESTIMATE, fill = "gene",color = "transparent",
+  xplot <- gghistogram(PipelineTesting_HMonly, ESTIMATE, fill = "gene",color = "transparent",
                        palette = "jco",bins=20)  + clean_theme() + rremove("legend")
-  yplot <- gghistogram(PipelineTesting, PVAL, fill = "gene", color = "transparent",
-                       palette = "jco",bins=20)  + clean_theme() + rremove("legend") + rotate()
+  yplot <- gghistogram(PipelineTesting_HMonly, PVAL, fill = "gene", color = "transparent",
+                       palette = "jco",bins=20)  + clean_theme() + rremove("legend") + ggpubr::rotate()
   # Cleaning the plots
   leg <- cowplot::get_legend(sp) # + theme(legend.position = "right"))
   sp <- sp + rremove("legend")+ theme(plot.margin = margin(t = 0, r = 0, b = 0, l = 0, unit = "pt"))
@@ -2322,12 +2429,13 @@ for (suffix in suffixes) {
     geom_hline(yintercept = 0.05, linetype = "dashed", color = "red")+
     scale_color_jco() +
     #theme(aspect.ratio=1) +
-    border()  
+    ggpubr::border() +
+    STYLE_generic
   # Marginal histograms
   xplot <- gghistogram(results_trim, ESTIMATE, fill = "black",color = "transparent",
                        palette = "jco",bins=20)  + clean_theme() + rremove("legend")
   yplot <- gghistogram(results_trim, PVAL, fill = "black", color = "transparent",
-                       palette = "jco",bins=20)  + clean_theme() + rremove("legend") + rotate()
+                       palette = "jco",bins=20)  + clean_theme() + rremove("legend") + ggpubr::rotate()
   # Cleaning the plots
   leg <- cowplot::get_legend(sp) # + theme(legend.position = "right"))
   sp <- sp + rremove("legend")+ theme(plot.margin = margin(t = 0, r = 0, b = 0, l = 0, unit = "pt"))
