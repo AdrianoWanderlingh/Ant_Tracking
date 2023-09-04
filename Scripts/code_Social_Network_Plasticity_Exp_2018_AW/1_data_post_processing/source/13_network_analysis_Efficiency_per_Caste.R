@@ -18,11 +18,22 @@ options(digits=16) ; options(digits.secs=6) ; options("scipen" = 10)
 # in AW case, run it with "number" only for grooming interactions
 edge_weights <- "duration" ### "number" # LS: run once for duration of interactions and once for number of interactions
 
-
 ###remove output file
-if (file.exists(paste(data_path,"/processed_data/individual_behaviour/post_treatment/interactions_with_treated.txt",sep=""))){
-  file.remove(paste(data_path,"/processed_data/individual_behaviour/post_treatment/interactions_with_treated.txt",sep=""))
-}
+# if (file.exists(paste(data_path,"/processed_data/individual_behaviour/post_treatment/interactions_with_treated.txt",sep=""))){
+#   file.remove(paste(data_path,"/processed_data/individual_behaviour/post_treatment/interactions_with_treated.txt",sep=""))
+# }
+
+# file_path <- file.path(data_path,"processed_data/individual_behaviour/post_treatment/interactions_with_treated.txt")
+# # Check if the file exists
+# if (file.exists(file_path)) {
+#   # Create a directory with the current date in the same directory as the file
+#   new_folder_path <- file.path(dirname(file_path), paste0("old", format(Sys.Date(), format = "_%Y-%m-%d")))
+#   dir.create(new_folder_path, showWarnings = FALSE)
+#   # Move the file to the new directory
+#   file.rename(file_path, file.path(new_folder_path, basename(file_path)))
+#   warning("Moving the present interactions_with_treated.txt in a backup folder. \n\nIf you want to make this work for the efficiency by task, make a copy of the file back in the directory.")
+# }
+
 
 #### get input file list
 if (!grepl("survival",data_path)){
@@ -144,60 +155,60 @@ for (input_folder in input_folders){
       interactions[which(interactions$Tag1%in%colony_treated),"status_Tag1"] <- "treated"
       interactions[which(interactions$Tag2%in%colony_treated),"status_Tag2"] <- "treated"
       
-      #### use this information to calculate, for each worker, the cumulated duration of interaction with treated workers
-      if (input_folder=="observed"&option=="all_workers"){
-        
-        ### AW: To overcome the "Error in aggregate.data.frame(lhs, mf[-1L], FUN = FUN, ...) : no rows to aggregate", create empty df if no rows to aggregate on
-        aggregated1 <- tryCatch(
-          { aggregate(na.rm=T,na.action="na.pass",cbind(duration_min,N)~Tag1+status_Tag2,FUN=sum,data=interactions[which(interactions$status_Tag2=="treated"),]) },
-          error = function(e) {data.frame(tag= integer(),partner_status=character(), duration_min=numeric(), number_contacts=numeric())} # Return an empty data frame in case of an error
-        )
-        #aggregated1                 <- aggregate(na.rm=T,na.action="na.pass",duration_min~Tag1+status_Tag2,FUN=sum,data=interactions[which(interactions$status_Tag2=="treated"),])
-        names(aggregated1)          <- c("tag","partner_status","duration_min","number_contacts")
-        aggregated2 <- tryCatch(
-          { aggregate(na.rm=T,na.action="na.pass",cbind(duration_min,N)~Tag2+status_Tag1,FUN=sum,data=interactions[which(interactions$status_Tag1=="treated"),]) },
-          error = function(e) {data.frame(tag= integer(),partner_status=character(), duration_min=numeric(), number_contacts=numeric())} # Return an empty data frame in case of an error
-        )
-        #aggregated2                 <- aggregate(na.rm=T,na.action="na.pass",duration_min~Tag2+status_Tag1,FUN=sum,data=interactions[which(interactions$status_Tag1=="treated"),])
-        names(aggregated2)          <- c("tag","partner_status","duration_min","number_contacts")
-        aggregated                  <- rbind(aggregated1,aggregated2)
-        aggregated <- tryCatch(
-          { aggregate(na.rm=T,na.action="na.pass",cbind(duration_min,number_contacts)~tag+partner_status,FUN=sum,data=aggregated) },
-          error = function(e) {data.frame(tag= integer(),partner_status=character(), duration_min=numeric(),number_contacts=numeric())} # Return an empty data frame in case of an error
-        )
-        #aggregated                  <- aggregate(na.rm=T,na.action="na.pass",duration_min~tag+partner_status,FUN=sum,data=aggregated)
-        interactions_with_treated   <- merge(data.frame(tag=tag[which(tag$tag%in%alive),"tag"],stringsAsFactors = F),aggregated[c("tag","duration_min","number_contacts")],all.x=T)
-        interactions_with_treated[is.na(interactions_with_treated$duration_min),"duration_min"] <- 0
-        interactions_with_treated[is.na(interactions_with_treated$number_contacts),"number_contacts"] <- 0
-        names(interactions_with_treated) <- c("tag","duration_of_contact_with_treated_min","number_of_contact_with_treated")
-        interactions_with_treated["colony"] <- colony
-        interactions_with_treated["time_hours"] <- time_hours
-        ###write results
-        if (grepl("main",data_path)){
-          behav <- read.table(paste(data_path,"/processed_data/individual_behaviour/pre_vs_post_treatment/individual_behavioural_data.txt",sep=""),header=T,stringsAsFactors = F)
-          if (!"duration_of_contact_with_treated_min"%in%names(behav)){
-            behav[c("duration_of_contact_with_treated_min")] <- NA
-            behav[c("number_of_contact_with_treated")] <- NA
-          }
-          behav[match(as.character(interaction(interactions_with_treated$colony,interactions_with_treated$tag,interactions_with_treated$time_hours)),as.character(interaction(behav$colony,behav$tag,behav$time_hours))),c("duration_of_contact_with_treated_min")]  <- interactions_with_treated$duration_of_contact_with_treated_min
-          behav[match(as.character(interaction(interactions_with_treated$colony,interactions_with_treated$tag,interactions_with_treated$time_hours)),as.character(interaction(behav$colony,behav$tag,behav$time_hours))),c("number_of_contact_with_treated")]        <- interactions_with_treated$number_of_contact_with_treated
-          options(digits=3)
-          write.table(behav,file=paste(data_path,"/processed_data/individual_behaviour/pre_vs_post_treatment/individual_behavioural_data.txt",sep=""), row.names=F, col.names=T,append=F,quote=F)
-          options(digits=16)
-        }
-        ###interactions with treated: post-treatment
-        if (period=="post"){
-          outputfoldy <- paste(data_path,"/processed_data/individual_behaviour/post_treatment",sep="")
-          if(!file.exists(outputfoldy)){dir.create(outputfoldy,recursive=T)}
-          int_with_treated <- data.frame(colony_size=colony_size,treatment=treatment,period=period, time_of_day=time_of_day,
-                                         interactions_with_treated,stringsAsFactors = F)
-          if (!file.exists(paste(data_path,"/processed_data/individual_behaviour/post_treatment/interactions_with_treated.txt",sep=""))){
-            write.table(int_with_treated,file=paste(outputfoldy,"/interactions_with_treated.txt",sep=""),col.names=T,row.names=F,quote=F,append=F)
-          }else{
-            write.table(int_with_treated,file=paste(outputfoldy,"/interactions_with_treated.txt",sep=""),col.names=F,row.names=F,quote=F,append=T)
-          }
-        }
-      }
+      # #### use this information to calculate, for each worker, the cumulated duration of interaction with treated workers
+      # if (input_folder=="observed"&option=="all_workers"){
+      #   
+      #   ### AW: To overcome the "Error in aggregate.data.frame(lhs, mf[-1L], FUN = FUN, ...) : no rows to aggregate", create empty df if no rows to aggregate on
+      #   aggregated1 <- tryCatch(
+      #     { aggregate(na.rm=T,na.action="na.pass",cbind(duration_min,N)~Tag1+status_Tag2,FUN=sum,data=interactions[which(interactions$status_Tag2=="treated"),]) },
+      #     error = function(e) {data.frame(tag= integer(),partner_status=character(), duration_min=numeric(), number_contacts=numeric())} # Return an empty data frame in case of an error
+      #   )
+      #   #aggregated1                 <- aggregate(na.rm=T,na.action="na.pass",duration_min~Tag1+status_Tag2,FUN=sum,data=interactions[which(interactions$status_Tag2=="treated"),])
+      #   names(aggregated1)          <- c("tag","partner_status","duration_min","number_contacts")
+      #   aggregated2 <- tryCatch(
+      #     { aggregate(na.rm=T,na.action="na.pass",cbind(duration_min,N)~Tag2+status_Tag1,FUN=sum,data=interactions[which(interactions$status_Tag1=="treated"),]) },
+      #     error = function(e) {data.frame(tag= integer(),partner_status=character(), duration_min=numeric(), number_contacts=numeric())} # Return an empty data frame in case of an error
+      #   )
+      #   #aggregated2                 <- aggregate(na.rm=T,na.action="na.pass",duration_min~Tag2+status_Tag1,FUN=sum,data=interactions[which(interactions$status_Tag1=="treated"),])
+      #   names(aggregated2)          <- c("tag","partner_status","duration_min","number_contacts")
+      #   aggregated                  <- rbind(aggregated1,aggregated2)
+      #   aggregated <- tryCatch(
+      #     { aggregate(na.rm=T,na.action="na.pass",cbind(duration_min,number_contacts)~tag+partner_status,FUN=sum,data=aggregated) },
+      #     error = function(e) {data.frame(tag= integer(),partner_status=character(), duration_min=numeric(),number_contacts=numeric())} # Return an empty data frame in case of an error
+      #   )
+      #   #aggregated                  <- aggregate(na.rm=T,na.action="na.pass",duration_min~tag+partner_status,FUN=sum,data=aggregated)
+      #   interactions_with_treated   <- merge(data.frame(tag=tag[which(tag$tag%in%alive),"tag"],stringsAsFactors = F),aggregated[c("tag","duration_min","number_contacts")],all.x=T)
+      #   interactions_with_treated[is.na(interactions_with_treated$duration_min),"duration_min"] <- 0
+      #   interactions_with_treated[is.na(interactions_with_treated$number_contacts),"number_contacts"] <- 0
+      #   names(interactions_with_treated) <- c("tag","duration_of_contact_with_treated_min","number_of_contact_with_treated")
+      #   interactions_with_treated["colony"] <- colony
+      #   interactions_with_treated["time_hours"] <- time_hours
+      #   ###write results
+      #   if (grepl("main",data_path)){
+      #     behav <- read.table(paste(data_path,"/processed_data/individual_behaviour/pre_vs_post_treatment/individual_behavioural_data.txt",sep=""),header=T,stringsAsFactors = F)
+      #     if (!"duration_of_contact_with_treated_min"%in%names(behav)){
+      #       behav[c("duration_of_contact_with_treated_min")] <- NA
+      #       behav[c("number_of_contact_with_treated")] <- NA
+      #     }
+      #     behav[match(as.character(interaction(interactions_with_treated$colony,interactions_with_treated$tag,interactions_with_treated$time_hours)),as.character(interaction(behav$colony,behav$tag,behav$time_hours))),c("duration_of_contact_with_treated_min")]  <- interactions_with_treated$duration_of_contact_with_treated_min
+      #     behav[match(as.character(interaction(interactions_with_treated$colony,interactions_with_treated$tag,interactions_with_treated$time_hours)),as.character(interaction(behav$colony,behav$tag,behav$time_hours))),c("number_of_contact_with_treated")]        <- interactions_with_treated$number_of_contact_with_treated
+      #     options(digits=3)
+      #     write.table(behav,file=paste(data_path,"/processed_data/individual_behaviour/pre_vs_post_treatment/individual_behavioural_data.txt",sep=""), row.names=F, col.names=T,append=F,quote=F)
+      #     options(digits=16)
+      #   }
+      #   ###interactions with treated: post-treatment
+      #   if (period=="post"){
+      #     outputfoldy <- paste(data_path,"/processed_data/individual_behaviour/post_treatment",sep="")
+      #     if(!file.exists(outputfoldy)){dir.create(outputfoldy,recursive=T)}
+      #     int_with_treated <- data.frame(colony_size=colony_size,treatment=treatment,period=period, time_of_day=time_of_day,
+      #                                    interactions_with_treated,stringsAsFactors = F)
+      #     if (!file.exists(paste(data_path,"/processed_data/individual_behaviour/post_treatment/interactions_with_treated.txt",sep=""))){
+      #       write.table(int_with_treated,file=paste(outputfoldy,"/interactions_with_treated.txt",sep=""),col.names=T,row.names=F,quote=F,append=F)
+      #     }else{
+      #       write.table(int_with_treated,file=paste(outputfoldy,"/interactions_with_treated.txt",sep=""),col.names=F,row.names=F,quote=F,append=T)
+      #     }
+      #   }
+      # }
       
       ###build NETWORK
       if (!grepl("survival",data_path)){
@@ -211,51 +222,51 @@ for (input_folder in input_folders){
         
         
         ###simplify graph (merge all edges involving the same pair of ants into a single one whose weight = sum of these weights)
-        net <- simplify(net,remove.multiple=TRUE,remove.loop=TRUE,edge.attr.comb="sum")
+        net <- igraph::simplify(net,remove.multiple=TRUE,remove.loop=TRUE,edge.attr.comb="sum")
         
-        ###get all degress without removing any node
-        degrees_all         <- degree(net,mode="all")
-        ##################remove unconnected nodes
-        unconnected <- actors[degree(net)==0,]
-        net <- net - as.character(unconnected)
-        ##get actor list from net
-        actors <- get.vertex.attribute(net,"name")
-        
-      ####Part 1: individual network properties ####
-        ###prepare table
-        tag["status"] <- "untreated"; tag[which(tag$tag%in%colony_treated),"status"] <- "treated"
-        individual <- data.frame(randy=input_folder,colony=colony,colony_size=colony_size,treatment=treatment,tag=tag$tag,age=tag$age,status=tag$group,period=period,time_hours=time_hours,time_of_day=time_of_day,
-                                 degree=NA,
-                                 aggregated_distance_to_queen=NA,
-                                 mean_aggregated_distance_to_treated=NA,
-                                 same_community_as_queen=NA)
-        ##degree
-         individual[match(names(degrees_all),individual$tag),"degree"] <- degrees_all
-        
-        ## skip queen in grooming interactions
-        if (!grepl("grooming",input_path)) {
-          communities             <- cluster_louvain(net, weights = E(net)$weight)
-          community_membership    <- communities$membership
-          ##same community as queen
-          queen_comm <- community_membership[which(V(net)$name==queenid)]
-          community_membership <- community_membership==queen_comm
-          individual[match(V(net)$name,individual$tag),"same_community_as_queen"] <- community_membership
-          ##path length to queen
-          if (queenid%in%actors){
-            path_length_to_queen <- t(shortest.paths(net,v=actors,to=queenid,weights=1/E(net)$weight))
-            individual[match(colnames(path_length_to_queen),individual$tag),"aggregated_distance_to_queen"] <- as.numeric(path_length_to_queen )
-          }
-        }
-        
-        ########Mean path length to treated; aggregated_network
-        if(option!="untreated_only"){
-          path_length_to_treated                             <- as.data.frame(as.matrix(shortest.paths(net,v=actors,to=as.character(colony_treated)[as.character(colony_treated)%in%V(net)$name],weights=1/E(net)$weight)))
-          path_length_to_treated["mean_distance_to_treated"] <- NA
-          path_length_to_treated$mean_distance_to_treated    <- as.numeric(rowMeans(path_length_to_treated,na.rm=T))
-          individual[match(rownames(path_length_to_treated),individual$tag),"mean_aggregated_distance_to_treated"] <- path_length_to_treated[,"mean_distance_to_treated"]
-        }
-        ###Add data to main data table
-        summary_individual <- rbind(summary_individual,individual)
+      #   ###get all degress without removing any node
+      #   degrees_all         <- degree(net,mode="all")
+      #   ##################remove unconnected nodes
+      #   unconnected <- actors[degree(net)==0,]
+      #   net <- net - as.character(unconnected)
+      #   ##get actor list from net
+      #   actors <- get.vertex.attribute(net,"name")
+      #   
+      # ####Part 1: individual network properties ####
+      #   ###prepare table
+      #   tag["status"] <- "untreated"; tag[which(tag$tag%in%colony_treated),"status"] <- "treated"
+      #   individual <- data.frame(randy=input_folder,colony=colony,colony_size=colony_size,treatment=treatment,tag=tag$tag,age=tag$age,status=tag$group,period=period,time_hours=time_hours,time_of_day=time_of_day,
+      #                            degree=NA,
+      #                            aggregated_distance_to_queen=NA,
+      #                            mean_aggregated_distance_to_treated=NA,
+      #                            same_community_as_queen=NA)
+      #   ##degree
+      #    individual[match(names(degrees_all),individual$tag),"degree"] <- degrees_all
+      #   
+      #   ## skip queen in grooming interactions
+      #   if (!grepl("grooming",input_path)) {
+      #     communities             <- cluster_louvain(net, weights = E(net)$weight)
+      #     community_membership    <- communities$membership
+      #     ##same community as queen
+      #     queen_comm <- community_membership[which(V(net)$name==queenid)]
+      #     community_membership <- community_membership==queen_comm
+      #     individual[match(V(net)$name,individual$tag),"same_community_as_queen"] <- community_membership
+      #     ##path length to queen
+      #     if (queenid%in%actors){
+      #       path_length_to_queen <- t(shortest.paths(net,v=actors,to=queenid,weights=1/E(net)$weight))
+      #       individual[match(colnames(path_length_to_queen),individual$tag),"aggregated_distance_to_queen"] <- as.numeric(path_length_to_queen )
+      #     }
+      #   }
+      #   
+      #   ########Mean path length to treated; aggregated_network
+      #   if(option!="untreated_only"){
+      #     path_length_to_treated                             <- as.data.frame(as.matrix(shortest.paths(net,v=actors,to=as.character(colony_treated)[as.character(colony_treated)%in%V(net)$name],weights=1/E(net)$weight)))
+      #     path_length_to_treated["mean_distance_to_treated"] <- NA
+      #     path_length_to_treated$mean_distance_to_treated    <- as.numeric(rowMeans(path_length_to_treated,na.rm=T))
+      #     individual[match(rownames(path_length_to_treated),individual$tag),"mean_aggregated_distance_to_treated"] <- path_length_to_treated[,"mean_distance_to_treated"]
+      #   }
+      #   ###Add data to main data table
+      #   summary_individual <- rbind(summary_individual,individual)
         
         
         ####Part 2: collective network properties ####
@@ -275,77 +286,87 @@ for (input_folder in input_folders){
         ##################update actor list
         actors <- get.vertex.attribute(net,"name")
         
-        ##Assortativity  - Age
-        ####if age experiment, get colony ages
-        if (grepl("age",data_path)){
-          colony_ages <- ages [which(ages$colony==colony),]
-          ####set queen age to NA as this would bias the result (the queen is the oldest individual and interacts mostly with the young nurses)
-          colony_ages[which(colony_ages$tag==queenid),"age"] <- NA
-          ####order the age acording to the order of the network's vertices
-          ordered_ages        <- colony_ages[match(V(net)$name,as.character(colony_ages$tag)),"age"]
-          #### calculate age assortativity
-          age_assortativity <- assortativity(net-V(net)$name[is.na(ordered_ages)],types1=ordered_ages[!is.na(ordered_ages)],directed=F)
-        }else{
-          age_assortativity <- NA
-        }
+        # ##Assortativity  - Age
+        # ####if age experiment, get colony ages
+        # if (grepl("age",data_path)){
+        #   colony_ages <- ages [which(ages$colony==colony),]
+        #   ####set queen age to NA as this would bias the result (the queen is the oldest individual and interacts mostly with the young nurses)
+        #   colony_ages[which(colony_ages$tag==queenid),"age"] <- NA
+        #   ####order the age acording to the order of the network's vertices
+        #   ordered_ages        <- colony_ages[match(V(net)$name,as.character(colony_ages$tag)),"age"]
+        #   #### calculate age assortativity
+        #   age_assortativity <- assortativity(net-V(net)$name[is.na(ordered_ages)],types1=ordered_ages[!is.na(ordered_ages)],directed=F)
+        # }else{
+        #   age_assortativity <- NA
+        # }
         ## Assortativity - Task
         ordered_task_groups <- colony_task_group[match(actors,as.character(colony_task_group$tag)),"task_group"]
         ordered_task_groups <- as.numeric(as.factor(ordered_task_groups))
-        task_assortativity  <- assortativity_nominal(net,types=ordered_task_groups,directed=F)
-        ##Clustering
-        clustering <- mean(transitivity(net,type="barrat",weights=E(net)$weight,isolates = c("NaN")),na.rm=T)
-        ##Degree mean and max
-        degrees         <- degree(net,mode="all")
-        degree_mean     <- mean(degrees,na.rm=T)
-        degree_maximum  <- max(degrees,na.rm=T)
-        ##Density
-        density  <- igraph::edge_density(net)
-        ##Diameter
-        diameter <- igraph::diameter(net,directed=F,unconnected=TRUE,weights=(1/E(net)$weight)) ###here use the inverse of the weights, because the algorithm considers weights as distances rather than strengths of connexion
-        ##Efficiency
-        net_dist                    <- shortest.paths(net, weights=1/E(net)$weight, mode="all") ##again use the inverse of the weights, because the algorithm considers weights as distances rather than strengths of connexion
-        net_dist[net_dist==0]       <- NA ##remove distances to self
-        efficiency                  <- 1/net_dist ##transform each distance into an efficiency
-        efficiency <- (1/((vcount(net)*(vcount(net)-1))))*(sum(efficiency,na.rm=TRUE))
+        # task_assortativity  <- assortativity_nominal(net,types=ordered_task_groups,directed=F)
+        # ##Clustering
+        # clustering <- mean(transitivity(net,type="barrat",weights=E(net)$weight,isolates = c("NaN")),na.rm=T)
+        # ##Degree mean and max
+        # degrees         <- degree(net,mode="all")
+        # degree_mean     <- mean(degrees,na.rm=T)
+        # degree_maximum  <- max(degrees,na.rm=T)
+        # ##Density
+        # density  <- igraph::edge_density(net)
+        # ##Diameter
+        # diameter <- igraph::diameter(net,directed=F,unconnected=TRUE,weights=(1/E(net)$weight)) ###here use the inverse of the weights, because the algorithm considers weights as distances rather than strengths of connexion
+        # ##Efficiency
+        # net_dist                    <- shortest.paths(net, weights=1/E(net)$weight, mode="all") ##again use the inverse of the weights, because the algorithm considers weights as distances rather than strengths of connexion
+        # net_dist[net_dist==0]       <- NA ##remove distances to self
+        # efficiency                  <- 1/net_dist ##transform each distance into an efficiency
+        # efficiency <- (1/((vcount(net)*(vcount(net)-1))))*(sum(efficiency,na.rm=TRUE))
         
         #Efficiency per Task (keep both ) #AW Aug23
+          foragersid             <- data.frame(name=as.character(colony_task_group[which(colony_task_group$task_group=="forager"),"tag"]))
+          nursesid             <- data.frame(name=as.character(colony_task_group[which(colony_task_group$task_group=="nurse"),"tag"]))
+        
+          foragersid <- actors[which(actors%in%foragersid$name)]
+          nursesid   <- actors[which(actors%in%nursesid$name)]
+          
         # calculate how tightly knit is the community
-        net_dist_FOR                    <- shortest.paths(net,
-                                                      from, #Foragers
-                                                      to = V(graph), #foragers
-                                                      weights=1/E(net)$weight, mode="all") ##again use the inverse of the weights, because the algorithm considers weights as distances rather than strengths of connexion
+        #foragers
+        net_dist_FOR                    <- shortest.paths(net, v=foragersid, to=foragersid, weights=1/E(net)$weight, mode="all") 
         net_dist_FOR[net_dist_FOR==0]       <- NA ##remove distances to self
         efficiency_FOR                  <- 1/net_dist_FOR ##transform each distance into an efficiency
-        efficiency_FOR <- (1/((vcount(net)*(vcount(net)-1))))*(sum(efficiency_FOR,na.rm=TRUE))
-        net_mean_dist_FOR <- mean(net_dist_FOR)
+        efficiency_FOR <- (1/(((vcount(net)-length(foragersid))*((vcount(net)-length(foragersid))-1))))*(sum(efficiency_FOR,na.rm=TRUE))
+        net_mean_dist_FOR <- mean(net_dist_FOR,na.rm=T)
         
-        warning("fix the from and to bits")
+        #nurses
+        net_dist_NUR                    <- shortest.paths(net, v=nursesid, to=nursesid, weights=1/E(net)$weight, mode="all")
+        net_dist_NUR[net_dist_NUR==0]       <- NA ##remove distances to self
+        efficiency_NUR                  <- 1/net_dist_NUR ##transform each distance into an efficiency
+        efficiency_NUR <- (1/(((vcount(net)-length(nursesid))*((vcount(net)-length(nursesid))-1))))*(sum(efficiency_NUR,na.rm=TRUE))
+        net_mean_dist_NUR <- mean(net_dist_NUR,na.rm=T)
         
-        warning("it may be needed to modify the vcount(net) to account for the selection of indviduals? \n Send he code to nathalie for review!!!")
-        
-        warning("save in output: \n-MEAN(net_dist_FOR)  \n-MEAN(net_dist_NUR)  \n-efficiency_FOR  \n-efficiency_NUR \n\n-INHIBIT THE SAVING OF ALL THE REST, JUST ADD EXTRA COLUMNS")
-        
-        
-        
-        ## Modularity
-        communities             <- cluster_louvain(net, weights = E(net)$weight)
-        community_membership    <- communities$membership
-        modularity              <- modularity(net,community_membership,weights=E(net)$weight)
-        
-        ###Add to data
         summary_collective <- rbind(summary_collective,data.frame(randy=input_folder,colony=colony,colony_size=colony_size,treatment=treatment,period=period,time_hours=time_hours,time_of_day=time_of_day,
-                                                                  age_assortativity=age_assortativity,
-                                                                  task_assortativity=task_assortativity,
-                                                                  clustering=clustering,
-                                                                  degree_mean=degree_mean,
-                                                                  degree_maximum=degree_maximum,
-                                                                  density=density,
-                                                                  diameter=diameter,
-                                                                  efficiency=efficiency,
-                                                                  modularity=modularity,
-                                                                  nb_unconnected=length(unconnected),
-                                                                  nb_outliers_removed=length(outlier_removed),
+                                                                  efficiency_FOR=efficiency_FOR,
+                                                                  efficiency_NUR=efficiency_NUR,
+                                                                  net_mean_dist_FOR=net_mean_dist_FOR,
+                                                                  net_mean_dist_NUR=net_mean_dist_NUR,
                                                                   stringsAsFactors = F))
+        
+        # ## Modularity
+        # communities             <- cluster_louvain(net, weights = E(net)$weight)
+        # community_membership    <- communities$membership
+        # modularity              <- modularity(net,community_membership,weights=E(net)$weight)
+        # 
+        # ###Add to data
+        # summary_collective <- rbind(summary_collective,data.frame(randy=input_folder,colony=colony,colony_size=colony_size,treatment=treatment,period=period,time_hours=time_hours,time_of_day=time_of_day,
+        #                                                           age_assortativity=age_assortativity,
+        #                                                           task_assortativity=task_assortativity,
+        #                                                           clustering=clustering,
+        #                                                           degree_mean=degree_mean,
+        #                                                           degree_maximum=degree_maximum,
+        #                                                           density=density,
+        #                                                           diameter=diameter,
+        #                                                           efficiency=efficiency,
+        #                                                           modularity=modularity,
+        #                                                           nb_unconnected=length(unconnected),
+        #                                                           nb_outliers_removed=length(outlier_removed),
+        #                                                           stringsAsFactors = F))
         
        }
       clean()
@@ -355,6 +376,7 @@ for (input_folder in input_folders){
     #print progress AW
     print(" End of network_files processing >> writing")
     
+  
     #####write #####
     if (!grepl("survival",data_path)){
       if (input_folder=="observed"){
@@ -362,97 +384,121 @@ for (input_folder in input_folders){
         if (!grepl("age",data_path)){
           outputfolder2 <- paste(outputfolder,"pre_vs_post_treatment",option,sep="/")
           if(!file.exists(outputfolder2)){dir.create(outputfolder2,recursive=T)}
-          write.table(summary_collective[,names(summary_collective)!="randy"],file=paste(outputfolder2,"/colony_data.txt",sep=""),col.names = T,row.names=F,append=F,quote=F)
-          write.table(summary_individual[,names(summary_individual)!="randy"],file=paste(outputfolder2,"/individual_data.txt",sep=""),col.names = T,row.names=F,append=F,quote=F)
+          
+          #append columns for the new efficiency measures #AW mod for task efficiency
+          summary_colony_existing <- read.table(paste(outputfolder2,"/colony_data.txt",sep=""),header = T,stringsAsFactors = F)
+          common_names <- names(summary_colony_existing)[names(summary_colony_existing) %in% names(summary_collective)]
+          summary_colony_existing <- merge(summary_colony_existing, summary_collective, by = common_names, all.x = TRUE)
+          
+          write.table(summary_colony_existing[,names(summary_colony_existing)!="randy"],file=paste(outputfolder2,"/colony_data.txt",sep=""),col.names = T,row.names=F,append=F,quote=F)
+          #write.table(summary_individual[,names(summary_individual)!="randy"],file=paste(outputfolder2,"/individual_data.txt",sep=""),col.names = T,row.names=F,append=F,quote=F)
         }
         ####All workers: write pre_treatment data into random_vs_observed folder
         if (option=="all_workers"){
           outputfolder3 <- paste(outputfolder,"random_vs_observed",sep="/")
           if(!file.exists(outputfolder3)){dir.create(outputfolder3,recursive=T)}
-          write.table(summary_collective[which(summary_collective$period=="pre"),],file=paste(outputfolder3,"/network_properties_",input_folder,".txt",sep=""),col.names = T,row.names=F,append=F,quote=F)
-          write.table(summary_individual[which(summary_individual$period=="pre"),],file=paste(outputfolder3,"/node_properties_",input_folder,".txt",sep=""),col.names = T,row.names=F,append=F,quote=F)
+          
+          #append columns for the new efficiency measures #AW mod for task efficiency
+          summary_colony_existing <- read.table(paste(outputfolder3,"/network_properties_",input_folder,".txt",sep=""),header = T,stringsAsFactors = F)
+          common_names <- names(summary_colony_existing)[names(summary_colony_existing) %in% names(summary_collective)]
+          summary_colony_existing <- merge(summary_colony_existing, summary_collective, by = common_names, all.x = TRUE)
+          
+          write.table(summary_colony_existing[which(summary_colony_existing$period=="pre"),],file=paste(outputfolder3,"/network_properties_",input_folder,".txt",sep=""),col.names = T,row.names=F,append=F,quote=F)
+          #write.table(summary_individual[which(summary_individual$period=="pre"),],file=paste(outputfolder3,"/node_properties_",input_folder,".txt",sep=""),col.names = T,row.names=F,append=F,quote=F)
           
           outputfolder4 <- paste(outputfolder,"post_treatment",sep="/")
           if(!file.exists(outputfolder4)){dir.create(outputfolder4,recursive=T)}
-          write.table(summary_collective[which(summary_collective$period=="post"),],file=paste(outputfolder4,"/network_properties_",input_folder,".txt",sep=""),col.names = T,row.names=F,append=F,quote=F)
-          write.table(summary_individual[which(summary_individual$period=="post"),],file=paste(outputfolder4,"/node_properties_",input_folder,".txt",sep=""),col.names = T,row.names=F,append=F,quote=F)
+          
+          #append columns for the new efficiency measures #AW mod for task efficiency
+          summary_colony_existing <- read.table(paste(outputfolder4,"/network_properties_",input_folder,".txt",sep=""),header = T,stringsAsFactors = F)
+          common_names <- names(summary_colony_existing)[names(summary_colony_existing) %in% names(summary_collective)]
+          summary_colony_existing <- merge(summary_colony_existing, summary_collective, by = common_names, all.x = TRUE)
+          
+          write.table(summary_colony_existing[which(summary_colony_existing$period=="post"),],file=paste(outputfolder4,"/network_properties_",input_folder,".txt",sep=""),col.names = T,row.names=F,append=F,quote=F)
+          #write.table(summary_individual[which(summary_individual$period=="post"),],file=paste(outputfolder4,"/node_properties_",input_folder,".txt",sep=""),col.names = T,row.names=F,append=F,quote=F)
         }
         ######Main experiment, All workers: add pre_treatment node_properties information to pre_treatment behaviour file
-        if (!grepl("age",data_path)&option=="all_workers"){
-          pre_treatment_behav_file <- paste(data_path,"/processed_data/individual_behaviour/pre_treatment/network_position_vs_time_outside.dat",sep="")
-          pre_treatment_behav      <- read.table(pre_treatment_behav_file,header=T,stringsAsFactors = F)
-          names(summary_individual)[which(names(summary_individual)=="aggregated_distance_to_queen")] <- paste("aggregated_distance_to_queen_edge_weights_",edge_weights,sep="")
-          pre_treatment_behav      <- merge(pre_treatment_behav,summary_individual[which(summary_individual$period=="pre"),c("colony","tag","time_hours","degree",paste("aggregated_distance_to_queen_edge_weights_",edge_weights,sep=""))],all.x=T,all.y=T) 
-          pre_treatment_behav      <- pre_treatment_behav[order(pre_treatment_behav$colony,pre_treatment_behav$tag,pre_treatment_behav$time_hours),]
-          write.table(pre_treatment_behav, file=pre_treatment_behav_file,col.names=T,row.names=F,quote=F,append=F)
-        }
+        # if (!grepl("age",data_path)&option=="all_workers"){
+        #   pre_treatment_behav_file <- paste(data_path,"/processed_data/individual_behaviour/pre_treatment/network_position_vs_time_outside.dat",sep="")
+        #   pre_treatment_behav      <- read.table(pre_treatment_behav_file,header=T,stringsAsFactors = F)
+        #   names(summary_individual)[which(names(summary_individual)=="aggregated_distance_to_queen")] <- paste("aggregated_distance_to_queen_edge_weights_",edge_weights,sep="")
+        #   pre_treatment_behav      <- merge(pre_treatment_behav,summary_individual[which(summary_individual$period=="pre"),c("colony","tag","time_hours","degree",paste("aggregated_distance_to_queen_edge_weights_",edge_weights,sep=""))],all.x=T,all.y=T) 
+        #   pre_treatment_behav      <- pre_treatment_behav[order(pre_treatment_behav$colony,pre_treatment_behav$tag,pre_treatment_behav$time_hours),]
+        #   write.table(pre_treatment_behav, file=pre_treatment_behav_file,col.names=T,row.names=F,quote=F,append=F)
+        # }
       }else{
         outputfolder3 <- paste(outputfolder,"random_vs_observed",sep="/")
         if(!file.exists(outputfolder3)){dir.create(outputfolder3,recursive=T)}
-        write.table(summary_collective[which(summary_collective$period=="pre"),],file=paste(outputfolder3,"/network_properties_",input_folder,".txt",sep=""),col.names = T,row.names=F,append=F,quote=F)
-        write.table(summary_individual[which(summary_individual$period=="pre"),],file=paste(outputfolder3,"/node_properties_",input_folder,".txt",sep=""),col.names = T,row.names=F,append=F,quote=F)
+        
+        #append columns for the new efficiency measures #AW mod for task efficiency
+        summary_colony_existing <- read.table(paste(outputfolder3,"/network_properties_",input_folder,".txt",sep=""),header = T,stringsAsFactors = F)
+        common_names <- names(summary_colony_existing)[names(summary_colony_existing) %in% names(summary_collective)]
+        summary_colony_existing <- merge(summary_colony_existing, summary_collective, by = common_names, all.x = TRUE)
+        
+        write.table(summary_colony_existing[which(summary_colony_existing$period=="pre"),],file=paste(outputfolder3,"/network_properties_",input_folder,".txt",sep=""),col.names = T,row.names=F,append=F,quote=F)
+        #write.table(summary_individual[which(summary_individual$period=="pre"),],file=paste(outputfolder3,"/node_properties_",input_folder,".txt",sep=""),col.names = T,row.names=F,append=F,quote=F)
       }
     }
     ###Get characteristics of queen community vs. other communities (worker age, prop. of foragers)
-    if (!grepl("survival",data_path)&option=="all_workers"){ 
-      #print progress AW
-      print(" End of writing >> Get characteristics of queen community vs. other communities")
-      
-      summary_individual_pre <- read.table(paste(outputfolder,"/random_vs_observed/node_properties_",input_folder,".txt",sep=""),header = T,stringsAsFactors = F)
-      summary_individual_pre <- summary_individual_pre[which(summary_individual_pre$period=="pre"),]
-      ####if necessary: add age
-      if (grepl("age",data_path)){
-        summary_individual_pre <- merge(summary_individual_pre[,which(names(summary_individual_pre)!="age")],ages,all.x=T,all.y=F)
-      }else{
-        summary_individual_pre$age <- NA
-      }
-      ####add task_group
-      summary_individual_pre <- merge(summary_individual_pre,task_groups,all.x=T,all.y=F)
-      ###remove queen
-      summary_individual_pre <- summary_individual_pre[which(summary_individual_pre$tag!=queenid),]
-      
-      ###1. calculate mean proportion of foragers depending on with vs without queen
-      summary_individual_pre["forager"] <- 0
-      summary_individual_pre[which(summary_individual_pre$task_group=="forager"),"forager"] <- 1
-      ## skip queen in grooming interactions
-      if (!grepl("grooming",input_path)) { #AW
-      prop_foragers <- aggregate(na.rm=T,na.action="na.pass",forager~colony+randy+colony_size+treatment+period+time_hours+same_community_as_queen,FUN=mean,data=summary_individual_pre)
-      prop_foragers <- aggregate(na.rm=T,na.action="na.pass",forager~colony+randy+colony_size+treatment+period+same_community_as_queen,FUN=mean,data=prop_foragers)
-      names(prop_foragers)[names(prop_foragers)=="same_community_as_queen"] <- "in_queen_comm";names(prop_foragers)[names(prop_foragers)=="forager"] <- "proportion_of_foragers"
-      }else{
-        prop_foragers <- aggregate(na.rm=T,na.action="na.pass",forager~colony+randy+colony_size+treatment+period+time_hours,FUN=mean,data=summary_individual_pre)
-        prop_foragers$in_queen_comm <- NA
-        names(prop_foragers)[names(prop_foragers)=="forager"] <- "proportion_of_foragers"
-        }
-      ###2. calculate mean age of workers depending on with vs without queen
-      if (grepl("age",data_path)){
-        mean_age <- aggregate(na.rm=T,na.action="na.pass",age~colony+randy+colony_size+treatment+period+time_hours+same_community_as_queen,FUN=mean,data=summary_individual_pre)
-        mean_age <- aggregate(na.rm=T,na.action="na.pass",age~colony+randy+colony_size+treatment+period+same_community_as_queen,FUN=mean,data=mean_age)
-        names(mean_age)[names(mean_age)=="same_community_as_queen"] <- "in_queen_comm"
-        prop_foragers <- merge(prop_foragers,mean_age,all.x=T)
-      }else{
-        prop_foragers$age <- NA
-      }
-      
-      
-      
-      
-      prop_foragers[which(prop_foragers$in_queen_comm=="FALSE"),"in_queen_comm"] <- "not_with_queen"
-      prop_foragers[which(prop_foragers$in_queen_comm=="TRUE"),"in_queen_comm"] <- "with_queen"
-      if (grepl("random",input_folder)){
-        prop_foragers["randy"] <- "random"
-      }
-      queen_community_summary <- rbind(queen_community_summary,prop_foragers)
-    }
+    # if (!grepl("survival",data_path)&option=="all_workers"){ 
+    #   #print progress AW
+    #   print(" End of writing >> Get characteristics of queen community vs. other communities")
+    #   
+    #   summary_individual_pre <- read.table(paste(outputfolder,"/random_vs_observed/node_properties_",input_folder,".txt",sep=""),header = T,stringsAsFactors = F)
+    #   summary_individual_pre <- summary_individual_pre[which(summary_individual_pre$period=="pre"),]
+    #   ####if necessary: add age
+    #   if (grepl("age",data_path)){
+    #     summary_individual_pre <- merge(summary_individual_pre[,which(names(summary_individual_pre)!="age")],ages,all.x=T,all.y=F)
+    #   }else{
+    #     summary_individual_pre$age <- NA
+    #   }
+    #   ####add task_group
+    #   summary_individual_pre <- merge(summary_individual_pre,task_groups,all.x=T,all.y=F)
+    #   ###remove queen
+    #   summary_individual_pre <- summary_individual_pre[which(summary_individual_pre$tag!=queenid),]
+    #   
+    #   ###1. calculate mean proportion of foragers depending on with vs without queen
+    #   summary_individual_pre["forager"] <- 0
+    #   summary_individual_pre[which(summary_individual_pre$task_group=="forager"),"forager"] <- 1
+    #   ## skip queen in grooming interactions
+    #   if (!grepl("grooming",input_path)) { #AW
+    #   prop_foragers <- aggregate(na.rm=T,na.action="na.pass",forager~colony+randy+colony_size+treatment+period+time_hours+same_community_as_queen,FUN=mean,data=summary_individual_pre)
+    #   prop_foragers <- aggregate(na.rm=T,na.action="na.pass",forager~colony+randy+colony_size+treatment+period+same_community_as_queen,FUN=mean,data=prop_foragers)
+    #   names(prop_foragers)[names(prop_foragers)=="same_community_as_queen"] <- "in_queen_comm";names(prop_foragers)[names(prop_foragers)=="forager"] <- "proportion_of_foragers"
+    #   }else{
+    #     prop_foragers <- aggregate(na.rm=T,na.action="na.pass",forager~colony+randy+colony_size+treatment+period+time_hours,FUN=mean,data=summary_individual_pre)
+    #     prop_foragers$in_queen_comm <- NA
+    #     names(prop_foragers)[names(prop_foragers)=="forager"] <- "proportion_of_foragers"
+    #     }
+    #   ###2. calculate mean age of workers depending on with vs without queen
+    #   if (grepl("age",data_path)){
+    #     mean_age <- aggregate(na.rm=T,na.action="na.pass",age~colony+randy+colony_size+treatment+period+time_hours+same_community_as_queen,FUN=mean,data=summary_individual_pre)
+    #     mean_age <- aggregate(na.rm=T,na.action="na.pass",age~colony+randy+colony_size+treatment+period+same_community_as_queen,FUN=mean,data=mean_age)
+    #     names(mean_age)[names(mean_age)=="same_community_as_queen"] <- "in_queen_comm"
+    #     prop_foragers <- merge(prop_foragers,mean_age,all.x=T)
+    #   }else{
+    #     prop_foragers$age <- NA
+    #   }
+    #   
+    #   
+    #   
+    #   
+    #   prop_foragers[which(prop_foragers$in_queen_comm=="FALSE"),"in_queen_comm"] <- "not_with_queen"
+    #   prop_foragers[which(prop_foragers$in_queen_comm=="TRUE"),"in_queen_comm"] <- "with_queen"
+    #   if (grepl("random",input_folder)){
+    #     prop_foragers["randy"] <- "random"
+    #   }
+    #   queen_community_summary <- rbind(queen_community_summary,prop_foragers)
+    # }
   } 
 }
 
 
-if (!grepl("survival",data_path)){
-  queen_community_summary <- aggregate(na.rm=T,na.action="na.pass",cbind(proportion_of_foragers,age)~.,FUN=mean,data=queen_community_summary)
-  queen_community_summary <- queen_community_summary[order(queen_community_summary$randy,queen_community_summary$colony),]
-  queen_community_summary$treatment <- queen_community_summary$randy
-  if (!file.exists(paste(outputfolder,"/random_vs_observed",sep=""))){dir.create(paste(outputfolder,"/random_vs_observed",sep=""),recursive=T)}
-  write.table(queen_community_summary,file=paste(outputfolder,"/random_vs_observed/queen_community.dat",sep=""),append=F,quote=F,row.names=F,col.names=T)
-}
+# if (!grepl("survival",data_path)){
+#   queen_community_summary <- aggregate(na.rm=T,na.action="na.pass",cbind(proportion_of_foragers,age)~.,FUN=mean,data=queen_community_summary)
+#   queen_community_summary <- queen_community_summary[order(queen_community_summary$randy,queen_community_summary$colony),]
+#   queen_community_summary$treatment <- queen_community_summary$randy
+#   if (!file.exists(paste(outputfolder,"/random_vs_observed",sep=""))){dir.create(paste(outputfolder,"/random_vs_observed",sep=""),recursive=T)}
+#   write.table(queen_community_summary,file=paste(outputfolder,"/random_vs_observed/queen_community.dat",sep=""),append=F,quote=F,row.names=F,col.names=T)
+# }
 to_keep <- to_keep_ori

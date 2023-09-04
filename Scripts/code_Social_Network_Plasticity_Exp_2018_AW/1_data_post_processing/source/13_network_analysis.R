@@ -20,8 +20,18 @@ edge_weights <- "duration" ### "number" # LS: run once for duration of interacti
 
 
 ###remove output file
-if (file.exists(paste(data_path,"/processed_data/individual_behaviour/post_treatment/interactions_with_treated.txt",sep=""))){
-  file.remove(paste(data_path,"/processed_data/individual_behaviour/post_treatment/interactions_with_treated.txt",sep=""))
+# if (file.exists(paste(data_path,"/processed_data/individual_behaviour/post_treatment/interactions_with_treated.txt",sep=""))){
+#   file.remove(paste(data_path,"/processed_data/individual_behaviour/post_treatment/interactions_with_treated.txt",sep=""))
+# }
+
+file_path <- file.path(data_path,"processed_data/individual_behaviour/post_treatment/interactions_with_treated.txt")
+# Check if the file exists
+if (file.exists(file_path)) {
+  # Create a directory with the current date in the same directory as the file
+  new_folder_path <- file.path(dirname(file_path), paste0("old", format(Sys.Date(), format = "_%Y-%m-%d")))
+  dir.create(new_folder_path, showWarnings = FALSE)
+  # Move the file to the new directory
+  file.rename(file_path, file.path(new_folder_path, basename(file_path)))
 }
 
 #### get input file list
@@ -211,7 +221,7 @@ for (input_folder in input_folders){
         
         
         ###simplify graph (merge all edges involving the same pair of ants into a single one whose weight = sum of these weights)
-        net <- simplify(net,remove.multiple=TRUE,remove.loop=TRUE,edge.attr.comb="sum")
+        net <- igraph::simplify(net,remove.multiple=TRUE,remove.loop=TRUE,edge.attr.comb="sum")
         
         ###get all degress without removing any node
         degrees_all         <- degree(net,mode="all")
