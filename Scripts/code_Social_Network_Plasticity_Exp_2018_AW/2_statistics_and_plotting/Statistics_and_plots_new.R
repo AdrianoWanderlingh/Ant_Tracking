@@ -8,6 +8,8 @@ rm(list=ls())
 
 USER <- "2A13_Office" # Nath_office 
 DISK <-  "Seagate Portable Drive" #"DISK4"
+DISK <-  "DISK4"
+
 
 if (USER == "2A13_Office") {
   usr <- "cf19810"
@@ -226,10 +228,40 @@ root_path <- paste(disk_path,"/main_experiment",sep="") # root_path <- paste(dis
 data_path=paste(root_path,"/processed_data/individual_behaviour/pre_vs_post_treatment",sep="")
 pattern="individual_behavioural_data"
 
-Entropy_size <- calculate_entropy(data_path,which_individuals=all_workers,number_permutations=500,showPlot=F) # "treated","queen","nurse","forager"
+Entropy_size <- calculate_entropy(data_path,which_individuals=all_workers,number_permutations=5,showPlot=F) # 500 PERMS  # "treated","queen","nurse","forager"
 
 Entropy_size$Dip_plot
 Entropy_size$entropy_plot
+
+
+################ check biomodality
+# copied from 19_Facetnet
+task_groups_A    <- read.table("/media/cf19810/Seagate Portable Drive/Lasius-Bristol_pathogen_experiment/main_experiment/original_data/task_groups.txt",header=T,stringsAsFactors = F)
+
+size_order      <- c("small","big")
+task_groups_A$size     <- unlist(lapply( task_groups_A$treatment, function(x)  unlist(strsplit(x,split="\\.") )[2]  ))
+task_groups_A$size      <- factor(task_groups_A$size    , levels=size_order   [which(size_order%in%task_groups_A$size )])
+
+# Generate plots of Social Maturity
+ggplot(task_groups_A, aes(x = Forager_score, colour = size)) + 
+  #geom_density(alpha = 0.6,size=1.5, adjust=1/1.2) + # 'adjust' changes the smoothing
+  geom_line(aes(color=size,group = colony), stat="density", size=1, alpha=0.2, adjust=1/1.2) +
+  geom_line(aes(color=size), stat="density", size=2, alpha=1, adjust=1/1.2) +
+  geom_vline(aes(xintercept = 0.5), linetype = "dashed",colour="grey20") + 
+  geom_vline(aes(xintercept = 1/4), linetype = "dashed",colour="grey20") + 
+  #facet_wrap(~ colony, scales = "free") +
+  theme_minimal() +
+  xlab("Social maturity (duration contacts)")
+
+#bimodality comparison #########################################
+warning("RUN ON THE SOCIAL MAT. SCORES -FORAG SCORES-.\nMODIFY TO SPECIFY THE VARIABLE OUTSIDE, AS IN THE OTHER FUNCTIONS (NOW PICKS THE OBJ CALLED $variable")
+p_value <- bimodality_permutation_test(data,n_permutations = 1000)
+print(paste("Permutation test p-value:", p_value))
+
+
+
+
+
 
 ###################################################################################################################################
 ###IV - individual analysis - for TWO types of individuals (e.g. nurses and foragers; or "untreated" and "treated") ###############
@@ -969,10 +1001,9 @@ high_threshold <- 0.0258
 # power0.001                                            26.71343
 # power0.0001                                           26.64026
 # Box_Cox fails
-## issue in functions_new.R, line 2321
 
 ######Open pdf Figure 2 #####
-#pdf(file=paste(figurefolder,"/Figure2.pdf",sep=""),family=text_font,font=text_font,bg="white",width=double_col,height=page_height*0.25,pointsize=pointsize_less_than_2row2col)
+pdf(file=paste(figurefolder,"/Figure2.pdf",sep=""),family=text_font,font=text_font,bg="white",width=double_col*0.5,height=double_col,pointsize=pointsize_less_than_2row2col) #height=page_height*0.25
 ######Plot qPCR data #####
 full_statuses_names_ori <- full_statuses_names
 full_statuses_names[full_statuses_names%in%c("Nurses","Untreated\nnurses")] <- "Nurses\n"
@@ -983,9 +1014,9 @@ statuses_colours[names(statuses_colours)%in%c("queen","forager","nurse")] <- "bl
 par(pars)
 par_mar_ori <- par()$mar
 par(mar=par_mar_ori+c(1,0,1,1))
-widz <- c(2,1.5)
-layout(matrix(c(1,2),nrow=1),widths=widz)
-translated_high_threshold <- plot_qpcr(experiments=c("main_experiment"))
+# widz <- c(2,1.5)
+# layout(matrix(c(1,2),nrow=1),widths=widz)
+translated_high_threshold <- plot_qpcr(experiments=c("main_experiment")) #thickness of violplots controlled by "wex" in ViolPlot function
 to_keep <- c(to_keep,"translated_high_threshold")
 ####Add letters ####
 par(xpd=NA)
@@ -998,7 +1029,7 @@ full_statuses_names <- full_statuses_names_ori
 statuses_colours <- statuses_colours_ori
 par(mar=par_mar_ori)
 ####Close figure 2#####
-#dev.off()
+dev.off()
 ######## clean before next step###
 #clean();
 Sys.sleep(2)
@@ -1244,6 +1275,7 @@ variable_list        <- c("intra_caste_over_inter_caste_WW_contact_duration","QN
 names(variable_list) <- c("Within/Between-task contact","Q-N/Q-F contacts")
 # DOL_plots <- plot_age_dol(data_path,experiments=c("main_experiment"))
 
+starting_data <- NULL; warning("I've no idea what I did wrong but, for the love of god,without 'starting_data' in the global env the function crashes ")
 dol_RandObs <- plot_observed_vs_random(data_path,experiments=c("main_experiment"))
 
 # solved by calculating cohen's d differences
@@ -1264,6 +1296,7 @@ pattern="network_properties"
 variable_list        <- c("modularity","clustering","task_assortativity","efficiency","degree_mean","density")
 names(variable_list) <- c("modularity","clustering","task assortativity","efficiency","mean degree","density")
 
+starting_data <- NULL; warning("I've no idea what I did wrong but, for the love of god,without 'starting_data' in the global env the function crashes ")
 net_RandObs <- plot_observed_vs_random(data_path,experiments=c("main_experiment"))
 
 
@@ -1273,13 +1306,18 @@ net_RandObs <- plot_observed_vs_random(data_path,experiments=c("main_experiment"
 seeds <- c("random_workers","nurses","foragers")
 names(seeds) <- c("Seeds = random workers","Seeds = nurses","Seeds = foragers" )
 
+sim_RandObs_plots <- list()
+sim_RandObs_formatted_outputs <- list() 
 for (seed in seeds) {
 data_path <- paste(disk_path,"/main_experiment/transmission_simulations/random_vs_observed/",seed,sep="")
 pattern="collective_simulation_results_"
 variable_list  <- c("logistic_r","Mean_load","Load_skewness","Prop_high_level","Prop_low_level" ,"Queen_load")
-names(variable_list) <- c("Transmission rate","Mean simulated load (W)","Simulated load skewness (W)","Prop high level","Prop low level","Simulated load (Q)")
+names(variable_list) <- c("Transmission rate","Mean simulated load (W)","Simulated load skewness (W)","Prop. high level","Prop. low level","Simulated load (Q)")
 
 sim_RandObs <- plot_observed_vs_random(data_path,experiments=c("main_experiment"),seedTitle=T)
+
+sim_RandObs_plots[seed] <- sim_RandObs$saved_plot
+sim_RandObs_formatted_outputs[seed] <- list(sim_RandObs$formatted_outcomes)
 }
 
 
@@ -1295,7 +1333,7 @@ color_pal <- c(statuses_colours["untreated"],statuses_colours["forager"],statuse
 names(color_pal) <- seeds
 
 variables <- c("logistic_r","Prevalence","Mean_load","Load_skewness","Prop_high_level","Prop_low_level" ,"Queen_load")
-names(variables) <- c("Transmission rate","Prevalence","Mean simulated load (W)","Simulated load skewness (W)","Prop high level","Prop low level","Simulated load (Q)")
+names(variables) <- c("Transmission rate","Prevalence","Mean simulated load (W)","Simulated load skewness (W)","Prop. high level","Prop. low level","Simulated load (Q)")
 transf <- c("none","none","none","none","none","none","none")
 names(transf) <- variables
 
@@ -1453,6 +1491,7 @@ sorted_objects <- matching_objects[order(sapply(matching_objects, custom_sort))]
 vec <- NULL
 
 
+
 transform_vector <- function(input_vector) {
   output_vector <- gsub("_", " ", input_vector)  # Remove underscores
   output_vector <- gsub("ind", "individual", output_vector)
@@ -1482,7 +1521,17 @@ for (obj in sorted_objects) {
 }
 
 
+vec1 <- NULL
+sim_RandObs_results <- list(dol_RandObs$formatted_outcomes,
+                            net_RandObs$formatted_outcomes)
+sim_RandObs_results <- c(sim_RandObs_results,sim_RandObs_formatted_outputs)
 
+# For the simulation outcomes, different organisation
+for (obj in sim_RandObs_results) {
+  # Construct the output string and print using cat()
+  output <- paste(paste(obj, collapse = '\n'), "\n\n")
+  vec1 <- c(vec1,cat(output))
+}
 
 
 
@@ -1509,7 +1558,7 @@ root_path <- paste(disk_path,"/main_experiment_grooming",sep="") # root_path <- 
 data_path=paste(root_path,"/processed_data/individual_behaviour/pre_vs_post_treatment",sep="")
 pattern="individual_behavioural_data"
 variable_list <-        c("duration_grooming_received_min") #GROOMING  ouside is negligibile as only 58/6016 events happen outside , "prop_duration_grooming_received_outside_min","duration_grooming_received_min_zone2"
-names(variable_list) <- c("duration grooming received (min)") # , "prop duration grooming received outside min","duration grooming received outside min"
+names(variable_list) <- c("duration grooming received (min)") # , "Prop. duration grooming received outside min","duration grooming received outside min"
 #transf_variable_list <- c("log"                           )   ######"none", "sqrt" "log","power2"
 
 dur_groom_rec_data <- read_data(data_path,which_individuals=c("forager","nurse"))
@@ -1551,3 +1600,5 @@ ggplot(outlier_data, aes(x = treatment, y = mean_proportion, fill=treatment)) +
   theme(axis.title.x=element_blank(), axis.text.x=element_blank(),
         axis.ticks.x=element_blank())
 
+#EXTRA SOLITAIRE
+Entropy_size$formatted_outcomes

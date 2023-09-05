@@ -17,7 +17,7 @@ inter_cex <- (ref_cex-2)/ref_cex
 min_cex <- (ref_cex-3)/ref_cex
 
 ####Text font
-text_font <- "Helvetica"
+text_font <- "DejaVu Serif" #"Liberation Serif"
 panel_font <- 2 ####panel letters must be bold upright
 panel_casse <- function(x){
   x <- tolower(x)

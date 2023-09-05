@@ -502,9 +502,9 @@ scatterplot_violin_forpaper <- function(formula_stat,formula_plot,ylabel,xlabel,
   for (i in 1:nrow(forplot)){
     subset <- dat[which(dat$pred==forplot[i,"pred"]),"variable"]
     if (is.na(range)){
-      VioPlot(na.omit(subset),col=alpha(forplot[i,"colour"],0.7), horizontal=F, at=forplot[i,"pred"], add=TRUE,lty=1, rectCol="black",wex=wex,border=NA,lwd=line_min,mode="Median",cexMed=cexMed)
+      VioPlot(na.omit(subset),col=alpha(forplot[i,"colour"],0.7), horizontal=F, at=forplot[i,"pred"], add=TRUE,lty=1, rectCol="black",wex=wex*0.5,border=NA,lwd=line_min,mode="Median",cexMed=cexMed)
     }else{
-      VioPlot(na.omit(subset),range=range, h=h,col=alpha(forplot[i,"colour"],0.7), horizontal=F, at=forplot[i,"pred"], add=TRUE,lty=1, rectCol="black",wex=wex,border=NA,lwd=line_min,mode="Median",cexMed=cexMed)
+      VioPlot(na.omit(subset),range=range, h=h,col=alpha(forplot[i,"colour"],0.7), horizontal=F, at=forplot[i,"pred"], add=TRUE,lty=1, rectCol="black",wex=wex*0.5,border=NA,lwd=line_min,mode="Median",cexMed=cexMed)
     }
   }
   par(cex=par_cex_ori)
@@ -1057,6 +1057,7 @@ meta_analysis <- function(p_values,effects,std.errors){
 plot_observed_vs_random <- function(data_path,experiments,data_input = NULL, seedTitle=F) { #, size = NULL
   
   saved_plot <- list()
+  formatted_outcomes <- c()
   
   # Create a layout matrix to plot all results in a grid
   N_cols <- ceiling(length(variable_list) / 2) * 2 # must be always even as the plots by size are generated independently
@@ -1101,15 +1102,13 @@ plot_observed_vs_random <- function(data_path,experiments,data_input = NULL, see
   ###1. read data
   setwd(data_path)
   file_list <- list.files(pattern=pattern)
+  starting_data <- NULL
 
-    data_input <- NULL
   for (file in file_list){
     data_input <- rbind(data_input,read.table(file,header=T,stringsAsFactors = F))}
-  
 
   if (is.null(data_input)) {
     ###read-in data###
-    starting_data <- NULL
   for (experiment in experiments){
     print(experiment)
     ### data files
@@ -1155,15 +1154,17 @@ plot_observed_vs_random <- function(data_path,experiments,data_input = NULL, see
   ####modify period values to be simple and match what scatterplot function expects
   #starting_data["colony"] <- as.character(interaction(starting_data$experiment,starting_data$colony))
   
-  
   for (variable in variable_list) {
-   
+    
+    Edgington_outcome <- c()
+    
+    variable_names <-  names(variable_list)[which(variable_list == variable)]
     #save base data
     ori_data <- starting_data
     
     ori_data["variable"] <- ori_data[,variable]
     cohens_d <- compare_cohens_d(data=ori_data)
-
+    
     # Find global y-axis limits
     min_y <- min(ori_data[, variable], na.rm=TRUE)
     max_y <- max(ori_data[, variable], na.rm=TRUE)
@@ -1294,7 +1295,9 @@ plot_observed_vs_random <- function(data_path,experiments,data_input = NULL, see
       one_sidedpval <- p_values_meta_analysis$one_sided_p
       statistic <- p_values_meta_analysis$meta_statistic
       
-      print(paste(variable,": z=",statistic,"; one-sided p =",one_sidedpval,"; two-sided p =",pval))
+      print(paste(variable_names,": z=",statistic,"; two-sided p =",pval))
+      Edgington_outcome <- c(Edgington_outcome,paste0(ifelse(current_size=="big","large",current_size),": |Z score| = ", abs(round(as.numeric(statistic),3)),", P ≤ ",format(from_p_to_prounded(as.numeric(pval)),scientific=F) ))
+      
       #add p_val
       if (pval>0.05){p_cex <- inter_cex;adjust_line <- 0.3;fonty <- 1}else{p_cex <- max_cex*1.1;adjust_line <- 0; fonty <-  2}
       #add size title
@@ -1318,13 +1321,27 @@ plot_observed_vs_random <- function(data_path,experiments,data_input = NULL, see
       axis(side=1,at=c(1,2),labels=c("",full_statuses_names["observed"]),tick=F,lty=0,cex.axis=inter_cex)
       par(mgp = c(3, 1, 0)) 
     }
-  }
+    
+    Edgington_outcome <- paste(Edgington_outcome,collapse = ' - ')
+
+    predictor="size"
+    if (seedTitle) {
+      formatted_outcome <- paste0("(Edgington combined tests (", tolower(names(seeds[seeds==seed])),", ", variable_names,", ",predictor,") ",Edgington_outcome,"; Cohen's d comparison: |Z score|"," = ", abs(round(as.numeric(cohens_d$Z_stat),3)), ", P ≤ ",format(from_p_to_prounded(as.numeric(cohens_d$p_value)),scientific=F),")")
+    }else{
+      formatted_outcome <- paste0("(Edgington combined tests (", variable_names,", ",predictor,") ",Edgington_outcome,"; Cohen's d comparison: |Z score|"," = ", abs(round(as.numeric(cohens_d$Z_stat),3)), ", P ≤ ",format(from_p_to_prounded(as.numeric(cohens_d$p_value)),scientific=F),")")
+    }
+    formatted_outcomes <- c(formatted_outcomes, formatted_outcome)
+    
+    }
   
   # Capture the current plot
   saved_plot[[variable]] <- recordPlot()
   #par(mar=c(5, 5, 2, 1)) 
   #graphics.off() # Close all devices
-  return(saved_plot)
+  
+  return(list(formatted_outcomes=formatted_outcomes, saved_plot=saved_plot))
+  
+  #return(saved_plot)
 }
 
 #THIS FUNCTION SHOULD BE DECOMMISSIONED
@@ -1423,7 +1440,8 @@ compare_cohens_d <- function(data) {
     #z_value = z,
     d_coeff = d_coeff,
     sig_sym = sig_sym,
-    p_value = p
+    p_value = p,
+    Z_stat = z
   ))
 }
 
@@ -1734,10 +1752,10 @@ collective_analysis_no_rescal <- function(data_path=data_path,showPlot=T){
   
   #add  formatted output
   if (!grepl("interactions.dat",pattern)) { #random_vs_observed data
-    stats_outcomes$formatted <- paste0("(GLMM,treatment-induced changes (", stats_outcomes$variable,", ",stats_outcomes$predictor,"): F(",stats_outcomes$df,") = ", round(stats_outcomes$Fvalue,3), ", P ≤ ",format(from_p_to_prounded(stats_outcomes$pval),scientific=F))
+    stats_outcomes$formatted <- paste0("(GLMM,treatment-induced changes (", stats_outcomes$variable,", ",stats_outcomes$predictor,"): F(",stats_outcomes$df,") = ", round(stats_outcomes$Fvalue,3), ", P ≤ ",format(from_p_to_prounded(stats_outcomes$pval),scientific=F),")")
     return(list(stats_outcomes=stats_outcomes,    post_hoc_outcomes=post_hoc_outcomes,  barplot_delta_period_list=barplot_delta_period_list))
   }else{
-    stats_outcomes$formatted <- paste0("(LM,pre-treatment difference (", stats_outcomes$variable,", ",stats_outcomes$predictor,"): F(",stats_outcomes$df,") = ", round(stats_outcomes$Fvalue,3), ", P ≤ ",format(from_p_to_prounded(stats_outcomes$pval),scientific=F))
+    stats_outcomes$formatted <- paste0("(LM,pre-treatment difference (", stats_outcomes$variable,", ",stats_outcomes$predictor,"): F(",stats_outcomes$df,") = ", round(stats_outcomes$Fvalue,3), ", P ≤ ",format(from_p_to_prounded(stats_outcomes$pval),scientific=F),")")
     return(list(stats_outcomes=stats_outcomes))
   }
 }
@@ -1968,7 +1986,7 @@ collective_analysis_rescal <- function(data_path=data_path,showPlot=T){
   rownames(stats_outcomes) <- NULL
   
   #add  formatted output
-  stats_outcomes$formatted <- paste0("(GLMM,treatment-induced changes (", stats_outcomes$variable,", ",stats_outcomes$predictor,"): F(",stats_outcomes$df,") = ", round(stats_outcomes$Fvalue,3), ", P ≤ ",format(from_p_to_prounded(stats_outcomes$pval),scientific=F))
+  stats_outcomes$formatted <- paste0("(GLMM,treatment-induced changes (", stats_outcomes$variable,", ",stats_outcomes$predictor,"): F(",stats_outcomes$df,") = ", round(stats_outcomes$Fvalue,3), ", P ≤ ",format(from_p_to_prounded(stats_outcomes$pval),scientific=F),")")
   
   return(list(stats_outcomes=stats_outcomes,    post_hoc_outcomes=post_hoc_outcomes,  barplot_delta_period_list=barplot_delta_period_list))
 }
@@ -2292,9 +2310,9 @@ individual_ONE_analysis <- function(data_path=data_path,which_individuals,pre_on
   
   #add  formatted output
   if (pre_only!=T) {
-    stats_outcomes$formatted <- paste0("(GLMM,treatment-induced changes (", stats_outcomes$variable,", ",stats_outcomes$predictor,"): F(",stats_outcomes$df,") = ", round(stats_outcomes$Fvalue,3), ", P ≤ ",format(from_p_to_prounded(stats_outcomes$pval),scientific=F))
+    stats_outcomes$formatted <- paste0("(GLMM,treatment-induced changes (", stats_outcomes$variable,", ",stats_outcomes$predictor,"): F(",stats_outcomes$df,") = ", round(stats_outcomes$Fvalue,3), ", P ≤ ",format(from_p_to_prounded(stats_outcomes$pval),scientific=F),")")
   } else {
-    stats_outcomes$formatted <- paste0("(GLMM, size differences (", stats_outcomes$variable,", ",stats_outcomes$predictor,"): F(",stats_outcomes$df,") = ", round(stats_outcomes$Fvalue,3), ", P ≤ ",format(from_p_to_prounded(stats_outcomes$pval),scientific=F))
+    stats_outcomes$formatted <- paste0("(GLMM, size differences (", stats_outcomes$variable,", ",stats_outcomes$predictor,"): F(",stats_outcomes$df,") = ", round(stats_outcomes$Fvalue,3), ", P ≤ ",format(from_p_to_prounded(stats_outcomes$pval),scientific=F),")")
   }
   
   return(list(stats_outcomes=stats_outcomes,    post_hoc_outcomes=post_hoc_outcomes,  barplot_delta_period_list=barplot_delta_period_list))
@@ -2630,7 +2648,7 @@ individual_TWO_analysis <- function(data_path=data_path,which_individuals,showPl
   rownames(stats_outcomes) <- NULL
   
   #add  formatted output
-  stats_outcomes$formatted <- paste0("(GLMM,treatment-induced changes (", stats_outcomes$variable,", ",stats_outcomes$predictor,"): F(",stats_outcomes$df,") = ", round(stats_outcomes$Fvalue,3), ", P ≤ ",format(from_p_to_prounded(stats_outcomes$pval),scientific=F))
+  stats_outcomes$formatted <- paste0("(GLMM,treatment-induced changes (", stats_outcomes$variable,", ",stats_outcomes$predictor,"): F(",stats_outcomes$df,") = ", round(stats_outcomes$Fvalue,3), ", P ≤ ",format(from_p_to_prounded(stats_outcomes$pval),scientific=F),")")
   
   return(list(stats_outcomes=stats_outcomes,    post_hoc_outcomes=post_hoc_outcomes,  barplot_delta_period_list=barplot_delta_period_list))
   
@@ -3527,10 +3545,10 @@ plot_qpcr <- function(experiments){
   transf_variable_list <- c("log") #AW c("log")
   transf_predictor_list <- c("log") #AW c("log")
   
-  ymin <- floor(log10(min(all_sim_qpcr_data$measured_load_ng_per_uL[all_sim_qpcr_data$measured_load_ng_per_uL!=0])/sqrt(2)))
-  ymax <- ceiling(log10(max(all_sim_qpcr_data$measured_load_ng_per_uL)))
-  xmin <- floor(log10(min(all_sim_qpcr_data[all_sim_qpcr_data[,varb]!=0,varb])/sqrt(2)))
-  xmax <- ceiling(log10(max(all_sim_qpcr_data[,varb])))
+  ymin <- floor(log10(min(all_sim_qpcr_data$measured_load_ng_per_uL[all_sim_qpcr_data$measured_load_ng_per_uL!=0])/sqrt(2))) + 2.8 #AW
+  ymax <- ceiling(log10(max(all_sim_qpcr_data$measured_load_ng_per_uL))) -0.5 #AW
+  xmin <- floor(log10(min(all_sim_qpcr_data[all_sim_qpcr_data[,varb]!=0,varb])/sqrt(2))) + 0.25
+  xmax <- ceiling(log10(max(all_sim_qpcr_data[,varb]))) -0.6
   
   analysis <- list(variable_list=variable_list,
                    predictor_list=predictor_list,
@@ -3559,7 +3577,9 @@ plot_qpcr <- function(experiments){
  #     ggtitle("Frequency Histogram of Simulated Load by Treatment")
  # )
   
+  print("### Measured vs Simulated ###")
   predicted_value <- plot_regression(data=all_sim_qpcr_data,time_point="after",analysis=analysis,n_cat_horiz=20,n_cat_vertic=11,pool=c(F,F),collective=T,input_color=colour_palette_age,xmin=xmin,xmax=xmax,ymin=ymin,ymax=ymax,point_cex=1.5,predict=high_threshold)
+
   par(xpd=NA)
   if (varb =="simulated_load"){
     title(sub=expression(italic("(Prop. exposure dose)")),cex.sub=min_cex,font.sub=1,mgp=c(1,0.1,0))
@@ -3849,7 +3869,7 @@ calculate_entropy <- function(data_path=data_path,which_individuals,number_permu
   Dip_plot <- ggplot(data, aes(x = variable, fill = size )) +
     #geom_density(alpha = 0.5) +
     geom_line(aes(color=size,group = colony), stat="density", size=1, alpha=0.15, adjust=1/1.2) +
-    geom_line(aes(color=size), stat="density", linewidth=2, alpha=1, adjust=1/1.2) +
+    geom_line(aes(color=size), stat="density",  alpha=1, adjust=1/1.2) + #linewidth=2,
     #geom_vline(aes(xintercept = 0.02), linetype = "dashed",colour="grey20") + 
     #geom_histogram(position = "identity", alpha = 0.5, bins = 10) +
     labs(x = "Prop. time outside (log)",y = "Density") +
@@ -3873,7 +3893,9 @@ calculate_entropy <- function(data_path=data_path,which_individuals,number_permu
   model_lm <- lm(norm_entropy ~ size, data= entropy_data)
   test_norm(residuals(model_lm))
   pvalue <- Anova(model_lm)["size","Pr(>F)"]
-  print(Anova(model_lm))
+  #stats_outcomes <- (Anova(model_lm)) 
+  
+  formatted_outcomes <- paste0("(LM, size differences (entropy, size): F(",Anova(model_lm)["size","Df"],") = ", round(Anova(model_lm)["size","F value"],3), ", P ≤ ",format(from_p_to_prounded(Anova(model_lm)["size","Pr(>F)"]),scientific=F),")")
   
   # Create a boxplot using ggplot
   entropy_plot <- ggplot(entropy_data, aes(x = size, y = norm_entropy)) +
@@ -3982,8 +4004,63 @@ calculate_entropy <- function(data_path=data_path,which_individuals,number_permu
   }
   
   
-  return(list(Dip_plot=Dip_plot,    entropy_plot=entropy_plot,  perm_hist=perm_hist))
+  return(list(Dip_plot=Dip_plot,    entropy_plot=entropy_plot, formatted_outcomes=formatted_outcomes,  perm_hist=perm_hist))
 }
+
+
+# --- Bimodality Coefficient Function ---
+# This function calculates the bimodality coefficient of a given distribution. A higher bimodality coefficient indicates stronger evidence of bimodality.
+bimodality_coefficient <- function(x) {
+  x <- x[!is.na(x)]
+  # Calculate skewness and kurtosis of the data
+  # Compute and return the bimodality coefficient
+  bc <- (skewness(x)^2 + 1) / kurtosis(x)
+  return(bc)
+}
+
+# --- Permutation Test Function ---
+# This function compares the bimodality of two distributions using a permutation test.
+bimodality_permutation_test <- function(data, n_permutations = 1000) {
+  # Split the dataset into two groups based on the 'size' column
+  group1 <- data$variable[data$size == unique(data$size)[1]]
+  group2 <- data$variable[data$size == unique(data$size)[2]]
+  
+  # Compute the bimodality coefficients for the two original groups
+  bc1_observed <- bimodality_coefficient(group1)
+  bc2_observed <- bimodality_coefficient(group2)
+  
+  # Calculate the observed difference between their bimodality coefficients
+  bc_diff_observed <- abs(bc1_observed - bc2_observed)
+  
+  # Initialize an empty vector to store differences from permuted samples
+  permuted_diffs <- numeric(n_permutations)
+  
+  # Pool both groups' data together for permutation
+  combined_data <- c(group1, group2)
+  
+  # Begin permutation: Shuffle data and compute differences in bimodality coefficients
+  for (i in 1:n_permutations) {
+    # Randomly select data points for the first permuted group
+    permuted_sample <- sample(combined_data, length(group1))
+    
+    # Calculate bimodality coefficients for both permuted groups
+    bc1_permuted <- bimodality_coefficient(permuted_sample)
+    bc2_permuted <- bimodality_coefficient(setdiff(combined_data, permuted_sample))
+    
+    # Store the absolute difference for this permutation
+    permuted_diffs[i] <- abs(bc1_permuted - bc2_permuted)
+  }
+  
+  # Compute the p-value as the proportion of permuted differences 
+  # that are as extreme or more extreme than the observed difference
+  p_value <- mean(permuted_diffs >= bc_diff_observed)
+  
+  # Return the p-value
+  return(p_value)
+}
+
+
+
 
 
 plot_seeds <- function(experiments,seeds,variables,transf,color_pal){
