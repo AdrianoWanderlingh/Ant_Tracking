@@ -224,13 +224,13 @@ for (input_folder in input_folders){
         ###simplify graph (merge all edges involving the same pair of ants into a single one whose weight = sum of these weights)
         net <- igraph::simplify(net,remove.multiple=TRUE,remove.loop=TRUE,edge.attr.comb="sum")
         
-      #   ###get all degress without removing any node
-      #   degrees_all         <- degree(net,mode="all")
-      #   ##################remove unconnected nodes
-      #   unconnected <- actors[degree(net)==0,]
-      #   net <- net - as.character(unconnected)
-      #   ##get actor list from net
-      #   actors <- get.vertex.attribute(net,"name")
+        ###get all degress without removing any node
+        degrees_all         <- degree(net,mode="all")
+        ##################remove unconnected nodes
+        unconnected <- actors[degree(net)==0,]
+        net <- net - as.character(unconnected)
+        ##get actor list from net
+        actors <- get.vertex.attribute(net,"name")
       #   
       # ####Part 1: individual network properties ####
       #   ###prepare table
@@ -341,11 +341,23 @@ for (input_folder in input_folders){
         efficiency_NUR <- (1/(((vcount(net)-length(nursesid))*((vcount(net)-length(nursesid))-1))))*(sum(efficiency_NUR,na.rm=TRUE))
         net_mean_dist_NUR <- mean(net_dist_NUR,na.rm=T)
         
+        
+        # calculate a density for each of nurses and foragers network
+        net_nurses   <- net - as.character(actors[which(!actors%in%nursesid)])
+        net_foragers <- net - as.character(actors[which(!actors%in%foragersid)])
+        actors_net_nurses <- get.vertex.attribute(net_nurses,"name")
+        actors_net_foragers <- get.vertex.attribute(net_foragers,"name")
+        
+        density_nurses    <- igraph::edge_density(net_nurses)
+        density_foragers  <- igraph::edge_density(net_foragers)
+        
         summary_collective <- rbind(summary_collective,data.frame(randy=input_folder,colony=colony,colony_size=colony_size,treatment=treatment,period=period,time_hours=time_hours,time_of_day=time_of_day,
                                                                   efficiency_FOR=efficiency_FOR,
                                                                   efficiency_NUR=efficiency_NUR,
                                                                   net_mean_dist_FOR=net_mean_dist_FOR,
                                                                   net_mean_dist_NUR=net_mean_dist_NUR,
+                                                                  density_FOR=density_foragers,
+                                                                  density_NUR=density_nurses,
                                                                   stringsAsFactors = F))
         
         # ## Modularity
