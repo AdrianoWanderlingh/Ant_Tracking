@@ -352,3 +352,20 @@ ggplot(iter_counts, aes(x = factor(ITER), y = n, fill = factor(rank))) +
   theme_minimal()
 }
 
+# #Merge cluster output
+# # Set the path to the directory
+# path <- "/media/cf19810/Seagate Portable Drive/Lasius-Bristol_pathogen_experiment/main_experiment/Soft_community_scores_duration/"
+# 
+# # List all the text files in the directory
+# files <- list.files(path, pattern = "\\.txt$", full.names = TRUE)
+# 
+# # Read and combine all the files
+# combined_data <- do.call(rbind, lapply(files, read.table, header=TRUE, stringsAsFactors=FALSE))
+# 
+# combined_data$JOBTYPE <- NULL
+# combined_data$ITER <- NULL
+# combined_data$alpha <- NULL
+# # Save the combined data to a new file
+# output_path <- "/media/cf19810/Seagate Portable Drive/Lasius-Bristol_pathogen_experiment/main_experiment/Soft_community_scores_duration_1ITER_0.5alpha_full.txt"
+# write.table(combined_data, file=output_path, row.names=FALSE, sep="\t", quote=FALSE)
+

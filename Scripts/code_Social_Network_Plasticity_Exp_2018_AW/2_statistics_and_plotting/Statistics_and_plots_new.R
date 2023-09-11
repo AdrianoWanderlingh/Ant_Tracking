@@ -1299,6 +1299,18 @@ names(variable_list) <- c("modularity","clustering","task assortativity","effici
 starting_data <- NULL; warning("I've no idea what I did wrong but, for the love of god,without 'starting_data' in the global env the function crashes ")
 net_RandObs <- plot_observed_vs_random(data_path,experiments=c("main_experiment"))
 
+# PER TASK GROUP network measures 
+#efficiency_FOR efficiency_NUR net_mean_dist_FOR net_mean_dist_NUR density_FOR density_NUR
+
+data_path <- paste(disk_path,"/main_experiment/processed_data/network_properties_edge_weights_duration/random_vs_observed",sep="")
+pattern="network_properties"
+variable_list        <- c("efficiency_FOR","efficiency_NUR","net_mean_dist_FOR","net_mean_dist_NUR","density_FOR","density_NUR")
+names(variable_list) <- c("efficiency_FOR","efficiency_NUR","net_mean_dist_FOR","net_mean_dist_NUR","density_FOR","density_NUR")
+
+starting_data <- NULL; warning("I've no idea what I did wrong but, for the love of god,without 'starting_data' in the global env the function crashes ")
+
+net_RandObs_TASK <- plot_observed_vs_random_TASK(data_path,experiments=c("main_experiment"))
+
 
 ######Extended data 3: simulation results from different seeds, obs vs. random, COLLECTIVE #####
 # Science 2018: Fig. S3. Disease spread simulations over pre-treatment observed (Obs) and randomized (Rd) networks: colony-level results
@@ -1345,81 +1357,82 @@ plot_seeds(experiments="main_experiment",seeds=seeds,variables=variables,transf=
 #dev.off()
 
 
+###########################################
+###SAVE THESE PLOTSSSSS
+
+
+pdf(file=paste(figurefolder,"/Figure_sim_RandObs_plots_ALL.pdf",sep=""),family=text_font,font=text_font,bg="white",width=double_col*1.6,height=double_col*0.7,pointsize=pointsize_less_than_2row2col) #height=page_height*0.25
+replayPlot(sim_RandObs_plots$foragers)
+replayPlot(sim_RandObs_plots$random_workers)
+replayPlot(sim_RandObs_plots$nurses)
+dev.off()
+
+pdf(file=paste(figurefolder,"/Figure_sim_RandObs_plots_TASK.pdf",sep=""),family=text_font,font=text_font,bg="white",width=double_col*1.6,height=double_col*0.7,pointsize=pointsize_less_than_2row2col) #height=page_height*0.25
+replayPlot(net_RandObs_TASK$saved_plot$net_mean_dist_small)
+dev.off()
 
 
 
-
-
-
-
-
-
-#########
-
-
-#use Cohen's d to compare the difference between two groups relative to their expected (randomised) measure.
-
-
-################ EXAMPLE CODE TO BUILD FUNCTION TO LATER INSERT IN THE RAN VS OBS SCRIPT
-
-### DOL MEASURES
-# data_path <- paste(disk_path,"/main_experiment/processed_data/collective_behaviour/random_vs_observed",sep="")
-# pattern="interactions.dat"
-# variable_list        <- c("intra_caste_over_inter_caste_WW_contact_duration","QNurse_over_QForager_contact_duration")
-# names(variable_list) <- c("Within/Between-task contact","Q-N/Q-F contacts")
-# experiments=c("main_experiment")
-
-data_path <- paste(disk_path,"/main_experiment/processed_data/network_properties_edge_weights_duration/random_vs_observed",sep="")
-pattern="network_properties"
-variable_list        <- c("modularity","clustering","task_assortativity","efficiency","degree_mean","density")
-names(variable_list) <- c("modularity","clustering","task assortativity","efficiency","mean degree","density")
-
-
-setwd(data_path)
-file_list <- list.files(pattern=pattern)
-
-data_input <- NULL
-for (file in file_list){
-  data_input <- rbind(data_input,read.table(file,header=T,stringsAsFactors = F))}
-
-
-if (is.null(data_input)) {
-  ###read-in data###
-  starting_data <- NULL
-  for (experiment in experiments){
-    print(experiment)
-    ### data files
-    setwd(data_path)
-    file_list <- list.files(pattern=pattern)
-    temp <- NULL
-    for (file in file_list){
-      dat <- read.table(file,header=T,stringsAsFactors=F)
-      dat <- dat[,which(names(dat)%in%c("randy","colony","treatment","period","time_hours","time_of_day",variable_list))]
-      temp <- rbind(temp,dat)
-      rm(list=c("dat"))
-    }
-    temp <- temp[,order(names(temp))]
-    temp <- data.frame(experiment=experiment,temp,stringsAsFactors = F)
-    if (!is.null(starting_data)){
-      if (!all(names(starting_data)%in%names(temp))){
-        temp[names(starting_data)[which(!names(starting_data)%in%names(temp))]] <- NA
-        temp <- temp[,names(starting_data)]
-      }
-    }
-    
-    starting_data <- rbind(starting_data,temp)
-    rm(list=c("temp"))
-    
-  }
-  
-  ####modify period values to be simple and match what scatterplot function expects
-  starting_data["colony"] <- as.character(interaction(starting_data$experiment,starting_data$colony))
-  
-}else{starting_data <- data_input}
-
-
-
-starting_data$variable <-  starting_data[,which(names(starting_data)== variable_list[5])]
+# ################ EXAMPLE CODE TO BUILD FUNCTION TO LATER INSERT IN THE RAN VS OBS SCRIPT
+# 
+# ### DOL MEASURES
+# # data_path <- paste(disk_path,"/main_experiment/processed_data/collective_behaviour/random_vs_observed",sep="")
+# # pattern="interactions.dat"
+# # variable_list        <- c("intra_caste_over_inter_caste_WW_contact_duration","QNurse_over_QForager_contact_duration")
+# # names(variable_list) <- c("Within/Between-task contact","Q-N/Q-F contacts")
+# # experiments=c("main_experiment")
+# 
+# data_path <- paste(disk_path,"/main_experiment/processed_data/network_properties_edge_weights_duration/random_vs_observed",sep="")
+# pattern="network_properties"
+# variable_list        <- c("modularity","clustering","task_assortativity","efficiency","degree_mean","density")
+# names(variable_list) <- c("modularity","clustering","task assortativity","efficiency","mean degree","density")
+# 
+# 
+# setwd(data_path)
+# file_list <- list.files(pattern=pattern)
+# 
+# data_input <- NULL
+# for (file in file_list){
+#   data_input <- rbind(data_input,read.table(file,header=T,stringsAsFactors = F))}
+# 
+# 
+# if (is.null(data_input)) {
+#   ###read-in data###
+#   starting_data <- NULL
+#   for (experiment in experiments){
+#     print(experiment)
+#     ### data files
+#     setwd(data_path)
+#     file_list <- list.files(pattern=pattern)
+#     temp <- NULL
+#     for (file in file_list){
+#       dat <- read.table(file,header=T,stringsAsFactors=F)
+#       dat <- dat[,which(names(dat)%in%c("randy","colony","treatment","period","time_hours","time_of_day",variable_list))]
+#       temp <- rbind(temp,dat)
+#       rm(list=c("dat"))
+#     }
+#     temp <- temp[,order(names(temp))]
+#     temp <- data.frame(experiment=experiment,temp,stringsAsFactors = F)
+#     if (!is.null(starting_data)){
+#       if (!all(names(starting_data)%in%names(temp))){
+#         temp[names(starting_data)[which(!names(starting_data)%in%names(temp))]] <- NA
+#         temp <- temp[,names(starting_data)]
+#       }
+#     }
+#     
+#     starting_data <- rbind(starting_data,temp)
+#     rm(list=c("temp"))
+#     
+#   }
+#   
+#   ####modify period values to be simple and match what scatterplot function expects
+#   starting_data["colony"] <- as.character(interaction(starting_data$experiment,starting_data$colony))
+#   
+# }else{starting_data <- data_input}
+# 
+# 
+# 
+# starting_data$variable <-  starting_data[,which(names(starting_data)== variable_list[5])]
 
 #result <- compare_cohens_d(values=starting_data$variable, orig_perm_factor= as.factor(starting_data$randy), group_factor=starting_data$size)
 

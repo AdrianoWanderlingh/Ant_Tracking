@@ -1054,36 +1054,43 @@ meta_analysis <- function(p_values,effects,std.errors){
 # }
 # 
 
+
 plot_observed_vs_random <- function(data_path,experiments,data_input = NULL, seedTitle=F) { #, size = NULL
   
   saved_plot <- list()
   formatted_outcomes <- c()
   
   # Create a layout matrix to plot all results in a grid
-  N_cols <- ceiling(length(variable_list) / 2) * 2 # must be always even as the plots by size are generated independently
+  N_cols <- ceiling(length(variable_list) / 2) * 4 # must be always even as the plots by size are generated independently
   if (N_cols == 2) {
     layout_matrix <- matrix(1:(2 * N_cols), nrow = 1)
   } else {
     layout_matrix <- matrix(1:(2 * N_cols), nrow = 2, byrow = TRUE)
+    layout_matrix <- matrix(1:(1 * N_cols), nrow = 1, byrow = TRUE)
+    
   }
   
   if (seedTitle) {
-  first_row <- rep(1, N_cols) # Create a row of ones to fit the title
-  layout_matrix <- rbind(first_row, layout_matrix+1) # Combine the first row of ones with the existing matrix
-  # Create a layout heights vector
-  layout_heights <- c(1/9, rep(8/9 , nrow(layout_matrix) - 1))
-  # Set up the layout
-  layout(layout_matrix, heights = layout_heights)
-  # Set up the layout
-  #layout(layout_matrix, heights = c(0.05,0.45,0.45)) 
-  # title settings
-  par(mar = c(0,0,0,0)); plot(1,1,type = "n",frame.plot = FALSE,axes = FALSE); u <- par("usr")
-  text(1,u[4],labels = names(seeds[seeds==seed]),font=2, pos = 1)
+    first_row <- rep(1, N_cols) # Create a row of ones to fit the title
+    layout_matrix <- rbind(first_row, layout_matrix+1) # Combine the first row of ones with the existing matrix
+    # Create a layout heights vector
+    layout_heights <- c(2/20, rep(18/20 , nrow(layout_matrix) - 1))
+    # Set up the layout
+    layout(layout_matrix, heights = layout_heights)
+    # Set up the layout
+    #layout(layout_matrix, heights = c(0.05,0.45,0.45)) 
+    # title settings
+    par(mar = c(0,0,0,0)); plot(1,1,type = "n",frame.plot = FALSE,axes = FALSE); u <- par("usr")
+    # Add a black line above the title
+    abline(h=u[4] - 0.05, col="black", lwd=1)  # Adjust 0.1 as needed to set the desired line position
+    # Adjust title position using the adj parameter
+    #text(1, u[4], labels = names(seeds[seeds==seed]), font=2, adj=c(0.5, 1.2), pos = 1)  # Adjust 1.2 to move title up or down as needed
+    text(1,u[4] - 0.3,labels = names(seeds[seeds==seed]),font=2, pos = 1)
   }else{
     # Set up the layout
     layout(layout_matrix)
   }
-
+  
   # ###1. read data
   # setwd(data_path)
   # file_list <- list.files(pattern=pattern)
@@ -1103,39 +1110,39 @@ plot_observed_vs_random <- function(data_path,experiments,data_input = NULL, see
   setwd(data_path)
   file_list <- list.files(pattern=pattern)
   starting_data <- NULL
-
+  
   for (file in file_list){
     data_input <- rbind(data_input,read.table(file,header=T,stringsAsFactors = F))}
-
+  
   if (is.null(data_input)) {
     ###read-in data###
-  for (experiment in experiments){
-    print(experiment)
-    ### data files
-    setwd(data_path)
-    file_list <- list.files(pattern=pattern)
-    temp <- NULL
-    for (file in file_list){
-      dat <- read.table(file,header=T,stringsAsFactors=F)
-      dat <- dat[,which(names(dat)%in%c("randy","colony","treatment","period","time_hours","time_of_day",variable_list))]
-      temp <- rbind(temp,dat)
-      rm(list=c("dat"))
-    }
-    temp <- temp[,order(names(temp))]
-    temp <- data.frame(experiment=experiment,temp,stringsAsFactors = F)
-    if (!is.null(starting_data)){
-      if (!all(names(starting_data)%in%names(temp))){
-        temp[names(starting_data)[which(!names(starting_data)%in%names(temp))]] <- NA
-        temp <- temp[,names(starting_data)]
+    for (experiment in experiments){
+      print(experiment)
+      ### data files
+      setwd(data_path)
+      file_list <- list.files(pattern=pattern)
+      temp <- NULL
+      for (file in file_list){
+        dat <- read.table(file,header=T,stringsAsFactors=F)
+        dat <- dat[,which(names(dat)%in%c("randy","colony","treatment","period","time_hours","time_of_day",variable_list))]
+        temp <- rbind(temp,dat)
+        rm(list=c("dat"))
       }
+      temp <- temp[,order(names(temp))]
+      temp <- data.frame(experiment=experiment,temp,stringsAsFactors = F)
+      if (!is.null(starting_data)){
+        if (!all(names(starting_data)%in%names(temp))){
+          temp[names(starting_data)[which(!names(starting_data)%in%names(temp))]] <- NA
+          temp <- temp[,names(starting_data)]
+        }
+      }
+      
+      starting_data <- rbind(starting_data,temp)
+      rm(list=c("temp"))
+      
     }
-
-    starting_data <- rbind(starting_data,temp)
-    rm(list=c("temp"))
-
-  }
-
-
+    
+    
   }else{starting_data <- data_input}
   
   #add info
@@ -1175,9 +1182,9 @@ plot_observed_vs_random <- function(data_path,experiments,data_input = NULL, see
       loop_N <- loop_N+1
       
       if (is.even(loop_N)) { #change spacing for every second plot
-        par(mar=c(2, 0, 5, 4))  
-        }else{
-        par(mar=c(2, 4, 5, 0))  #  Adjust margins as needed          #mfrow=c(1, 2), #Set up two-panel layout 
+        par(mar=c(2, 0, 5, 2.1))  #2054
+      }else{
+        par(mar=c(2, 2.1, 5, 0))  #2450  Adjust margins as needed          #mfrow=c(1, 2), #Set up two-panel layout 
       }
       
       # Subset data by size
@@ -1255,6 +1262,343 @@ plot_observed_vs_random <- function(data_path,experiments,data_input = NULL, see
       
       # Set y-axis limits to be consistent across the two sizes
       ylim = c(min_y, max_y)
+      # # Store default par settings
+      # op <- par(no.readonly = TRUE)
+      # # Adjust mgp for y-axis title
+      par(mgp = c(1.3, 0.5, 0)) #mgp[2] controls the axis labels
+      
+      for (coli in rev(col_list)){
+        if (coli==col_list[length(col_list)]){
+          addy <- F
+        }else{
+          addy <- T
+        }
+        
+        titl <- names(variable_list[variable_list==variable])
+        if (grepl("delta",titl)){
+          titl1 <- unlist(strsplit(titl,"delta"))[1]
+          titl2 <- unlist(strsplit(titl,"delta"))[2]
+          titl <- substitute(paste(labo,Delta,laby),list(labo=titl1,laby=titl2))
+        }
+        #stripchart(median ~ network, data = forplot[forplot$colony==coli,],vertical = TRUE,pch=16,col=alpha(colour_pal[which(coli==col_list)],1),method = 'jitter', jitter = 0.3,ylim=c(min(c(0,forplot$median)),max(c(forplot$median))), main = "",ylab=titl,add=addy,bty="l",cex=0.5,cex.axis=min_cex,cex.lab=inter_cex)
+        
+        
+        if (is.even(loop_N)) { #remove y axis for every second plot
+          stripchart(median ~ network, data = forplot[forplot$colony==coli,],vertical = TRUE,pch=16,col=alpha(colour_pal[which(coli==col_list)],1),method = 'jitter', jitter = 0.3,ylim=ylim,main = "",ylab="",yaxt = "n",add=addy,bty="l",cex=0.5,cex.axis=min_cex,cex.lab=inter_cex)
+          #par(mar=c(2, 0, 4, 1)) # ,oma=c(0,0,0,0) # Adjust the right margin to make the second panel smaller
+        }else{
+          stripchart(median ~ network, data = forplot[forplot$colony==coli,],vertical = TRUE,pch=16,col=alpha(colour_pal[which(coli==col_list)],1),method = 'jitter', jitter = 0.3,ylim=ylim, main = "",ylab=titl,add=addy,bty="l",cex=0.5,cex.axis=min_cex,cex.lab=inter_cex)
+        }
+        
+      }
+      par(mgp = c(3, 1, 0))  #par(op)
+      
+      ###make boxplot
+      forplot3 <- data.frame(as.matrix(aggregate(median~network,function(x)cbind(mean(x),std.error(x)),data=forplot)),stringsAsFactors = F)
+      names(forplot3) <- c("network","mean","se")
+      
+      boxplot(median ~ network, data = forplot, 
+              outline = FALSE, notch=F,    ## avoid double-plotting outliers, if any
+              main = "",yaxt="n",add=T,col=alpha("white",0),medlwd=line_max,boxlwd=line_min+0.5*(line_max-line_min),whisklwd=line_min,whisklty=1,staplelwd=line_min,boxwex=0.7,bty="l")
+      
+      par(xpd=T)
+      
+      ###add stat
+      pval <- p_values_meta_analysis$two_sided_p
+      one_sidedpval <- p_values_meta_analysis$one_sided_p
+      statistic <- p_values_meta_analysis$meta_statistic
+      
+      print(paste(variable_names,": z=",statistic,"; two-sided p =",pval))
+      Edgington_outcome <- c(Edgington_outcome,paste0(ifelse(current_size=="big","large",current_size),": |Z score| = ", abs(round(as.numeric(statistic),2)),", P ≤ ",format(from_p_to_prounded(as.numeric(pval)),scientific=F) ))
+      
+      #add p_val
+      if (pval>0.05){p_cex <- inter_cex*0.6;adjust_line <- 0.3;fonty <- 1}else{p_cex <- max_cex*1.1*0.6;adjust_line <- 0; fonty <-  2} # adjust titles
+      #      if (pval>0.05){p_cex <- inter_cex;adjust_line <- 0.3;fonty <- 1}else{p_cex <- max_cex*1.1;adjust_line <- 0; fonty <-  2}
+
+      #add size title
+      title(main=ifelse(current_size=="big","large",current_size),cex.main=p_cex,font.main=fonty,line=stat_line+adjust_line+2.2,xpd=T)
+      
+      #add cohen's d information under the size group
+      title(main= paste0("d=",round(cohens_d$d_coeff[which(cohens_d$d_coeff$size==current_size),"mean_d"],2)),
+            cex.main=p_cex,font.main=3,line=stat_line+adjust_line+1.3,xpd=T)
+      
+      if (current_size=="small") {
+        title(main=cohens_d$sig_sym,cex.main=p_cex,font.main=fonty,line=stat_line+adjust_line+2.2,adj=1,xpd=T) # cohen's d diff. p_val
+        title(main=from_p_to_ptext(cohens_d$p_value),cex.main=p_cex,font.main=fonty,line=stat_line+adjust_line+2.9,adj=1,xpd=T) # cohen's d diff. direction
+      }
+      
+      title(main=from_p_to_ptext(pval),cex.main=p_cex,font.main=fonty,line=stat_line+adjust_line,xpd=T)
+      par(xpd=F)
+      par(xaxt = "s")
+      # Adjust the mgp parameter to move the x-axis labels further up
+      par(mgp = c(3, 0, 0))  # Adjust the second value to control the distance of the labels
+      axis(side=1,at=c(1,2),labels=c(full_statuses_names["random"],""),tick=F,lty=0,cex.axis=inter_cex*0.7)
+      axis(side=1,at=c(1,2),labels=c("",full_statuses_names["observed"]),tick=F,lty=0,cex.axis=inter_cex*0.7)
+      par(mgp = c(3, 1, 0)) 
+    }
+    
+    Edgington_outcome <- paste(Edgington_outcome,collapse = ' - ')
+    
+    predictor="size"
+    if (seedTitle) {
+      formatted_outcome <- paste0("(Edgington combined tests (", tolower(names(seeds[seeds==seed])),", ", variable_names,", ",predictor,") ",Edgington_outcome,"; Cohen's d comparison: |Z score|"," = ", abs(round(as.numeric(cohens_d$Z_stat),2)), ", P ≤ ",format(from_p_to_prounded(as.numeric(cohens_d$p_value)),scientific=F),")")
+    }else{
+      formatted_outcome <- paste0("(Edgington combined tests (", variable_names,", ",predictor,") ",Edgington_outcome,"; Cohen's d comparison: |Z score|"," = ", abs(round(as.numeric(cohens_d$Z_stat),2)), ", P ≤ ",format(from_p_to_prounded(as.numeric(cohens_d$p_value)),scientific=F),")")
+    }
+    formatted_outcomes <- c(formatted_outcomes, formatted_outcome)
+    
+  }
+  
+  # Capture the current plot
+  saved_plot[[variable]] <- recordPlot()
+  #par(mar=c(5, 5, 2, 1)) 
+  #graphics.off() # Close all devices
+  
+  return(list(formatted_outcomes=formatted_outcomes, saved_plot=saved_plot))
+  
+  #return(saved_plot)
+}
+
+#version specific to task_group
+plot_observed_vs_random_TASK <- function(data_path,experiments,data_input = NULL, seedTitle=F) { #, size = NULL
+  
+  saved_plot <- list()
+  formatted_outcomes <- c()
+  
+  # Create a layout matrix to plot all results in a grid
+  N_cols <- ceiling(length(variable_list) / 2) * 4 # must be always even as the plots by size are generated independently
+  if (N_cols == 2) {
+    layout_matrix <- matrix(1:(2 * N_cols), nrow = 1)
+  } else {
+    layout_matrix <- matrix(1:(2 * N_cols), nrow = 2, byrow = TRUE)
+    layout_matrix <- matrix(1:(1 * N_cols), nrow = 1, byrow = TRUE)
+  }
+  
+  if (seedTitle) {
+    first_row <- rep(1, N_cols) # Create a row of ones to fit the title
+    layout_matrix <- rbind(first_row, layout_matrix+1) # Combine the first row of ones with the existing matrix
+    # Create a layout heights vector
+    layout_heights <- c(2/20, rep(18/20 , nrow(layout_matrix) - 1))
+    # Set up the layout
+    layout(layout_matrix, heights = layout_heights)
+    # Set up the layout
+    #layout(layout_matrix, heights = c(0.05,0.45,0.45)) 
+    # title settings
+    par(mar = c(0,0,0,0)); plot(1,1,type = "n",frame.plot = FALSE,axes = FALSE); u <- par("usr")
+    # Add a black line above the title
+    abline(h=u[4] - 0.05, col="black", lwd=1)  # Adjust 0.1 as needed to set the desired line position
+    # Adjust title position using the adj parameter
+    #text(1, u[4], labels = names(seeds[seeds==seed]), font=2, adj=c(0.5, 1.2), pos = 1)  # Adjust 1.2 to move title up or down as needed
+    text(1,u[4] - 0.3,labels = names(seeds[seeds==seed]),font=2, pos = 1)
+  }else{
+    # Set up the layout
+    layout(layout_matrix)
+  }
+  
+  ###1. read data
+  setwd(data_path)
+  file_list <- list.files(pattern=pattern)
+  starting_data <- NULL
+  
+  for (file in file_list){
+    data_input <- rbind(data_input,read.table(file,header=T,stringsAsFactors = F))}
+  
+  if (is.null(data_input)) {
+    ###read-in data###
+    for (experiment in experiments){
+      print(experiment)
+      ### data files
+      setwd(data_path)
+      file_list <- list.files(pattern=pattern)
+      temp <- NULL
+      for (file in file_list){
+        dat <- read.table(file,header=T,stringsAsFactors=F)
+        dat <- dat[,which(names(dat)%in%c("randy","colony","treatment","period","time_hours","time_of_day",variable_list))]
+        temp <- rbind(temp,dat)
+        rm(list=c("dat"))
+      }
+      temp <- temp[,order(names(temp))]
+      temp <- data.frame(experiment=experiment,temp,stringsAsFactors = F)
+      if (!is.null(starting_data)){
+        if (!all(names(starting_data)%in%names(temp))){
+          temp[names(starting_data)[which(!names(starting_data)%in%names(temp))]] <- NA
+          temp <- temp[,names(starting_data)]
+        }
+      }
+      
+      starting_data <- rbind(starting_data,temp)
+      rm(list=c("temp"))
+    }
+    
+  }else{starting_data <- data_input}
+  
+
+  starting_data$size     <- unlist(lapply( starting_data$treatment, function(x)  unlist(strsplit(x,split="\\.") )[2]  ))
+  starting_data$size      <- factor(starting_data$size    , levels=size_order   [which(size_order%in%starting_data$size )])
+  
+  # Data reshaping for current_task
+  for (root in roots) {
+    starting_data[paste0(root, "_task_group")] <- NA
+  }
+  starting_data$task_group <- NA
+  df_FOR <- starting_data
+  df_NUR <- starting_data
+  df_FOR$task_group <- "forager"
+  df_NUR$task_group <- "nurse"
+  combined_data <- rbind(df_FOR, df_NUR)
+  for (root in roots) {
+    combined_data <- combined_data %>%
+      dplyr::mutate(!!paste0(root, "_task_group") := case_when(
+        task_group == "forager" ~ !!sym(paste0(root, "_FOR")),
+        task_group == "nurse" ~ !!sym(paste0(root, "_NUR"))
+      ))
+  }
+  combined_data <- combined_data %>%
+    dplyr::select(-all_of(cols))
+  combined_data$task_group <- as.factor(combined_data$task_group)
+
+  # 1. Duplicate the Data
+  big_data <- combined_data %>% filter(size == "big")
+  small_data <- combined_data %>% filter(size == "small")
+  # 2. Reshape Each Subset
+  # For "big"
+  big_data <- big_data %>%
+    mutate(across(all_of(sapply(roots, function(root) paste0(root, "_task_group"))),
+                  ~ .x,
+                  .names = "{.col}_big")) %>%
+    select(-size)
+  # For "small"
+  small_data <- small_data %>%
+    mutate(across(all_of(sapply(roots, function(root) paste0(root, "_task_group"))),
+                  ~ .x,
+                  .names = "{.col}_small")) %>%
+    select(-size)
+  # 1. Identify Common Columns
+  common_cols <- intersect(names(big_data), names(small_data))
+  # 2. Join the Datasets
+  wide_data <- full_join(big_data, small_data, by = common_cols)
+  
+  starting_data <- wide_data
+  
+  #add info
+  starting_data$task_group      <- factor(starting_data$task_group    , levels=task_group_order   [which(task_group_order%in%starting_data$task_group )])
+  starting_data$treatment <- factor(starting_data$treatment , levels=treatment_order[which(treatment_order%in%starting_data$treatment )])
+  
+  # Modify variable_list to include the new "_task_group" variables
+  variable_list <- c(paste0(roots, "_big"), paste0(roots, "_small"))  # for (root in roots) {
+  names(variable_list) <- gsub("_big", "_large", variable_list)   # Replace "big" with "large"
+  names(variable_list) <- sub(".*_(\\w+)$", "\\1", names(variable_list))
+  names(variable_list) <- paste0(roots, " (",  names(variable_list), ")")
+  
+  #   variable_list[paste0(root, "_task_group")] <- paste0(root, "_task_group")
+  # }
+  
+  for (variable in sort(variable_list)) {
+    
+    Edgington_outcome <- c()
+    
+    variable_names <-  names(variable_list)[which(variable_list == variable)]
+    #save base data
+    ori_data <- starting_data
+    
+    ori_data["variable"] <- ori_data[,variable]
+    cohens_d <- compare_cohens_d_task(data=ori_data)
+    
+    # Find global y-axis limits
+    min_y <- min(ori_data[, variable], na.rm=TRUE)
+    max_y <- max(ori_data[, variable], na.rm=TRUE)
+    
+    # Loop through each size
+    loop_N <- 0
+    for (current_task in levels(ori_data$task_group)) {
+      loop_N <- loop_N+1
+      
+      if (is.even(loop_N)) { #change spacing for every second plot
+        par(mar=c(2, 0, 5, 2.1))  #2054
+      }else{
+        par(mar=c(2, 2.1, 5, 0))  #2450  Adjust margins as needed          #mfrow=c(1, 2), #Set up two-panel layout 
+      }
+      
+      # Subset data by task_group instead of size
+      data <- ori_data[ori_data$task_group == current_task, ]
+      
+      
+      data["variable"] <- data[,variable]
+      data[which(!is.finite(data$variable)),"variable"] <- NA
+      
+      #####get random and observed mean
+      randys <- aggregate(variable~colony+treatment+randy,FUN=mean,data=data[which(data$randy!="observed"),]);
+      randys <- as.data.frame(as.matrix(randys));randys$variable <- as.numeric(as.character(randys$variable))
+      #####then get mean, median and standard error
+      randys <- aggregate(variable~colony+treatment,function(x)cbind(mean(x),median(x),std.error(x),length(x)),data=randys);
+      randys <- as.data.frame(as.matrix(randys))
+      names(randys)[names(randys)=="variable.1"] <- "random_mean";names(randys)[names(randys)=="variable.2"] <- "random_median";names(randys)[names(randys)=="variable.3"] <- "random_std.error";names(randys)[names(randys)=="variable.4"] <- "random_nb"
+      
+      ###do the same for observed
+      observeds <- aggregate(variable~colony+treatment+randy,FUN=mean,data=data[which(data$randy=="observed"),])
+      observeds <- as.data.frame(as.matrix(observeds));observeds$variable <- as.numeric(as.character(observeds$variable))
+      observeds <- aggregate(variable~colony+treatment,function(x)cbind(mean(x),median(x),length(x)),data=observeds);
+      observeds <- as.data.frame(as.matrix(observeds))
+      names(observeds)[names(observeds)=="variable.1"] <- "observed_mean";names(observeds)[names(observeds)=="variable.2"] <- "observed_median";names(observeds)[names(observeds)=="variable.3"] <- "observed_nb"
+      
+      randys <- merge(randys,observeds);
+      randys$colony <- as.character(randys$colony)
+      randys$observed_mean <- as.numeric(as.character(randys$observed_mean))
+      randys$random_mean <- as.numeric(as.character( randys$random_mean))
+      randys$observed_median <- as.numeric(as.character(randys$observed_median))
+      randys$random_median <- as.numeric(as.character( randys$random_median))
+      randys$random_std.error <- as.numeric(as.character( randys$random_std.error))
+      
+      randys["deviation"] <- randys$observed_median-randys$random_median
+      randys["relative_deviation"] <- (randys$observed_median-randys$random_median)/abs(randys$random_median)
+      randys["p_value"] <- NA
+      randys["variable"] <- variable
+      randys["n_observed"] <- NA
+      randys["n_random"] <- NA
+      
+      for (coli in unique(randys$colony)){
+        random <- aggregate(variable~colony+treatment+randy,FUN=mean,data=data[which(data$colony==coli&data$randy!="observed"),])[,"variable"];
+        observed <- aggregate(variable~colony+treatment+randy,FUN=mean,data=data[which(data$colony==coli&data$randy=="observed"),])[,"variable"];
+        #####Get one-sided p: proportion of random values that are greater than observed values. Will be 0 if all values are lower and 1 if all values are greater
+        one_sided_p <- length(which(random>observed))/length(random)
+        
+        randys[which(randys$colony==coli),"p_value"] <- one_sided_p
+        randys[which(randys$colony==coli),"one_sided_p_value_obs_lower_than_rand"] <- 1-one_sided_p
+        randys[which(randys$colony==coli),"one_sided_p_value_obs_greater_than_rand"] <- one_sided_p
+        randys[which(randys$colony==coli),"effect_sign"] <- sign( randys[which(randys$colony==coli),"deviation"])
+        randys[which(randys$colony==coli),"n_observed"] <- length(observed)
+        randys[which(randys$colony==coli),"n_random"] <- length(random)
+      }
+      randys_toprint <- data.frame(variable=variable,randys[c("colony","treatment","deviation","relative_deviation","effect_sign","one_sided_p_value_obs_lower_than_rand","one_sided_p_value_obs_greater_than_rand")],stringsAsFactors = F)
+      randys_toprint[which(randys_toprint$effect_sign==1),"effect_signs"] <- "+"
+      randys_toprint[which(randys_toprint$effect_sign==-1),"effect_signs"] <- "-"
+      randys_toprint[which(randys_toprint$effect_sign==0),"effect_signs"] <- "0"
+      
+      #####now the stats: meta-analysis
+      p_values_meta_analysis <- meta_analysis(p_values = randys[,"p_value"],effects = randys[,"relative_deviation"],std.errors = randys[,"random_std.error"])
+      
+      #####modify randys for plot
+      forplot <- data.frame(network="random",randys[c("colony","treatment","random_median")],stringsAsFactors=F); names(forplot)[grepl("median",names(forplot))] <- "median"
+      forplot2 <- data.frame(network="observed",randys[c("colony","treatment","observed_median")],stringsAsFactors=F); names(forplot2)[grepl("median",names(forplot2))] <- "median"
+      
+      forplot <- aggregate(median~network+colony+treatment,FUN=mean,data=forplot)
+      forplot2 <- aggregate(median~network+colony+treatment,FUN=mean,data=forplot2)
+      forplot <- rbind(forplot,forplot2)
+      forplot$network <- factor(forplot$network,levels = c("random","observed"))
+      ###get colony ordering from observed
+      col_medians <- aggregate(median~colony,FUN=median,data=forplot2)
+      col_medians <- col_medians [order(col_medians$median),]
+      col_list <- col_medians$colony
+      colour_pal <- colorRampPalette(brewer.pal(11, "Spectral"))(length(col_list))
+      par(bty="n",xaxt = "n")
+      
+      
+      # Set y-axis limits to be consistent across the two sizes
+      ylim = c(min_y, max_y)
+      # # Store default par settings
+      # op <- par(no.readonly = TRUE)
+      # # Adjust mgp for y-axis title
+      par(mgp = c(1.3, 0.5, 0)) #mgp[2] controls the axis labels
       
       for (coli in rev(col_list)){
         if (coli==col_list[length(col_list)]){
@@ -1274,12 +1618,12 @@ plot_observed_vs_random <- function(data_path,experiments,data_input = NULL, see
         if (is.even(loop_N)) { #remove y axis for every second plot
           stripchart(median ~ network, data = forplot[forplot$colony==coli,],vertical = TRUE,pch=16,col=alpha(colour_pal[which(coli==col_list)],1),method = 'jitter', jitter = 0.3,ylim=ylim,main = "",ylab="",yaxt = "n",add=addy,bty="l",cex=0.5,cex.axis=min_cex,cex.lab=inter_cex)
           #par(mar=c(2, 0, 4, 1)) # ,oma=c(0,0,0,0) # Adjust the right margin to make the second panel smaller
-          
-          }else{
+        }else{
           stripchart(median ~ network, data = forplot[forplot$colony==coli,],vertical = TRUE,pch=16,col=alpha(colour_pal[which(coli==col_list)],1),method = 'jitter', jitter = 0.3,ylim=ylim, main = "",ylab=titl,add=addy,bty="l",cex=0.5,cex.axis=min_cex,cex.lab=inter_cex)
         }
-
-         }
+      }
+      par(mgp = c(3, 1, 0))  #par(op)
+      
       ###make boxplot
       forplot3 <- data.frame(as.matrix(aggregate(median~network,function(x)cbind(mean(x),std.error(x)),data=forplot)),stringsAsFactors = F)
       names(forplot3) <- c("network","mean","se")
@@ -1296,53 +1640,57 @@ plot_observed_vs_random <- function(data_path,experiments,data_input = NULL, see
       statistic <- p_values_meta_analysis$meta_statistic
       
       print(paste(variable_names,": z=",statistic,"; two-sided p =",pval))
-      Edgington_outcome <- c(Edgington_outcome,paste0(ifelse(current_size=="big","large",current_size),": |Z score| = ", abs(round(as.numeric(statistic),3)),", P ≤ ",format(from_p_to_prounded(as.numeric(pval)),scientific=F) ))
+      Edgington_outcome <- c(Edgington_outcome,paste0(current_task,": |Z score| = ", abs(round(as.numeric(statistic),2)),", P ≤ ",format(from_p_to_prounded(as.numeric(pval)),scientific=F) ))
       
       #add p_val
-      if (pval>0.05){p_cex <- inter_cex;adjust_line <- 0.3;fonty <- 1}else{p_cex <- max_cex*1.1;adjust_line <- 0; fonty <-  2}
-      #add size title
-      title(main=ifelse(current_size=="big","large",current_size),cex.main=p_cex,font.main=fonty,line=stat_line+adjust_line+2.2,xpd=T)
+      if (pval>0.05){p_cex <- inter_cex*0.6;adjust_line <- 0.3;fonty <- 1}else{p_cex <- max_cex*1.1*0.6;adjust_line <- 0; fonty <-  2} # adjust titles
+      #      if (pval>0.05){p_cex <- inter_cex;adjust_line <- 0.3;fonty <- 1}else{p_cex <- max_cex*1.1;adjust_line <- 0; fonty <-  2}
+      
+      # #add size title
+      # title(main=ifelse(current_size=="big","large",current_size),cex.main=p_cex,font.main=fonty,line=stat_line+adjust_line+2.2,xpd=T)
+      # Add task_group title instead of size title
+      title(main = current_task, cex.main = p_cex, font.main = fonty, line = stat_line + adjust_line + 2.2, xpd = T)
       
       #add cohen's d information under the size group
-      title(main= paste0("d = ",round(cohens_d$d_coeff[which(cohens_d$d_coeff$size==current_size),"mean_d"],2)),
+      title(main= paste0("d=",round(cohens_d$d_coeff[which(cohens_d$d_coeff$task_group==current_task),"mean_d"],2)),
             cex.main=p_cex,font.main=3,line=stat_line+adjust_line+1.3,xpd=T)
       
-      if (current_size=="small") {
+      if (current_task=="nurse") {
         title(main=cohens_d$sig_sym,cex.main=p_cex,font.main=fonty,line=stat_line+adjust_line+2.2,adj=1,xpd=T) # cohen's d diff. p_val
         title(main=from_p_to_ptext(cohens_d$p_value),cex.main=p_cex,font.main=fonty,line=stat_line+adjust_line+2.9,adj=1,xpd=T) # cohen's d diff. direction
       }
-  
+      
       title(main=from_p_to_ptext(pval),cex.main=p_cex,font.main=fonty,line=stat_line+adjust_line,xpd=T)
       par(xpd=F)
       par(xaxt = "s")
       # Adjust the mgp parameter to move the x-axis labels further up
       par(mgp = c(3, 0, 0))  # Adjust the second value to control the distance of the labels
-      axis(side=1,at=c(1,2),labels=c(full_statuses_names["random"],""),tick=F,lty=0,cex.axis=inter_cex)
-      axis(side=1,at=c(1,2),labels=c("",full_statuses_names["observed"]),tick=F,lty=0,cex.axis=inter_cex)
+      axis(side=1,at=c(1,2),labels=c(full_statuses_names["random"],""),tick=F,lty=0,cex.axis=inter_cex*0.7)
+      axis(side=1,at=c(1,2),labels=c("",full_statuses_names["observed"]),tick=F,lty=0,cex.axis=inter_cex*0.7)
       par(mgp = c(3, 1, 0)) 
     }
     
     Edgington_outcome <- paste(Edgington_outcome,collapse = ' - ')
-
-    predictor="size"
+    
+    predictor="task_group"
     if (seedTitle) {
-      formatted_outcome <- paste0("(Edgington combined tests (", tolower(names(seeds[seeds==seed])),", ", variable_names,", ",predictor,") ",Edgington_outcome,"; Cohen's d comparison: |Z score|"," = ", abs(round(as.numeric(cohens_d$Z_stat),3)), ", P ≤ ",format(from_p_to_prounded(as.numeric(cohens_d$p_value)),scientific=F),")")
+      formatted_outcome <- paste0("(Edgington combined tests (", tolower(names(seeds[seeds==seed])),", ", variable_names,", ",predictor,") ",Edgington_outcome,"; Cohen's d comparison: |Z score|"," = ", abs(round(as.numeric(cohens_d$Z_stat),2)), ", P ≤ ",format(from_p_to_prounded(as.numeric(cohens_d$p_value)),scientific=F),")")
     }else{
-      formatted_outcome <- paste0("(Edgington combined tests (", variable_names,", ",predictor,") ",Edgington_outcome,"; Cohen's d comparison: |Z score|"," = ", abs(round(as.numeric(cohens_d$Z_stat),3)), ", P ≤ ",format(from_p_to_prounded(as.numeric(cohens_d$p_value)),scientific=F),")")
+      formatted_outcome <- paste0("(Edgington combined tests (", variable_names,", ",predictor,") ",Edgington_outcome,"; Cohen's d comparison: |Z score|"," = ", abs(round(as.numeric(cohens_d$Z_stat),2)), ", P ≤ ",format(from_p_to_prounded(as.numeric(cohens_d$p_value)),scientific=F),")")
     }
     formatted_outcomes <- c(formatted_outcomes, formatted_outcome)
-    
-    }
+  }
   
   # Capture the current plot
   saved_plot[[variable]] <- recordPlot()
   #par(mar=c(5, 5, 2, 1)) 
   #graphics.off() # Close all devices
-  
   return(list(formatted_outcomes=formatted_outcomes, saved_plot=saved_plot))
   
   #return(saved_plot)
 }
+
+
 
 #THIS FUNCTION SHOULD BE DECOMMISSIONED
 plot_age_dol <- function(data_path=data_path,experiments){
@@ -1383,7 +1731,7 @@ compare_cohens_d <- function(data) {
 
   # Ensure inputs are in correct data structure format
   data$randy <- as.factor(data$randy)
-  starting_data$size      <- factor(starting_data$size    , levels=size_order   [which(size_order%in%starting_data$size )])
+  data$size      <- factor(data$size    , levels=size_order   [which(size_order%in%data$size )])
 
   #aggregate if file is split in windows
   if ("time_hours" %in% names(data)) {
@@ -1444,6 +1792,74 @@ compare_cohens_d <- function(data) {
     Z_stat = z
   ))
 }
+
+#version specific to task group
+compare_cohens_d_task <- function(data) {
+  
+  # Ensure inputs are in correct data structure format
+  data$randy <- as.factor(data$randy)
+  data$task_group      <- factor(data$task_group    , levels=task_group_order   [which(task_group_order%in%data$task_group )])
+  
+  #aggregate if file is split in windows
+  if ("time_hours" %in% names(data)) {
+    data <- aggregate(variable~colony+task_group+randy,FUN=mean,data=data)
+  }
+  
+  
+  # re-assing labels
+  GroupA <- levels(data$task_group)[1]
+  GroupB <- levels(data$task_group)[2]
+  
+  d_A <- compute_cohens_d(data$variable[data$task_group == GroupA], data$randy[data$task_group == GroupA]) # this is not absolute diff, as the directionality (sign) is important to tell us how the relationship goes for each permutation comparison and give a realistic estimate of the diff
+  d_B <- compute_cohens_d(data$variable[data$task_group == GroupB], data$randy[data$task_group == GroupB])
+  
+  # Compute the Mean and Variance of Effect Sizes for Both Groups
+  mean_d_A <- abs(mean(d_A)) # I calculate the absolute mean which represents the magnitude of the effect
+  var_d_A <- var(d_A)
+  
+  mean_d_B <- abs(mean(d_B))
+  var_d_B <- var(d_B)
+  
+  # Compute Standard Error for the Difference in Mean Effect Sizes
+  SE_diff <- sqrt(var_d_A/length(d_A) + var_d_B/length(d_B))
+  
+  # Compute the Difference in Mean Effect Sizes
+  d_diff <- mean_d_A - mean_d_B
+  
+  # Test for significance using z-test
+  z <- d_diff / SE_diff
+  # two-tailed test
+  p <- 2 * (1 - pnorm(abs(z)))
+  
+  if (p<0.05) {
+    if (mean_d_A>mean_d_B) {
+      print(paste(toupper(GroupA),round(mean_d_A,2),"has a mean effect size larger then",toupper(GroupB),round(mean_d_B,2),"(p=",p,")"))
+    }else{print(paste(toupper(GroupB),round(mean_d_B,2),"has a mean effect size larger then",toupper(GroupA),round(mean_d_A,2),"( p=",p,")"))}
+  }
+  
+  #assuming that the group large is plotted after group small
+  sig_sym <- ifelse(mean_d_A>mean_d_B,">","<")
+  
+  d_coeff <- data.frame(task_group = c(levels(data$task_group)[1],levels(data$task_group)[2]), mean_d = c(mean_d_A,mean_d_B))
+  
+  # Return a list containing all the results
+  return(list(
+    #d_values_A = d_A,
+    #d_values_B = d_B,
+    #mean_d_A = mean_d_A,
+    #mean_d_B = mean_d_B,
+    #var_d_A = var_d_A,
+    #var_d_B = var_d_B,
+    #SE_diff = SE_diff,
+    #d_diff = d_diff,
+    #z_value = z,
+    d_coeff = d_coeff,
+    sig_sym = sig_sym,
+    p_value = p,
+    Z_stat = z
+  ))
+}
+
 
 # Compute Cohen's d (effect's size) for obs VS permutations
 compute_cohens_d <- function(group_variable, orig_perm_factor) {
@@ -4008,57 +4424,56 @@ calculate_entropy <- function(data_path=data_path,which_individuals,number_permu
 }
 
 
-# --- Bimodality Coefficient Function ---
-# This function calculates the bimodality coefficient of a given distribution. A higher bimodality coefficient indicates stronger evidence of bimodality.
-bimodality_coefficient <- function(x) {
-  x <- x[!is.na(x)]
-  # Calculate skewness and kurtosis of the data
-  # Compute and return the bimodality coefficient
-  bc <- (skewness(x)^2 + 1) / kurtosis(x)
-  return(bc)
+# --- Silverman's Bandwidth Function ---
+# This function estimates the bandwidth using Silverman's method. 
+# A smaller bandwidth suggests potential multimodality since the kernel density estimate 
+# is more sensitive to nuances in the data, possibly indicating multiple modes.
+silverman_bandwidth <- function(x) {
+  return(bandwidth.nrd( x[!is.na(x)]))
 }
 
-# --- Permutation Test Function ---
-# This function compares the bimodality of two distributions using a permutation test.
-bimodality_permutation_test <- function(data, n_permutations = 1000) {
+# --- Bandwidth-Based Permutation Test Function ---
+# This function uses a permutation test approach to compare the bandwidths (indicative of modality) 
+# of two distributions. It checks if the observed difference in bandwidths is statistically 
+# significant by comparing it against differences from randomized partitions of the data.
+bandwidth_permutation_test <- function(data, n_permutations = 1000) {
   # Split the dataset into two groups based on the 'size' column
   group1 <- data$variable[data$size == unique(data$size)[1]]
   group2 <- data$variable[data$size == unique(data$size)[2]]
-  
-  # Compute the bimodality coefficients for the two original groups
-  bc1_observed <- bimodality_coefficient(group1)
-  bc2_observed <- bimodality_coefficient(group2)
-  
-  # Calculate the observed difference between their bimodality coefficients
-  bc_diff_observed <- abs(bc1_observed - bc2_observed)
-  
-  # Initialize an empty vector to store differences from permuted samples
+  # Calculate the bandwidths for each original group using Silverman's method
+  bw1_observed <- silverman_bandwidth(group1)
+  bw2_observed <- silverman_bandwidth(group2)
+  # Compute the difference in bandwidths for the original groups
+  bw_diff_observed <- abs(bw1_observed - bw2_observed)
+  # Initialize a vector to store bandwidth differences from permuted samples
   permuted_diffs <- numeric(n_permutations)
-  
-  # Pool both groups' data together for permutation
+  # Pool the data from both groups together for permutation
   combined_data <- c(group1, group2)
-  
-  # Begin permutation: Shuffle data and compute differences in bimodality coefficients
+  # Conduct the permutation: Shuffle the combined data and partition into two groups
   for (i in 1:n_permutations) {
     # Randomly select data points for the first permuted group
     permuted_sample <- sample(combined_data, length(group1))
-    
-    # Calculate bimodality coefficients for both permuted groups
-    bc1_permuted <- bimodality_coefficient(permuted_sample)
-    bc2_permuted <- bimodality_coefficient(setdiff(combined_data, permuted_sample))
-    
-    # Store the absolute difference for this permutation
-    permuted_diffs[i] <- abs(bc1_permuted - bc2_permuted)
+    # Calculate the bandwidths for the permuted groups using Silverman's method
+    bw1_permuted <- silverman_bandwidth(permuted_sample)
+    bw2_permuted <- silverman_bandwidth(setdiff(combined_data, permuted_sample))
+    # Compute and store the bandwidth difference for this permutation
+    permuted_diffs[i] <- abs(bw1_permuted - bw2_permuted)
   }
-  
-  # Compute the p-value as the proportion of permuted differences 
-  # that are as extreme or more extreme than the observed difference
-  p_value <- mean(permuted_diffs >= bc_diff_observed)
-  
+  # Determine the proportion of permuted differences that are greater or equal to 
+  # the observed difference to compute the p-value
+  p_value <- mean(permuted_diffs >= bw_diff_observed)
   # Return the p-value
   return(p_value)
 }
 
+
+## Load necessary library for bandwidth estimation
+#library(boot)
+# # --- Execution of the Test ---
+# # Use the above-defined function to perform the test on the dataset and print the resulting p-value
+# p_value <- bandwidth_permutation_test(data)
+# print(paste("Permutation test p-value based on Silverman's bandwidth:", p_value))
+# 
 
 
 
