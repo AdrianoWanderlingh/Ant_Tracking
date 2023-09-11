@@ -1436,7 +1436,13 @@ plot_observed_vs_random_TASK <- function(data_path,experiments,data_input = NULL
   starting_data$size     <- unlist(lapply( starting_data$treatment, function(x)  unlist(strsplit(x,split="\\.") )[2]  ))
   starting_data$size      <- factor(starting_data$size    , levels=size_order   [which(size_order%in%starting_data$size )])
   
-  # Data reshaping for current_task
+  # 1. Identify columns that end with "_FOR" or "_NUR"
+  cols <- grep("(_FOR|_NUR)$", names(starting_data), value = TRUE)
+  
+  # 2. Extract root names
+  roots <- unique(sub("(_FOR|_NUR)$", "", cols))
+
+    # Data reshaping for current_task
   for (root in roots) {
     starting_data[paste0(root, "_task_group")] <- NA
   }

@@ -8,7 +8,6 @@ rm(list=ls())
 
 USER <- "2A13_Office" # Nath_office 
 DISK <-  "Seagate Portable Drive" #"DISK4"
-DISK <-  "DISK4"
 
 
 if (USER == "2A13_Office") {
@@ -108,8 +107,8 @@ coll_no_rescal_net <- collective_analysis_no_rescal(data_path,showPlot=F)
 root_path <- paste(disk_path,"/main_experiment/processed_data",sep="") # root_path <- paste(disk_path,"/main_experiment_grooming/processed_data",sep="")
 data_path <- paste(root_path,"/network_properties_edge_weights_duration/pre_vs_post_treatment/all_workers",sep="")
 pattern="colony_data.txt"
-variable_list <- c("modularity","clustering","task_assortativity","efficiency","degree_mean","density") #,"degree_maximum","diameter"
-names(variable_list) <- c("modularity","clustering","task assortativity","efficiency","mean degree","density") # ,"degree maximum","diameter"
+variable_list <- c("modularity_FacetNet","clustering","task_assortativity","efficiency","degree_mean","density") #,"degree_maximum","diameter"
+names(variable_list) <- c("modularity (FacetNet)","clustering","task assortativity","efficiency","mean degree","density") # ,"degree maximum","diameter"
 transf_variable_list <- c("sqrt"       ,"sqrt"      ,"Box_Cox"              ,"log"       ,"log"        ,"log" ) # ,"log"   ,"power0.01"  ######"none", "sqrt" "log","power2"
 # TRANSFORMATION NOTE: task_assortativity is hard to normalise (no transformation has the best result) - used Box_Cox
 
@@ -1293,8 +1292,8 @@ dol_RandObs <- plot_observed_vs_random(data_path,experiments=c("main_experiment"
 # Science 2018: S2. Constitutive properties of the ant social networks compared to randomized networks
 data_path <- paste(disk_path,"/main_experiment/processed_data/network_properties_edge_weights_duration/random_vs_observed",sep="")
 pattern="network_properties"
-variable_list        <- c("modularity","clustering","task_assortativity","efficiency","degree_mean","density")
-names(variable_list) <- c("modularity","clustering","task assortativity","efficiency","mean degree","density")
+variable_list        <- c("modularity_FacetNet","clustering","task_assortativity","efficiency","degree_mean","density")
+names(variable_list) <- c("modularity (FacetNet)","clustering","task assortativity","efficiency","mean degree","density")
 
 starting_data <- NULL; warning("I've no idea what I did wrong but, for the love of god,without 'starting_data' in the global env the function crashes ")
 net_RandObs <- plot_observed_vs_random(data_path,experiments=c("main_experiment"))

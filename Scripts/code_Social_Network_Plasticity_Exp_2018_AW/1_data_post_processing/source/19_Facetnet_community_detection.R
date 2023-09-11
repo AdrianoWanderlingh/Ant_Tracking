@@ -368,4 +368,81 @@ ggplot(iter_counts, aes(x = factor(ITER), y = n, fill = factor(rank))) +
 # # Save the combined data to a new file
 # output_path <- "/media/cf19810/Seagate Portable Drive/Lasius-Bristol_pathogen_experiment/main_experiment/Soft_community_scores_duration_1ITER_0.5alpha_full.txt"
 # write.table(combined_data, file=output_path, row.names=FALSE, sep="\t", quote=FALSE)
+# 
 
+UPDATE_DATA <- F
+if(UPDATE_DATA){
+#add this info to all the relevant files
+combined_data <- read.table( "/media/cf19810/Seagate Portable Drive/Lasius-Bristol_pathogen_experiment/main_experiment/Soft_community_scores_duration_1ITER_0.5alpha_full.txt", header=TRUE, stringsAsFactors=FALSE)
+combined_data$colony <- paste0("colony",combined_data$colony)
+combined_data$treatment <- paste(combined_data$treatment,combined_data$colony_size,sep=".")
+combined_data$colony_size <- NULL
+combined_data$period <- tolower(gsub("Treatment", "", combined_data$period))
+combined_data$time_hours <- as.numeric(gsub("TH","",combined_data$bin)); combined_data$bin <- NULL
+combined_data$time_of_day <- as.numeric(gsub("TD","",combined_data$TD)); combined_data$TD <- NULL
+combined_data$modularity_FacetNet <- combined_data$MODULARITY; combined_data$MODULARITY <- NULL
+combined_data$randy <- combined_data$ObsRand; combined_data$ObsRand <- NULL
+
+
+outputfolder <- "/media/cf19810/Seagate Portable Drive/Lasius-Bristol_pathogen_experiment/main_experiment/processed_data/network_properties_edge_weights_duration"
+options <- c("all_workers","untreated_only")
+
+for (input_folder in unique(combined_data$randy)){
+
+if (input_folder=="observed"){
+for (option in options) {
+    ####Main experiment: write pre_vs_post_treatment data
+      outputfolder2 <- paste(outputfolder,"pre_vs_post_treatment",option,sep="/")
+      
+      summary_collective <- combined_data[which(combined_data$randy=="observed"),]
+
+      #append columns for the new efficiency measures #AW mod for task efficiency
+      summary_colony_existing <- read.table(paste(outputfolder2,"/colony_data.txt",sep=""),header = T,stringsAsFactors = F)
+      common_names <- names(summary_colony_existing)[names(summary_colony_existing) %in% names(summary_collective)]
+      summary_colony_existing <- merge(summary_colony_existing, summary_collective, by = common_names, all.x = TRUE)
+      
+      write.table(summary_colony_existing[,names(summary_colony_existing)!="randy"],file=paste(outputfolder2,"/colony_data.txt",sep=""),col.names = T,row.names=F,append=F,quote=F)
+      #write.table(summary_individual[,names(summary_individual)!="randy"],file=paste(outputfolder2,"/individual_data.txt",sep=""),col.names = T,row.names=F,append=F,quote=F)
+  
+      
+    ####All workers: write pre_treatment data into random_vs_observed folder
+    if (option=="all_workers"){
+      outputfolder3 <- paste(outputfolder,"random_vs_observed",sep="/")
+
+      #append columns for the new efficiency measures #AW mod for task efficiency
+      summary_colony_existing <- read.table(paste(outputfolder3,"/network_properties_",input_folder,".txt",sep=""),header = T,stringsAsFactors = F)
+      common_names <- names(summary_colony_existing)[names(summary_colony_existing) %in% names(summary_collective)]
+      summary_colony_existing <- merge(summary_colony_existing, summary_collective, by = common_names, all.x = TRUE)
+      
+      write.table(summary_colony_existing[which(summary_colony_existing$period=="pre"),],file=paste(outputfolder3,"/network_properties_",input_folder,".txt",sep=""),col.names = T,row.names=F,append=F,quote=F)
+      #write.table(summary_individual[which(summary_individual$period=="pre"),],file=paste(outputfolder3,"/node_properties_",input_folder,".txt",sep=""),col.names = T,row.names=F,append=F,quote=F)
+      
+      outputfolder4 <- paste(outputfolder,"post_treatment",sep="/")
+
+      #append columns for the new efficiency measures #AW mod for task efficiency
+      summary_colony_existing <- read.table(paste(outputfolder4,"/network_properties_",input_folder,".txt",sep=""),header = T,stringsAsFactors = F)
+      common_names <- names(summary_colony_existing)[names(summary_colony_existing) %in% names(summary_collective)]
+      summary_colony_existing <- merge(summary_colony_existing, summary_collective, by = common_names, all.x = TRUE)
+      
+      write.table(summary_colony_existing[which(summary_colony_existing$period=="post"),],file=paste(outputfolder4,"/network_properties_",input_folder,".txt",sep=""),col.names = T,row.names=F,append=F,quote=F)
+      #write.table(summary_individual[which(summary_individual$period=="post"),],file=paste(outputfolder4,"/node_properties_",input_folder,".txt",sep=""),col.names = T,row.names=F,append=F,quote=F)
+    }
+
+}
+      
+#for all not observed
+}else{
+  summary_collective <- combined_data[which(combined_data$randy==input_folder),]
+  
+    outputfolder3 <- paste(outputfolder,"random_vs_observed",sep="/")
+
+    #append columns for the new efficiency measures #AW mod for task efficiency
+    summary_colony_existing <- read.table(paste(outputfolder3,"/network_properties_",input_folder,".txt",sep=""),header = T,stringsAsFactors = F)
+    common_names <- names(summary_colony_existing)[names(summary_colony_existing) %in% names(summary_collective)]
+    summary_colony_existing <- merge(summary_colony_existing, summary_collective, by = common_names, all.x = TRUE)
+    
+    write.table(summary_colony_existing[which(summary_colony_existing$period=="pre"),],file=paste(outputfolder3,"/network_properties_",input_folder,".txt",sep=""),col.names = T,row.names=F,append=F,quote=F)
+    #write.table(summary_individual[which(summary_individual$period=="pre"),],file=paste(outputfolder3,"/node_properties_",input_folder,".txt",sep=""),col.names = T,row.names=F,append=F,quote=F)
+}
+}
+}
