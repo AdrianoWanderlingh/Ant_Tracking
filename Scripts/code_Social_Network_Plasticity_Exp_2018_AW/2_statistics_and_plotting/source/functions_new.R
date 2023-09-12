@@ -4442,7 +4442,10 @@ silverman_bandwidth <- function(x) {
 # This function uses a permutation test approach to compare the bandwidths (indicative of modality) 
 # of two distributions. It checks if the observed difference in bandwidths is statistically 
 # significant by comparing it against differences from randomized partitions of the data.
-bandwidth_permutation_test <- function(data, n_permutations = 1000) {
+bandwidth_permutation_test <- function(data, variable, n_permutations = 1000) {
+  
+  data$ variable <- data[,variable]
+  
   # Split the dataset into two groups based on the 'size' column
   group1 <- data$variable[data$size == unique(data$size)[1]]
   group2 <- data$variable[data$size == unique(data$size)[2]]

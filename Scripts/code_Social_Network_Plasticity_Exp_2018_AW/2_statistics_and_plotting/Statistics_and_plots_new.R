@@ -83,8 +83,8 @@ if(RUN_UNSCALED_NETS){
 root_path <- paste(disk_path,"/main_experiment/processed_data",sep="") # root_path <- paste(disk_path,"/main_experiment_grooming/processed_data",sep="")
 data_path <- paste(root_path,"/network_properties_edge_weights_duration/pre_vs_post_treatment/all_workers",sep="")
 pattern="colony_data.txt"
-variable_list <- c("modularity","clustering","task_assortativity","efficiency","degree_mean","degree_maximum","density","diameter")
-names(variable_list) <- c("modularity","clustering","task assortativity","efficiency","mean degree","degree maximum","density","diameter")
+variable_list <- c("modularity_FacetNet","clustering","task_assortativity","efficiency","degree_mean","degree_maximum","density","diameter")
+names(variable_list) <- c("modularity_FacetNet","clustering","task assortativity","efficiency","mean degree","degree maximum","density","diameter")
 transf_variable_list <- c("log"      ,"none"      ,"none"         ,"log"      ,"log"       ,"log"          ,"none"   ,"log")   ######"none", "sqrt" "log","power2"
 
 coll_no_rescal_net <- collective_analysis_no_rescal(data_path,showPlot=F)
@@ -233,7 +233,7 @@ Entropy_size$Dip_plot
 Entropy_size$entropy_plot
 
 
-################ check biomodality
+################ check bimodality
 # copied from 19_Facetnet
 task_groups_A    <- read.table("/media/cf19810/Seagate Portable Drive/Lasius-Bristol_pathogen_experiment/main_experiment/original_data/task_groups.txt",header=T,stringsAsFactors = F)
 
@@ -253,11 +253,20 @@ ggplot(task_groups_A, aes(x = Forager_score, colour = size)) +
   xlab("Social maturity (duration contacts)")
 
 #bimodality comparison #########################################
-warning("RUN ON THE SOCIAL MAT. SCORES -FORAG SCORES-.\nMODIFY TO SPECIFY THE VARIABLE OUTSIDE, AS IN THE OTHER FUNCTIONS (NOW PICKS THE OBJ CALLED $variable")
-p_value <- bimodality_permutation_test(data,n_permutations = 1000)
-print(paste("Permutation test p-value:", p_value))
+# warning("RUN ON THE SOCIAL MAT. SCORES -FORAG SCORES-.\nMODIFY TO SPECIFY THE VARIABLE OUTSIDE, AS IN THE OTHER FUNCTIONS (NOW PICKS THE OBJ CALLED $variable")
+# p_value <- bimodality_permutation_test(data,n_permutations = 1000)
+# print(paste("Permutation test p-value:", p_value))
 
+task_groups <- read.table(paste(root_path,"original_data",task_group_file,sep="/"),header=T,stringsAsFactors = F)
+task_groups$size     <- unlist(lapply( task_groups$treatment, function(x)  unlist(strsplit(x,split="\\.") )[2]  ))
 
+hist(task_groups[which(task_groups$size=="big"),"Forager_score"])
+hist(task_groups[which(task_groups$size=="small"),"Forager_score"])
+
+dip_results <- by(task_groups$Forager_score, task_groups$size, perform_dip_test)
+
+bandwidth_permutation_test(task_groups, variable = "Forager_score")
+warning("there is no proper way to statistically test which distribution is more bimodal")
 
 
 
@@ -664,7 +673,7 @@ GroomVSTimeOut <- cowplot::plot_grid(
 
 ###################################################################################################################################
 ### collective_net_properties ### 
-plot_list <- list(coll_rescal_net$barplot_delta_period_list$modularity,
+plot_list <- list(coll_rescal_net$barplot_delta_period_list$modularity_FacetNet,
                   coll_rescal_net$barplot_delta_period_list$clustering,
                   coll_rescal_net$barplot_delta_period_list$task_assortativity,
                   coll_rescal_net$barplot_delta_period_list$density,
