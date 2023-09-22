@@ -1064,10 +1064,11 @@ plot_observed_vs_random <- function(data_path,experiments,data_input = NULL, see
   N_cols <- ceiling(length(variable_list) / 2) * 4 # must be always even as the plots by size are generated independently
   if (N_cols == 2) {
     layout_matrix <- matrix(1:(2 * N_cols), nrow = 1)
-  } else {
-    layout_matrix <- matrix(1:(2 * N_cols), nrow = 2, byrow = TRUE)
+  }else if (N_cols == 8) {
+    layout_matrix <- matrix(1:(6), nrow = 1) # this is a terrible way of doing it.....
+  }else {
+    #layout_matrix <- matrix(1:(2 * N_cols), nrow = 2, byrow = TRUE)
     layout_matrix <- matrix(1:(1 * N_cols), nrow = 1, byrow = TRUE)
-    
   }
   
   if (seedTitle) {
@@ -3857,7 +3858,7 @@ plot_qpcr <- function(experiments){
     
     plotx <- barplot(means$mean,plot=F,width=barwidth,space=barspace)
     ####empty plot
-    plot(plotx,means$mean,ylim=yrange,xlim=c(min(plotx)- 0.6*(barwidth_fac_between*barwidth/2+barwidth/2),max(plotx)+ 0.6*(barwidth_fac_between*barwidth/2+barwidth/2)),xlab="",ylab=expression(paste("Mean measured pathogen load (ng/", mu, "L)")),bty="n",xaxs="i",yaxs="i",type="n",cex.axis=min_cex,cex.lab=inter_cex,lwd=line_min,xaxt="n",yaxt="n")
+    plot(plotx,means$mean,ylim=yrange,xlim=c(min(plotx)- 0.6*(barwidth_fac_between*barwidth/2+barwidth/2),max(plotx)+ 0.6*(barwidth_fac_between*barwidth/2+barwidth/2)),xlab="",ylab=expression(paste("Mean measured pathogen load (ng/", mu, "L) (log)")),bty="n",xaxs="i",yaxs="i",type="n",cex.axis=min_cex,cex.lab=inter_cex,lwd=line_min,xaxt="n",yaxt="n")
     ####arrows
     plot_arrows(means=means,plotx=plotx,plot_type="means",LWD=line_max,LENGTH=0.025,colz=statuses_colours[as.character(means$predictor)])
     ####points
@@ -3961,9 +3962,9 @@ plot_qpcr <- function(experiments){
   
   varb <- "simulated_load"
   variable_list <- c("measured_load_ng_per_uL")
-  names(variable_list) <-  c("Measured pathogen load")
+  names(variable_list) <-  c("Measured pathogen load (log)")
   predictor_list <- c( "simulated_load")
-  names(predictor_list) <- c("Simulated pathogen load")
+  names(predictor_list) <- c("Simulated pathogen load (log)")
   transf_variable_list <- c("log") #AW c("log")
   transf_predictor_list <- c("log") #AW c("log")
   
@@ -4000,13 +4001,13 @@ plot_qpcr <- function(experiments){
  # )
   
   print("### Measured vs Simulated ###")
-  predicted_value <- plot_regression(data=all_sim_qpcr_data,time_point="after",analysis=analysis,n_cat_horiz=20,n_cat_vertic=11,pool=c(F,F),collective=T,input_color=colour_palette_age,xmin=xmin,xmax=xmax,ymin=ymin,ymax=ymax,point_cex=1.5,predict=high_threshold)
+  predicted_value <- plot_regression(data=all_sim_qpcr_data,time_point="after",analysis=analysis,n_cat_horiz=20,n_cat_vertic=11,pool=c(F,F),collective=T,input_color=colour_palette_age,xmin=xmin,xmax=xmax,ymin=ymin,ymax=ymax,point_cex=1.5,predict=NULL) #,predict=high_threshold TO HAVE SPRINGREEEN AND RED LINES
 
   par(xpd=NA)
   if (varb =="simulated_load"){
     title(sub=expression(italic("(Prop. exposure dose)")),cex.sub=min_cex,font.sub=1,mgp=c(1,0.1,0))
   }else if (varb =="predicted_measured_load_ng_per_uL_SI"){
-    title(sub=expression(paste("(ng/", mu, "L)")),cex.sub=min_cex,font.sub=1,mgp=c(1,0.1,0))
+    title(sub=expression(paste("(ng/", mu, "L) (log)")),cex.sub=min_cex,font.sub=1,mgp=c(1,0.1,0))
   }
   par(xpd=F)
   
@@ -4319,14 +4320,38 @@ calculate_entropy <- function(data_path=data_path,which_individuals,number_permu
   
   formatted_outcomes <- paste0("(LM, size differences (entropy, size): F(",Anova(model_lm)["size","Df"],") = ", round(Anova(model_lm)["size","F value"],3), ", P ≤ ",format(from_p_to_prounded(Anova(model_lm)["size","Pr(>F)"]),scientific=F),")")
   
+  # # Create a boxplot using ggplot
+  # entropy_plot <- ggplot(entropy_data, aes(x = size, y = norm_entropy)) +
+  #   geom_boxplot() +
+  #   geom_point(aes(color = colony), position = position_jitter(width = 0.2), size=1) +
+  #   annotate("text", x = 1.5, y = max(entropy_data$norm_entropy-0.05), label = from_p_to_ptext(pvalue)) +
+  #   labs(x = "",y = "Normalized Shannon's entropy",color = "Colony") +
+  #   scale_x_discrete(position = "top", labels = function(x) str_to_title(gsub("big", "large", gsub("\\.", " ", x))))+
+  #   guides(color = "none") +
+  #   theme_minimal() +
+  #   theme(
+  #     panel.grid.major = element_blank(),
+  #     panel.grid.minor = element_blank(),
+  #     #plot.margin = unit(c(2, 1, 1, 1), "lines") # Adjust the top margin as needed
+  #   ) +
+  #   STYLE_generic
+  
   # Create a boxplot using ggplot
   entropy_plot <- ggplot(entropy_data, aes(x = size, y = norm_entropy)) +
-    geom_boxplot() +
-    geom_point(aes(color = colony), position = position_jitter(width = 0.2)) +
-    annotate("text", x = 1.5, y = max(entropy_data$norm_entropy+0.05), label = from_p_to_ptext(pvalue)) +
-    labs(x = "Size",y = "Normalized Entropy",color = "Colony") +
+    stat_boxplot(geom ='errorbar',lwd= 0.3, width = 0.1) + 
+    geom_boxplot(lwd= 0.3,width = 0.2) +
+    geom_point(aes(color = colony), position = position_jitter(width = 0.1), size=0.3) +
+    annotate("text", x = 1.5, y = Inf, vjust = 1, label = from_p_to_ptext(pvalue)) + # Adjust vjust as needed
+    labs(x = "",y = "Normalized Shannon's entropy",color = "Colony") +
+    scale_x_discrete(position = "top", labels = function(x) str_to_title(gsub("big", "large", gsub("\\.", " ", x))))+
     guides(color = "none") +
     theme_minimal() +
+    theme(
+      panel.grid.major = element_blank(),
+      panel.grid.minor = element_blank(),
+      axis.line.y = element_line(color = "black", size = 0.5), # Adjust size as needed
+      axis.ticks.y = element_line(color = "black", size = 0.5) # Adjust size as needed
+    ) +
     STYLE_generic
   
   
@@ -5212,6 +5237,21 @@ STYLE <- list(#colScale, fillScale,
   
   
   
+  # Polled colonies colour (CH4)
+  palette <- viridis_pal()(4)
+  # Mix the first two colors
+  mixed_color1 <- col2rgb(palette[1]) / 2 + col2rgb(palette[2]) / 2
+  # Mix the last two colors
+  mixed_color2 <- col2rgb(palette[3]) / 2 + col2rgb(palette[4]) / 2
+  
+  # Convert the mixed RGB values back to a color
+  pooled_large_cols_colour <- rgb(mixed_color1[1, ], mixed_color1[2, ], mixed_color1[3, ], maxColorValue = 255)
+  pooled_small_cols_colour <- rgb(mixed_color2[1, ], mixed_color2[2, ], mixed_color2[3, ], maxColorValue = 255)
+  
+  # Display the mixed colors
+  #show_col(c(palette,mixed_color1,mixed_color2))
+  
+  
   remove <-
     c(
       "color_ramp",
@@ -5234,7 +5274,10 @@ STYLE <- list(#colScale, fillScale,
       "myColors_Colony",
       "rand_shades",
       "treatment_labs",
-      "Shades"
+      "Shades",
+      "palette",
+      "mixed_color1",
+      "mixed_color2"
     )
   # cleaning
   rm(list = ls()[which(ls() %in% remove)])

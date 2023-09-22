@@ -7,7 +7,7 @@
 rm(list=ls())
 
 USER <- "2A13_Office" # Nath_office 
-DISK <-  "Seagate Portable Drive" #"DISK4"
+DISK <-  "DISK4" #"Seagate Portable Drive" #"DISK4"
 
 
 if (USER == "2A13_Office") {
@@ -235,22 +235,69 @@ Entropy_size$entropy_plot
 
 ################ check bimodality
 # copied from 19_Facetnet
-task_groups_A    <- read.table("/media/cf19810/Seagate Portable Drive/Lasius-Bristol_pathogen_experiment/main_experiment/original_data/task_groups.txt",header=T,stringsAsFactors = F)
+task_groups_A    <- read.table(paste0(disk_path,"/main_experiment/original_data/task_groups.txt"),header=T,stringsAsFactors = F)
 
 size_order      <- c("small","big")
 task_groups_A$size     <- unlist(lapply( task_groups_A$treatment, function(x)  unlist(strsplit(x,split="\\.") )[2]  ))
 task_groups_A$size      <- factor(task_groups_A$size    , levels=size_order   [which(size_order%in%task_groups_A$size )])
 
-# Generate plots of Social Maturity
-ggplot(task_groups_A, aes(x = Forager_score, colour = size)) + 
-  #geom_density(alpha = 0.6,size=1.5, adjust=1/1.2) + # 'adjust' changes the smoothing
-  geom_line(aes(color=size,group = colony), stat="density", size=1, alpha=0.2, adjust=1/1.2) +
-  geom_line(aes(color=size), stat="density", size=2, alpha=1, adjust=1/1.2) +
-  geom_vline(aes(xintercept = 0.5), linetype = "dashed",colour="grey20") + 
-  geom_vline(aes(xintercept = 1/4), linetype = "dashed",colour="grey20") + 
-  #facet_wrap(~ colony, scales = "free") +
-  theme_minimal() +
-  xlab("Social maturity (duration contacts)")
+#task_groups_A[!is.na(task_groups_A$Forager_score),"Forager_score_log"] <- log_transf(task_groups_A[!is.na(task_groups_A$Forager_score),"Forager_score"] )
+
+# Filter out NA values
+task_groups_A <- task_groups_A %>%
+  filter(!is.na(Forager_score_contact_count))
+
+# A function to get density data frame along with confidence intervals
+get_density_df <- function(data) {
+  d <- density(data$Forager_score_contact_count, adjust = 1/1.2) # adjust is 1 for normal smoothing
+  data.frame(x = d$x, y = d$y, ci = qnorm(0.975) * d$bw * sqrt(d$n) / sqrt(d$n - 1))
+}
+
+# Calculate density and confidence interval
+density_data <- task_groups_A %>%
+  group_by(size) %>%
+  group_modify(~get_density_df(.)) %>%
+  ungroup()
+
+
+# Plot
+SocialMaturity <- ggplot(density_data, aes(x = x, y = y, fill = size)) +
+  geom_ribbon(aes(ymin = y - ci, ymax = y + ci), alpha = 0.3) +
+  geom_line(aes(color=size),size=1, alpha=1) +
+  #geom_line(aes(color=size), stat="density", size=2, alpha=1, adjust=1/1.2) +
+  labs(
+    x = "Social maturity",
+    y = "Density"
+  ) +
+  scale_colour_manual(
+    values = c("small" = mixed_color2, "big" = mixed_color1),
+    labels = function(x) str_to_title(gsub("big", "large", gsub("\\.", " ", x)))
+  ) +
+  scale_fill_manual(
+    values = c("small" = mixed_color2, "big" = mixed_color1),
+    labels = function(x) str_to_title(gsub("big", "large", gsub("\\.", " ", x)))
+  ) + # you can choose your own colors
+  scale_x_continuous(limits = c(0, 1)) +
+  coord_cartesian(ylim = c(0, max(density_data$y + density_data$ci)), xlim = c(0, 1)) +
+  theme_classic() +
+  theme(
+    #legend.position = "top",   # Place the legend on top
+    #legend.direction = "horizontal",  # Display legend items in a single line
+    #legend.box = "horizontal",  # Arrange legend items horizontally
+    text = element_text(family = "Liberation Serif") 
+
+  )
+
+# # Generate plots of Social Maturity
+# ggplot(task_groups_A, aes(x = Forager_score_contact_count, colour = size)) + 
+#   #geom_line(aes(color=size, group=colony), stat="density", size=1, alpha=0.2, adjust=1/1.2) +
+#   geom_line(aes(color=size), stat="density", size=2, alpha=1, adjust=1/1.2) +
+#   theme_minimal() +
+#   xlab("Social maturity")
+
+
+
+
 
 #bimodality comparison #########################################
 # warning("RUN ON THE SOCIAL MAT. SCORES -FORAG SCORES-.\nMODIFY TO SPECIFY THE VARIABLE OUTSIDE, AS IN THE OTHER FUNCTIONS (NOW PICKS THE OBJ CALLED $variable")
@@ -1022,7 +1069,7 @@ statuses_colours[names(statuses_colours)%in%c("queen","forager","nurse")] <- "bl
 par(pars)
 par_mar_ori <- par()$mar
 par(mar=par_mar_ori+c(1,0,1,1))
-# widz <- c(2,1.5)
+widz <- c(2,1.5)
 # layout(matrix(c(1,2),nrow=1),widths=widz)
 translated_high_threshold <- plot_qpcr(experiments=c("main_experiment")) #thickness of violplots controlled by "wex" in ViolPlot function
 to_keep <- c(to_keep,"translated_high_threshold")
@@ -1302,7 +1349,7 @@ dol_RandObs <- plot_observed_vs_random(data_path,experiments=c("main_experiment"
 data_path <- paste(disk_path,"/main_experiment/processed_data/network_properties_edge_weights_duration/random_vs_observed",sep="")
 pattern="network_properties"
 variable_list        <- c("modularity_FacetNet","clustering","task_assortativity","efficiency","degree_mean","density")
-names(variable_list) <- c("modularity (FacetNet)","clustering","task assortativity","efficiency","mean degree","density")
+names(variable_list) <- c("modularity","clustering","task assortativity","efficiency","mean degree","density")
 
 starting_data <- NULL; warning("I've no idea what I did wrong but, for the love of god,without 'starting_data' in the global env the function crashes ")
 net_RandObs <- plot_observed_vs_random(data_path,experiments=c("main_experiment"))
@@ -1331,8 +1378,8 @@ sim_RandObs_formatted_outputs <- list()
 for (seed in seeds) {
 data_path <- paste(disk_path,"/main_experiment/transmission_simulations/random_vs_observed/",seed,sep="")
 pattern="collective_simulation_results_"
-variable_list  <- c("logistic_r","Mean_load","Load_skewness","Prop_high_level","Prop_low_level" ,"Queen_load")
-names(variable_list) <- c("Transmission rate","Mean simulated load (W)","Simulated load skewness (W)","Prop. high level","Prop. low level","Simulated load (Q)")
+variable_list  <- c("logistic_r","Mean_load","Queen_load") #,"Load_skewness","Prop_high_level","Prop_low_level" 
+names(variable_list) <- c("Transmission rate","Mean simulated load (W)","Simulated load (Q)") # ,"Simulated load skewness (W)","Prop. high level","Prop. low level"
 
 sim_RandObs <- plot_observed_vs_random(data_path,experiments=c("main_experiment"),seedTitle=T)
 
@@ -1368,8 +1415,118 @@ plot_seeds(experiments="main_experiment",seeds=seeds,variables=variables,transf=
 ###########################################
 ###SAVE THESE PLOTSSSSS
 
+############# DOL MEASURES
+# plot_list <- list(Entropy_size$entropy_plot,
+#                   dol_RandObs$saved_plot,
+#                   SocialMaturity)
+# 
+# allplots <- cowplot::align_plots(plot_list[[1]]  ,
+#                                  plot_list[[2]]    ,
+#                                  plot_list[[3]] ,
+#                                  align="h")
+# 
+#   cowplot::plot_grid(allplots[[1]], allplots[[2]], allplots[[3]],
+#                      ncol=3, rel_widths = c(0.2,0.2,0.6))
+# 
+# 
 
-pdf(file=paste(figurefolder,"/Figure_sim_RandObs_plots_ALL.pdf",sep=""),family=text_font,font=text_font,bg="white",width=double_col*1.6,height=double_col*0.7,pointsize=pointsize_less_than_2row2col) #height=page_height*0.25
+  # Convert base R plot to a grid object
+  grid.newpage()
+  dol_RandObs$saved_plot#plot(1:10) # Replace this with your base R plot: dol_RandObs$saved_plot
+  grid.echo()
+  base_plot <- grid.grab()
+  
+  library(cowplot)
+  library(ggpubr)
+  
+  
+  # Reduce the font size of the top row plots
+  Entropy_size$entropy_plot <- Entropy_size$entropy_plot +
+    theme(axis.text = element_text(size = 6), axis.title = element_text(size = 6))
+  
+  SocialMaturity <- SocialMaturity +
+    theme(axis.text = element_text(size = 6), axis.title = element_text(size = 6))
+  
+  # Arrange ggplot objects horizontally
+  top_row <- ggarrange(Entropy_size$entropy_plot, SocialMaturity, 
+                       ncol = 2, widths = c(0.4, 0.6),labels = c("B", "C"))
+  
+  # Use plot_grid to arrange the top row and the base plot in two rows
+  pre_DOL_plot <- cowplot::plot_grid(base_plot,top_row,  nrow = 2, rel_heights = c(0.6, 0.3),
+                     labels = c("A"))
+  
+  
+  #DON'T TOUCH IT, IT IS VERY DELICATE
+  # THERE ARE SOME GRAPHICAL ABBERATIONS ON THE TOP ROW (RAN MISSING and top trimmed) BUT THAT CAN BE FIXED LATER
+  SavePrint_plot(
+    plot_obj = pre_DOL_plot,
+    plot_name = "pre_DOL_plot",
+    plot_size = c(480/ppi, 450/ppi),
+    # font_size_factor = 4,
+    dataset_name = "Grid",
+    save_dir = figurefolder
+  )
+  
+  # Entropy_size$entropy_plot <- Entropy_size$entropy_plot + theme(plot.margin = unit(c(0.5, 1.5, 1.5, 0.5), "cm"))
+  # 
+  # # Now use the 'grid' graphical object with cowplot::plot_grid along with other ggplots
+  # allplots <- cowplot::align_plots(Entropy_size$entropy_plot, base_plot, SocialMaturity, align="h")
+  # 
+  # cowplot::plot_grid(allplots[[1]], allplots[[2]], allplots[[3]], ncol=3, rel_widths = c(0.2,0.4,0.4))
+  # 
+
+  
+  # # Assuming Entropy_size$entropy_plot and SocialMaturity are ggplot objects
+  # # and base_plot is the grid object converted from a base R plot
+  # 
+  # # Customize the margin of the plot
+  # Entropy_size$entropy_plot <- Entropy_size$entropy_plot + 
+  #   theme(plot.margin = unit(c(0.5, 1.5, 1.5, 0.5), "cm"))
+  # 
+  # # Now use the 'grid' graphical object with cowplot::plot_grid along with other ggplots
+  # allplots <- cowplot::align_plots(Entropy_size$entropy_plot, base_plot, SocialMaturity, align="h")
+  # 
+  # # Define the layout. 1:2 implies the first plot spans 2 columns, the second plot 1 column, and the third plot 3 columns.
+  # layout_matrix <- rbind(c(1, 2, 2),
+  #                        c(3, 3, 3))
+  # 
+  # cowplot::plot_grid(allplots[[1]], allplots[[2]], allplots[[3]], 
+  #                    layout_matrix = layout_matrix, 
+  #                    rel_heights = c(0.5, 0.5))  # Modify the rel_heights to adjust the relative heights of the rows
+  # 
+  
+
+# pdf(file=paste(figurefolder,"/Figure_DOL_RandObs_plots.pdf",sep=""),family=text_font,font=text_font,bg="white",width=double_col*1.6,height=double_col*0.7,pointsize=pointsize_less_than_2row2col) #height=page_height*0.25
+# dol_RandObs$saved_plot
+# dev.off()
+
+
+
+
+### NETWORK MEASURES
+  pdf(file=paste(figurefolder,"/Figure_sim_NET_RandObs_plots.pdf",sep=""),family=text_font,font=text_font,bg="white",width=double_col*1.6,height=double_col*0.7,pointsize=pointsize_less_than_2row2col) #height=page_height*0.25
+  replayPlot(net_RandObs$saved_plot$density)
+  dev.off()
+
+############# SIMULATION
+  # grid.newpage()
+  # sim_RandObs_plots$foragers
+  # grid.echo()
+  # base_plot1 <- grid.grab()
+  # 
+  # grid.newpage()
+  # sim_RandObs_plots$random_workers
+  # grid.echo()
+  # base_plot2 <- grid.grab()
+  # 
+  # grid.newpage()
+  # sim_RandObs_plots$nurses
+  # grid.echo()
+  # base_plot3 <- grid.grab()
+  # 
+  # cowplot::plot_grid(base_plot1, base_plot2, base_plot3,  nrow = 2, rel_heights = c(0.3, 0.3))
+  
+pdf(file=paste(figurefolder,"/Figure_sim_RandObs_plots_ALL.pdf",sep=""),family=text_font,font=text_font,bg="white",width=double_col*0.8,height=double_col*0.7,pointsize=pointsize_less_than_2row2col) #height=page_height*0.25
 replayPlot(sim_RandObs_plots$foragers)
 replayPlot(sim_RandObs_plots$random_workers)
 replayPlot(sim_RandObs_plots$nurses)
@@ -1490,7 +1647,26 @@ net_RandObs
 sim_RandObs_EXP_seed
 
 
-#plot_seeds plots! (they are a bit messy atm). they are S5. Disease spread simulations run over pre-treatment observed networks: effect of disease origin.
+
+
+
+
+
+
+
+warning("PRODUCE THE FILE example_networks_for_figures, is in passport HDD, is code somewhere? check github!!")
+
+##################
+####First plot networks #######
+root_path <- paste(disk_path,"/main_experiment",sep="")######linux laptop
+plot_network(case="topology_comparison",which_to_draw=c("PreTreatment_random","PreTreatment_observed"))# ### clean before next step
+clean();
+Sys.sleep(2)
+
+
+
+
+
 
 ######### Results report
 
