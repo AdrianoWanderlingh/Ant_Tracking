@@ -1654,17 +1654,45 @@ sim_RandObs_EXP_seed
 
 
 
-warning("PRODUCE THE FILE example_networks_for_figures, is in passport HDD, is code somewhere? check github!!")
+# USED 24H FILES.
+# picked a random plot. to go through all networks, change the selection system of "network_file" by removing the need for a renaming of the file with "observed" or "random"but using the name of the directory and loop through all original list files (pick only 1 random).
 
 ##################
-####First plot networks #######
+#### plot networks PRE - POST #######
+#good vertex options for plotting: 9,11,21
+vertexi <- 21
+pdf(file=paste(figurefolder,"/Pre-Post_Networks_example.pdf",sep=""),family=text_font,font=text_font,bg="white",width=double_col,height=double_col,pointsize=pointsize_less_than_2row2col)
 root_path <- paste(disk_path,"/main_experiment",sep="")######linux laptop
-plot_network(case="topology_comparison",which_to_draw=c("PreTreatment_random","PreTreatment_observed"))# ### clean before next step
-clean();
+layout(t(matrix(c(1:6),nrow=2)),heights = c(5,0.2,5)) 
+plot_network(case="topology_comparison",which_to_draw=c("PreTreatment_observed","PostTreatment_observed"), size="small",vertexi=vertexi)# ### clean before next step
+par(mar = c(0, 0, 0, 0))  # Set margins to zero for empty plots
+plot.new();plot.new() #empty spacer
+par(mar = c(2, 2, 2, 2))
+plot_network(case="topology_comparison",which_to_draw=c("PreTreatment_observed","PostTreatment_observed"), size="big",vertexi=vertexi)# ### clean before next step
 Sys.sleep(2)
+dev.off()
+
+#### plot networks PRE - RANDOM #######
+#good vertex options for plotting: 9,11,21
+vertexi <- 21
+pdf(file=paste(figurefolder,"/Pre-Ran_Networks_example.pdf",sep=""),family=text_font,font=text_font,bg="white",width=double_col,height=double_col,pointsize=pointsize_less_than_2row2col)
+root_path <- paste(disk_path,"/main_experiment",sep="")######linux laptop
+layout(t(matrix(c(1:6),nrow=2)),heights = c(5,0.7,5)) 
+plot_network(case="topology_comparison",which_to_draw=c("PreTreatment_observed","PreTreatment_random"), size="small",vertexi=vertexi)# ### clean before next step
+par(mar = c(0, 0, 0, 0))  # Set margins to zero for empty plots
+plot.new();plot.new() #empty spacer
+par(mar = c(2, 2, 2, 2))
+plot_network(case="topology_comparison",which_to_draw=c("PreTreatment_observed","PreTreatment_random"), size="big",vertexi=vertexi)# ### clean before next step
+Sys.sleep(2)
+dev.off()
 
 
-
+# layout(t(matrix(c(1:10),nrow=2)))
+# for (vertexi in c(8:15)) {
+#   plot_network(case="topology_comparison",which_to_draw=c("PreTreatment_observed","PostTreatment_observed"), size="big",vertexi=vertexi)# ### clean before next step
+#   #plot_network(case="topology_comparison",which_to_draw=c("PreTreatment_observed","PostTreatment_observed"), size="small",vertexi=vertexi)# ### clean before next step
+#   
+# }
 
 
 

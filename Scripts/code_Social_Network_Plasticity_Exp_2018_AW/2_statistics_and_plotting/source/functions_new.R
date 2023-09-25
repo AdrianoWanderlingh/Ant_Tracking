@@ -897,6 +897,340 @@ meta_analysis <- function(p_values,effects,std.errors){
 }
 
 
+mycircle <- function(coords, v=NULL, params) {
+  vertex.color <- params("vertex", "color")
+  if (length(vertex.color) != 1 && !is.null(v)) {
+    vertex.color <- vertex.color[v]
+  }
+  vertex.size  <- 1/200 * params("vertex", "size")
+  if (length(vertex.size) != 1 && !is.null(v)) {
+    vertex.size <- vertex.size[v]
+  }
+  vertex.frame.color <- params("vertex", "frame.color")
+  if (length(vertex.frame.color) != 1 && !is.null(v)) {
+    vertex.frame.color <- vertex.frame.color[v]
+  }
+  vertex.frame.width <- params("vertex", "frame.width")
+  if (length(vertex.frame.width) != 1 && !is.null(v)) {
+    vertex.frame.width <- vertex.frame.width[v]
+  }
+  
+  mapply(coords[,1], coords[,2], vertex.color, vertex.frame.color,
+         vertex.size, vertex.frame.width,
+         FUN=function(x, y, bg, fg, size, lwd) {
+           symbols(x=x, y=y, bg=bg, fg=fg, lwd=lwd,
+                   circles=size, add=TRUE, inches=FALSE)
+         })
+}
+
+mysquare <- function(coords, v=NULL, params) {
+  vertex.color <- params("vertex", "color")
+  if (length(vertex.color) != 1 && !is.null(v)) {
+    vertex.color <- vertex.color[v]
+  }
+  vertex.size  <- 1/200 * params("vertex", "size")
+  if (length(vertex.size) != 1 && !is.null(v)) {
+    vertex.size <- vertex.size[v]
+  }
+  vertex.frame.color <- params("vertex", "frame.color")
+  if (length(vertex.frame.color) != 1 && !is.null(v)) {
+    vertex.frame.color <- vertex.frame.color[v]
+  }
+  vertex.frame.width <- params("vertex", "frame.width")
+  if (length(vertex.frame.width) != 1 && !is.null(v)) {
+    vertex.frame.width <- vertex.frame.width[v]
+  }
+  
+  mapply(coords[,1], coords[,2], vertex.color, vertex.frame.color,
+         vertex.size, vertex.frame.width,
+         FUN=function(x, y, bg, fg, size, lwd) {
+           symbols(x=x, y=y, bg=bg, fg=fg, lwd=lwd,
+                   squares=2*size, add=TRUE, inches=FALSE)
+         })
+}
+
+normalize_to_range <- function(Input, Min, Max){
+  Range  <- max(Input) - min(Input)
+  Input  <- (Input - min(Input)) / Range
+  Range2 <- Max - Min
+  Input  <- (Input * Range2) + -1
+  return(Input)
+}
+
+
+plot_network <- function(case,which_to_draw,colours="task_group",size,vertexi, scale_factor=0.5){
+  ####Define two new vertex shapes (circle and square) which will allow to control the width of the vertex frame
+  add.vertex.shape("fcircle", clip=igraph.shape.noclip,
+                   plot=mycircle, parameters=list(vertex.frame.color=1,
+                                                  vertex.frame.width=1))
+  
+  add.vertex.shape("fsquare", clip=igraph.shape.noclip,
+                   plot=mysquare, parameters=list(vertex.frame.color=1,
+                                                  vertex.frame.width=1))
+  
+  ##read qPCR data
+  qPCR <- read.table(paste(root_path,"original_data/qPCR/qPCR_results.txt",sep="/"),header=T,stringsAsFactors = F)
+  ##read simulation data
+  si_outcome <- read.table(paste(root_path,"/transmission_simulations/pre_vs_post_treatment/experimentally_exposed_seeds/individual_simulation_results_observed.txt",sep=""),header=T,stringsAsFactors = F)
+  ##read task_group data
+  task_groups <- read.table(paste(root_path,"original_data",task_group_file,sep="/"),header=T,stringsAsFactors = F)
+  ##read experimentally treated list
+  treated <- read.table(paste(root_path,"original_data","treated_worker_list.txt",sep="/"),header=T,stringsAsFactors = F)
+  
+  setwd(paste(root_path,"example_networks_for_figures",case,sep="/"))
+  networks <- list.files()
+  for (current in which_to_draw){
+    network_file <- networks[which( (grepl(unlist(strsplit(current,split="_"))[1],networks)) & (grepl(unlist(strsplit(current,split="_"))[2],networks)) )]
+    #select by size
+    network_file <- network_file[grep(size,network_file)]
+    interactions <- read.table(network_file,header=T,stringsAsFactors = F)
+    
+    if (current=="PreTreatment_random"){
+      network_title <- "Random network"
+    }else if (current=="PreTreatment_observed"&"PostTreatment_observed"%in%which_to_draw){
+      network_title <- "Pre-treatment network"
+    }else if (current=="PreTreatment_observed"&"PreTreatment_random"%in%which_to_draw){
+      network_title <- "Observed network"
+    }else if (current=="PostTreatment_observed"){
+      network_title <- "Post-treatment network"
+    }
+    
+    ###Make graph object
+    actors <- data.frame(name=as.character(unique(c(interactions$Tag1,interactions$Tag2))))
+    net <- graph.data.frame(interactions[c("Tag1","Tag2")],directed=F,vertices=actors)
+    E(net)$weight <- interactions[,"duration"]
+    net <- igraph::simplify(net,remove.multiple=TRUE,remove.loop=TRUE,edge.attr.comb="sum")
+    
+    ###Drawing network
+    WEIGHTS <- E(net)$weight
+    ########first change the weight values so it ranges from mini to 0, then define edge widths and colors
+    mini <- -100
+    normal <- (WEIGHTS-min(WEIGHTS)) / max(WEIGHTS-min(WEIGHTS)) ####ranging from 0 to 1
+    normal <- (normal-max(normal))*(mini/min(normal-max(normal)))
+    normal <- exp(normal/(-mini/(1/50)))
+    normal <- (normal-min(normal)) / max(normal-min(normal))
+    E(net)$ori_width <-  1.8*normal #AW, ori multiplier 2
+    E(net)$width <-  0.5*line_min+(3*line_max-0.5*line_min)*((E(net)$ori_width-min(E(net)$ori_width))/max(E(net)$ori_width-min(E(net)$ori_width))) #0.5
+    E(net)$color <-  grey( 8/10*( 1-normal ))
+    ########define node size, shapes, and labels
+    V(net)$size  <- 10
+    V(net)$shape <- "fcircle"
+    V(net)$label=""
+    ## Define layout
+    E(net)$Scaled_Contact_Weights           <- sqrt(E(net)$weight)    / max(sqrt(E(net)$weight))
+    net2 <- net                                                                 ## get layout from edge=weight thresholded graph
+    Edge_Cutoff_P <- quantile(E(net2)$Scaled_Contact_Weights, probs=0.25)
+    net2 <- igraph::delete.edges(net2, E(net2) [E(net2)$Scaled_Contact_Weights < Edge_Cutoff_P ] )  ## delete edges below a threshold - leaves only the strongest edges indicative of high spatial correlatoin
+    # spring-embeded layout using contact weights
+    lay <-  data.frame(tag=V(net)$name, layout_with_fr (net2, weights=E(net2)$Scaled_Contact_Weights, niter=50000)) ; colnames(lay )[2:3] <- c("x","y")
+    
+    ## contract outlier nodes
+    PLOT_CONTRACTIONS <- F
+    N_CONTRACTIONS <- 4
+    OUTLIER_QUANTILE <- 0.9
+    if (PLOT_CONTRACTIONS==TRUE) {par(mfrow=c(2,N_CONTRACTIONS/2))}
+    if (N_CONTRACTIONS>0)
+    {
+      for (IT in 1:N_CONTRACTIONS)
+      {
+        ## centre so the CoG of all the nodes is at 0,0
+        lay$x <- lay$x - mean(lay$x)
+        lay$y <- lay$y - mean(lay$y)
+        ## get nearest neighbour distance for each node & define those above a threshold as outliers
+        lay$nnd <- rowMeans(nndist(X=lay$x, Y=lay$y, k=1:2))
+        Outliers <- which(lay$nnd > quantile(lay$nnd,probs=OUTLIER_QUANTILE))
+        lay$Outliers <- 0 ;  lay$Outliers [Outliers] <- 1
+        CoG <- colMeans(lay[lay$Outliers==0,c("x","y")])
+        lay$x_zero <- lay$x - CoG[1]
+        lay$y_zero <- lay$y - CoG[2]
+        lay$corrections <- 1
+        lay$corrections[lay$Outliers==1] <- lay$nnd[lay$Outliers==1]
+        lay$corrections[lay$Outliers==1] <- lay$corrections[lay$Outliers==1] / max(lay$nnd[lay$Outliers==1])
+        lay$corrections[lay$Outliers==1] <- 1 - lay$corrections[lay$Outliers==1]
+        lay$corrections[lay$Outliers==1] <- lay$corrections[lay$Outliers==1] + mean(sqrt(((lay$x-CoG["x"])^2+((lay$x-CoG["y"])^2))))
+        lay$corrections[lay$Outliers==1] <- lay$corrections[lay$Outliers==1] / max(lay$corrections[lay$Outliers==1])
+        lay$X  <- NA; lay$Y  <- NA
+        lay[c("X","Y")]            <- lay$corrections * lay [,c("x","y")]
+        ## plot each contraction
+        if (PLOT_CONTRACTIONS==TRUE)
+        {
+          plot(lay[,c("X","Y")], pch=lay[,"Outliers"]+1) ; abline(v=0, lty=2) ; abline(h=0, lty=2)
+          points(CoG[1], CoG[2], pch=21, bg=2, cex=2)
+          segments(x0 = lay$x[lay$Outliers==1], y0 = lay$y[lay$Outliers==1], x1 = lay$X[lay$Outliers==1], y1 = lay$Y[lay$Outliers==1], col=2)
+        }
+        ## update the starting  coords
+        lay[c("x","y")] <- lay[c("X","Y")]
+      }
+    }
+    ## normalize the corrected x,y coords to -1, 1
+    colnames(lay ) [2:3]<- c("X","Y")
+    lay[,c("X","Y")] <- apply(lay[,c("X","Y")], 2, normalize_to_range, Min=-1, Max=1)
+    lay <- as.matrix(lay[match(V(net)$name,lay$tag),c("X","Y")])
+    rownames(lay) <- V(net)$name
+    
+    ##rotate network to facilitate comparisons, using two reference ants, 665 and 329
+    colony         <- unique(interactions$colony)
+    queenid        <- task_groups[which(task_groups$task_group=="queen" & task_groups$colony==colony),"tag"]
+    
+    ref_vec <- c(1,-1)
+    obs_vec <- c(lay[vertexi,"X"]-lay[queenid,"X"],lay[vertexi,"Y"]-lay[queenid,"Y"]) #replace by actual queen
+    theta <-  atan2(obs_vec[2],obs_vec[1]) - atan2(ref_vec[2],ref_vec[1])
+    ####then get rotation center
+    center <- c(X=mean(lay[queenid,"X"]),Y=mean(lay[queenid,"Y"]))
+    
+    ####Now do the rotation. First: make "center" the origin
+    lay[,"X"] <- lay[,"X"]-center["X"]
+    lay[,"Y"] <- lay[,"Y"]-center["Y"]
+    ####Second make new lay vector and calculate new coordinates
+    lay_bis <- lay
+    lay_bis[,"X"] <- lay[,"X"]*cos(-theta)-lay[,"Y"]*sin(-theta)
+    lay_bis[,"Y"] <- lay[,"Y"]*cos(-theta)+lay[,"X"]*sin(-theta)
+    ###Third retranslate
+    lay[,"X"] <- lay[,"X"]+center["X"]
+    lay[,"Y"] <- lay[,"Y"]+center["Y"]
+    lay_bis[,"X"] <- lay_bis[,"X"]+center["X"]
+    lay_bis[,"Y"] <- lay_bis[,"Y"]+center["Y"]
+    lay_bis[,c("X","Y")] <- apply(lay_bis[,c("X","Y")], 2, normalize_to_range, Min=-1, Max=1)
+    
+    ###define colours
+    #colony_number  <- as.numeric(gsub("colony","",colony))
+    colony_treated <- treated[which(treated$colony==colony),"tag"]
+    for (colour in colours){
+      if (colour=="task_group"){
+        colony_task_groups <- task_groups[which(task_groups$colony==colony),]
+        colony_task_groups["color"] <- statuses_colours[colony_task_groups[,"task_group"]]
+        V(net)$color <- colony_task_groups[match(V(net)$name,colony_task_groups$tag),"color"]
+        if (length(colours)>1){
+          network_title <- "Task group"
+        }
+      }else if (colour=="measured_load"){
+        qPCR <- qPCR[which(qPCR$colony==colony),c("tag","status","measured_load_ng_per_uL")]
+        qPCR[qPCR$tag=="queen","tag"] <- queenid
+        
+        
+        
+        qPCR <- qPCR[which(!is.na(as.numeric(qPCR$tag))),]
+        if (0%in%qPCR$measured_load_ng_per_uL){
+          replace_val <- min(qPCR$measured_load_ng_per_uL[qPCR$measured_load_ng_per_uL!=0])/sqrt(2)
+        }else{
+          replace_val <- 0
+        }
+        
+        qPCR$log_measured <- log10(qPCR$measured_load_ng_per_uL+replace_val)
+        mini_val <- min(qPCR[,"log_measured"])
+        maxi_val <- max(qPCR[,"log_measured"])
+        
+        qPCR$log_measured_normalised <- 0 + ((qPCR$log_measured-mini_val)/(maxi_val-mini_val))*(1-0)
+        
+        palette <- rev(brewer.pal(9,"YlGnBu"))
+        colour_palette <- colorRampPalette(palette)(1001)
+        col_threshold <- "red"
+        
+        colour_range <- c (mini_val,maxi_val)
+        qPCR[,"colour"] <- colour_palette[1+ceiling(qPCR[,"log_measured_normalised"]*1000)]
+        V(net)$color <- qPCR[match(V(net)$name,qPCR$tag),"colour"]
+        
+        high_loadzes                                     <- qPCR[which(qPCR[,"measured_load_ng_per_uL"]>translated_high_threshold),"tag"]
+        V(net)$shape                                     <- "fcircle"
+        V(net)$shape[which(V(net)$name%in%high_loadzes)] <- "fsquare"
+        
+        network_title <- "qPCR-measured pathogen load"
+      }else if (colour=="simulated_load"){
+        si_outcome <- si_outcome[which(si_outcome$colony==colony&si_outcome$period=="after"),c("tag","simulated_load")]
+        
+        high_loadzes <- si_outcome[which(si_outcome$simulated_load>high_threshold),"tag"]
+        V(net)$shape                                     <- "fcircle"
+        V(net)$shape[which(V(net)$name%in%high_loadzes)] <- "fsquare"
+        
+        si_outcome$log_load <- log10(si_outcome$simulated_load)
+        mini_val <- min(si_outcome[,"log_load"])
+        maxi_val <- max(si_outcome[,"log_load"])
+        
+        si_outcome$log_load_normalised <- 0 + ((si_outcome$log_load-mini_val)/(maxi_val-mini_val))*(1-0)
+        colour_palette <- inferno(1001, alpha = 1, begin = 0, end = 1, direction = 1)
+        colour_range <- c (mini_val,maxi_val)
+        si_outcome[,"colour"] <- colour_palette[1+ceiling(si_outcome[,"log_load_normalised"]*1000)]
+        V(net)$color <- si_outcome[match(V(net)$name,si_outcome$tag),"colour"]
+        network_title <- "Simulated pathogen load"
+      }
+      
+      ###Finally, plot net
+      plot_net <- net
+      ###To improve visibility, delete thinnest edges before plotting
+      plot_net <- igraph::delete.edges(plot_net, E(plot_net) [(E(net)$ori_width/2)<0.02 ] ) #0.02
+      
+      par_mar_ori <- par()$mar
+      if("measured_load" %in% colours){
+        par(mar=c(1.2,0,0.2,0))
+      }else{
+        par(mar=c(0.2,0,1.2,0))
+      }
+      
+      # Scale the layout based on 'size'
+      if (size == "small") {
+        lay_bis <- lay_bis *scale_factor
+        #par(mar=c(0.2,0,1.2,0))
+        #lay$x  <- lay$x  * scale_factor
+        #lay$y  <- lay$y * scale_factor
+      }
+      
+      # if (size == "small") {
+      #   par(mar=par()$mar+1)
+      # } else {
+      #   par(mar=par_mar_ori)  # Reset margins to their original values
+      # }
+      
+      # Create a new graph with edges sorted by weight
+      # edge_list <- get.edgelist(plot_net)
+      # sorted_edges <- edge_list[order(E(plot_net)$weight), ]
+      # plot_net <- graph.edgelist(sorted_edges, directed = FALSE)
+      # 
+      
+      plot(plot_net, layout=lay_bis, edge.arrow.size=0.5, main="",rescale=F, vertex.frame.color="black",vertex.frame.width=line_min )#,"nodes")
+      points(lay_bis[which(V(plot_net)$name%in%colony_treated),"X"],lay_bis[which(V(plot_net)$name%in%colony_treated),"Y"],pch=16,col="black",cex=0.7)
+      if("measured_load" %in% colours){
+        title(sub=paste0(network_title," - size : ",gsub("big", "large", gsub("\\.", " ", size))),font.sub=2,cex.sub=inter_cex,line=0.2,xpd=NA,family=text_font)
+      }else{
+        title(main=paste0(network_title," - size : ",gsub("big", "large", gsub("\\.", " ", size))),font.main=2,cex.main=inter_cex,line=0.2,xpd=NA,family=text_font)
+      }
+      
+      if (grepl("load",colour)){
+        par(mar=c(2,1,1,1))
+        par(mgp=c(1,0.1,0))
+        if (colour=="measured_load"){
+          image(y=1, x=1:length(colour_palette), matrix(1:length(colour_palette), ncol =1),cex.lab=min_cex, col= colour_palette, xlab="", ylab="", xaxt="n", yaxt="n", main="",font=text_font); box(lwd=line_inter)
+          title(main=expression(paste("(ng/", mu, "L)")),cex.main=inter_cex)
+        }else{
+          image(y=1, x=1:length(colour_palette), matrix(1:length(colour_palette), ncol =1),cex.lab=min_cex, col= colour_palette, xlab="", ylab="", xaxt="n", yaxt="n", main="",font=text_font); box(lwd=line_inter)
+          title(main="(Proportion of exposure dose)",cex.main=inter_cex,font.main=1)
+        }
+        colour_vals <- mini_val+c(0:1000)*(maxi_val-mini_val)/1000
+        ats <- ceiling(colour_range[1]):floor(colour_range[2])
+        
+        labs <- format(10^(ats),scientific=T)
+        for (at in 1:length(ats)){
+          ats[at] <- closest_match(ats[at] ,colour_vals)
+        }
+        axis(side = 1, at=ats, labels = labs, las=1, cex.axis=min_cex,lend="square",tcl=-0.2,lwd=line_inter)  ## ensure to back-transform the labels!!
+        if (colour=="simulated_load"){
+          thresh <- closest_match(log10(high_threshold) ,colour_vals)
+          
+          par(xpd=F)
+          abline(v=thresh,col="white",lwd=1.5)
+          abline(v=thresh,col="springgreen2",lwd=1)
+          
+        }else{
+          thresh <- closest_match(log10(translated_high_threshold) ,colour_vals)
+          
+          par(xpd=F)
+          abline(v=thresh,col="white",lwd=1.5)
+          abline(v=thresh,col=col_threshold,lwd=1)
+        }
+      }
+      par(mar=par_mar_ori)
+    }
+  }
+}
 
 #@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 #AW adapted Functions

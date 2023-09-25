@@ -61,7 +61,7 @@ statuses <- c("treated","untreated","queen"
 statuses_colours <- 
   c(treated_colour,untreated_colour,queen_colour
     ,
-    forager_colour,occasional_forager_colour,nurse_colour,queen_colour
+    nurse_colour,occasional_forager_colour,forager_colour,queen_colour
     ,
     worker_colour,queen_colour
     ,
