@@ -46,7 +46,7 @@ library(MuMIn) # multi-model inference
 library(multcomp)
 library(multcompView)
 library(blmeco)
-library(sjPlot)
+#library(sjPlot)
 library(lsmeans)
 library(lme4)
 library(blmeco) # check dispersion for glmer
@@ -1588,7 +1588,8 @@ genes_data$Category[genes_data$Category=="evaluate_abs_diff_Ct" & (genes_data$ab
             print(sel.table)
             # compute posthocs
             sel_mod <- get(sel.table[which.max(sel.table$weight), "Model"])
-            #output_lmer(sel_mod)
+            print(paste0("##################",GENE,"####################"))
+            output_lmer(sel_mod)
             ID_model <- paste(GROUP,GENE,sep="-") # to assign name to posthoc's list element
             #posthoc_list <- compute_posthocs(sel_mod)
             
@@ -2051,9 +2052,10 @@ for (suffix in suffixes) {
   PVAL <- paste0("P.", suffix)
   
   # Determine the appropriate labels based on the suffix
-  x_label <- ifelse(suffix == "Status", "task group effect size", "treatment effect size")
-  y_label <- ifelse(suffix == "Status", "task group p val.", "treatment p val.")
-  
+  # x_label <- ifelse(suffix == "Status", "task group effect size", "treatment effect size")
+  # y_label <- ifelse(suffix == "Status", "task group p val.", "treatment p val.")
+  x_label <- ifelse(suffix == "Status", "task group E.S.", "group size E.S.")
+  y_label <- ifelse(suffix == "Status", "task group p val.", "group size p val.")
   
   # Create scatterplot of model estimates VS p-values
   sp <- ggplot(data = PipelineTesting_HMonly, aes_string(x = ESTIMATE, y = PVAL)) +
@@ -2357,24 +2359,50 @@ for (IMPUTATION in c("HM","QRILC","zero")) {
   
   rownames(results_trim) <- NULL
 
-  #####   STATS   ##### 
-  # one-sample t-test to determine if base model is statistically different from permutations
-  test_result <- list()
-  for (VARIABLE in c("Estim.Status","Estim.Treatment","P.Status","P.Treatment")) {
-    test_result[VARIABLE] <- list(wilcox.test(results_trim[,VARIABLE], y =  base_model[,VARIABLE], alternative = "two.sided"))#list(t.test(results_trim[,VARIABLE], mu = base_model[,VARIABLE]))
-    #test_result[[VARIABLE]] %>% report_statistics()
-    #names(test_result[[length(test_result)]]) <- VARIABLE
-    #test_result
-  }
   
-  results_trim %>%
-    summarise(
-      Estim.Status_test    = report_statistics(wilcox.test(Estim.Status, y = base_model$Estim.Status, alternative = "two.sided")),
-      P.Status_test        = report_statistics(wilcox.test(P.Status, y = base_model$P.Status, alternative = "two.sided")),
-      Estim.Treatment_test = report_statistics(wilcox.test(Estim.Treatment, y = base_model$Estim.Treatment, alternative = "two.sided")),
-      P.Treatment_test     = report_statistics(wilcox.test(P.Treatment, y = base_model$P.Treatment, alternative = "two.sided"))
-    ) %>%
-    print()
+  
+  
+  
+  # Count how many times HM and QRILC meet the criteria for each case
+  count_HM_Estim_Status <- sum(results_trim$imputation == "HM" &
+                                 compare_sign(results_trim$Estim.Status, base_model$Estim.Status))
+  
+  count_QRILC_Estim_Status <- sum(results_trim$imputation == "QRILC" &
+                                    compare_sign(results_trim$Estim.Status, base_model$Estim.Status))
+  
+  count_HM_Estim_Treatment <- sum(results_trim$imputation == "HM" &
+                                    compare_sign(results_trim$Estim.Treatment, base_model$Estim.Treatment))
+  
+  count_QRILC_Estim_Treatment <- sum(results_trim$imputation == "QRILC" &
+                                       compare_sign(results_trim$Estim.Treatment, base_model$Estim.Treatment))
+  
+  count_HM_P_Status <- sum(results_trim$imputation == "HM" &
+                             compare_significance(results_trim$P.Status, base_model$P.Status))
+  
+  count_QRILC_P_Status <- sum(results_trim$imputation == "QRILC" &
+                                compare_significance(results_trim$P.Status, base_model$P.Status))
+  
+  count_HM_P_Treatment <- sum(results_trim$imputation == "HM" &
+                                compare_significance(results_trim$P.Treatment, base_model$P.Treatment))
+  
+  count_QRILC_P_Treatment <- sum(results_trim$imputation == "QRILC" &
+                                   compare_significance(results_trim$P.Treatment, base_model$P.Treatment))
+  
+  # Generate the final report
+  report <- paste("When comparing the model estimates and p-values for the effect of the task group,
+                  QRILC imputation produced model estimates of the same sign in",
+                  count_QRILC_Estim_Status, "/15 of the cases (versus", count_HM_Estim_Status,
+                  "/15 of the cases for HM) and p-values consistent with the ones of the original dataset in",
+                  count_QRILC_P_Status, "/15 of the cases (versus", count_HM_P_Status, "/15 of the cases for HM).",
+                  "When checking for the effect of the colony size, QRILC imputation produced model estimates of the same sign in",
+                  count_QRILC_Estim_Treatment, "/15 of the cases (versus", count_HM_Estim_Treatment,
+                  "/15 of the cases for HM) and p-values consistent with the ones of the original dataset in",
+                  count_QRILC_P_Treatment, "/15 of the cases (versus", count_HM_P_Treatment, "/15 of the cases for HM).")
+  
+  # Print the final report
+  cat(report)
+  
+  
   
   
   #####   PLOTS   ##### 
@@ -2416,6 +2444,12 @@ for (suffix in suffixes) {
   ESTIMATE <- paste0("Estim.", suffix)
   PVAL <- paste0("P.", suffix)
   
+  
+  # Determine the appropriate labels based on the suffix
+  x_label <- ifelse(suffix == "Status", "task group E.S.", "group size E.S.")
+  y_label <- ifelse(suffix == "Status", "task group p val.", "group size p val.")
+  
+  
   # Create scatterplot of model estimates VS p-values
   sp <- ggplot(data = results_trim, aes_string(x = ESTIMATE, y = PVAL)) +
     geom_point(aes(shape=imputation), alpha = 0.9,size =2)  + 
@@ -2423,6 +2457,9 @@ for (suffix in suffixes) {
     #geom_rug(aes(color = gene))+
     geom_vline(xintercept = 0) +
     geom_text(data = base_model, aes_string(x = ESTIMATE, y = PVAL, label = "gene"), vjust = -1,hjust= +1 ) +
+    labs(x = x_label, y = y_label) +
+    # expand_limits(x = c(min(PipelineTesting_HMonly[[ESTIMATE]]) - 0.1, max(PipelineTesting_HMonly[[ESTIMATE]]) + 0.3),
+    #               y = c(min(PipelineTesting_HMonly[[PVAL]]) - 0.05, max(PipelineTesting_HMonly[[PVAL]]) + 0.05)) +
     #labs(x = "Model Estimates", y = "p-value") + #, title = "Model Estimates vs. P-values"
     theme_classic()  +
     scale_shape_manual(values = c(21, 24)) +
