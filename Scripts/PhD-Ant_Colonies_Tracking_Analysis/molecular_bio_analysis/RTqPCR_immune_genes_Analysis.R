@@ -1416,7 +1416,7 @@ genes_data$Category[genes_data$Category=="evaluate_abs_diff_Ct" & (genes_data$ab
       mod_T_list <- list()
       ##temporary list for untreated
       mod_UN_list <- list()
-      
+
       
       for (GROUP in unique(CLEAN_DATA$GROUP)) {
         print(GROUP)
@@ -1674,9 +1674,59 @@ genes_data$Category[genes_data$Category=="evaluate_abs_diff_Ct" & (genes_data$ab
             #     ylab("rel. concentration") +
             #     scale_x_discrete(expand = c(0, 0))
             #   }
+            
+            
           }
         }
       }
+      
+      
+      
+      ############ test diff in variance by size to see if there is divergence in the immune investment by group size
+      ## variance test results
+      results_untreat_var <- list()
+      
+      #Calculate the variance in expression by taskgroup
+      for (GENE in unique(CLEAN_DATA$gene)) {
+        print(paste0("##################",GENE,"####################"))
+        
+        GENE_data_VAR <- CLEAN_DATA[which(CLEAN_DATA$gene==GENE & CLEAN_DATA$GROUP=="UNTREATED_W"),
+                                    c("Colony","GROUP","Ant_status","gene","Treatment","rel_conc_imputed")]
+        
+        # Calculate coefficient of variation
+        cv_data <- GENE_data_VAR %>%
+          group_by(Colony, Treatment) %>%
+          summarise(
+            mean_rel_conc = mean(rel_conc_imputed, na.rm = TRUE),
+            sd_rel_conc = sd(rel_conc_imputed, na.rm = TRUE)
+          ) %>%
+          mutate(cv = (sd_rel_conc / mean_rel_conc)) %>%
+          ungroup()
+        
+        mod_CV <-  rstatix::wilcox_test(cv ~ Treatment, data = cv_data, alternative = "two.sided")
+        
+        
+        if (mod_CV$p < 0.05) {
+          cv_control_small <- mean(cv_data$cv[cv_data$Treatment == "control.small"])
+          cv_control_big <- mean(cv_data$cv[cv_data$Treatment == "control.big"])
+          
+          print(paste0("The variance in expression of ", GENE, " is significant (p-value ", round(mod_CV$p, 3), 
+                       "). CV for control.small is ", round(cv_control_small, 3), 
+                       ", for control.big is ", round(cv_control_big, 3), "."))
+        }
+        
+        # Store results
+        results_untreat_var[[GENE]] <- list( W = mod_CV$statistic, P = mod_CV$p, N = nrow(cv_data))
+        
+      }
+      
+      # Print results in the desired format
+      output <- "variance in gene expression for untreated workers (Wilcoxon rank sum test, "
+      output <- paste0(output, paste(sapply(names(results_untreat_var), function(gene) {
+        paste0(tolower(gene), ": W = ", results_untreat_var[[gene]]$W, ", P = ", round(results_untreat_var[[gene]]$P, 3), "; N = ", results_untreat_var[[gene]]$N)
+      }), collapse = "; "), ").")
+      
+      print(output)
       
       #### PREPARE post hoc LABELS FOR THE PLOTS
       
