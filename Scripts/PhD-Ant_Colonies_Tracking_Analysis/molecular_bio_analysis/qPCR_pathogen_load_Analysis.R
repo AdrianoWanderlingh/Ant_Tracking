@@ -20,11 +20,11 @@ library(MuMIn)
 library(multcomp)
 library(multcompView)
 library(blmeco)
-library(sjPlot)
-library(lsmeans)
+#library(sjPlot)
+#library(lsmeans)
 library(lme4)
 library(blmeco) # check dispersion for glmer
-library(emmeans) # post-hoc comparisons
+#library(emmeans) # post-hoc comparisons
 library(e1071) # calc skewness and other stuff
 library(lawstat) # for levene test (homogeneity of variance)
 library(lmPerm) # for permutations
@@ -43,72 +43,72 @@ afex::set_sum_contrasts()
 options(contrasts = c("contr.sum", "contr.poly"))
 
 
-##### PLOT STYLES
-warning("in the future, the functions_new script should be used!")
-# Create a custom color scale FOR COLONIES + treatments
-FullPal <- scales::viridis_pal(option = "D")(20)
-myColorsSmall <- tail(FullPal, 5)
-myColorsLarge <- head(FullPal, 5)
-Cols_treatments <- c("#440154FF", "#FDE725FF") # "#31688EFF"
-myColors <- c(myColorsLarge, myColorsSmall, Cols_treatments)
-names(myColors) <- c("R3BP", "R5BP", "R7BP", "R8BP", "R12BP", "R1SP", "R2SP", "R5SP", "R7SP", "R11SP", "Big Pathogen", "Small Pathogen")
-colScale <- scale_colour_manual(name = "Colony", values = myColors, drop = TRUE)
-fillScale <- scale_fill_manual(name = "Colony", values = myColors, drop = TRUE)
-
-
-# ggplot PLOT STYLE
-STYLE <- list(
-  colScale, fillScale,
-  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank()),
-  theme_bw(),
-  scale_x_discrete(labels = function(x) str_wrap(x, width = 4)) # wrap lables when long
-)
-
-STYLE_CONT <- list(
-  colScale, fillScale,
-  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank()),
-  theme_bw()
-)
-
-
-##### FUNCTIONS
-warning("in the future, the functions_new script should be used!")
+# ##### PLOT STYLES
+# warning("in the future, the functions_new script should be used!")
+# # Create a custom color scale FOR COLONIES + treatments
+# FullPal <- scales::viridis_pal(option = "D")(20)
+# myColorsSmall <- tail(FullPal, 5)
+# myColorsLarge <- head(FullPal, 5)
+# Cols_treatments <- c("#440154FF", "#FDE725FF") # "#31688EFF"
+# myColors <- c(myColorsLarge, myColorsSmall, Cols_treatments)
+# names(myColors) <- c("R3BP", "R5BP", "R7BP", "R8BP", "R12BP", "R1SP", "R2SP", "R5SP", "R7SP", "R11SP", "Big Pathogen", "Small Pathogen")
+# colScale <- scale_colour_manual(name = "Colony", values = myColors, drop = TRUE)
+# fillScale <- scale_fill_manual(name = "Colony", values = myColors, drop = TRUE)
+# 
+# 
+# # ggplot PLOT STYLE
+# STYLE <- list(
+#   colScale, fillScale,
+#   theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank()),
+#   theme_bw(),
+#   scale_x_discrete(labels = function(x) str_wrap(x, width = 4)) # wrap lables when long
+# )
+# 
+# STYLE_CONT <- list(
+#   colScale, fillScale,
+#   theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank()),
+#   theme_bw()
+# )
+# 
+# 
+# ##### FUNCTIONS
+# warning("in the future, the functions_new script should be used!")
 
 # right function
 RIGHT <- function(x, n) {
   substring(x, nchar(x) - n + 1)
 }
 
-# function to test normality of residuals
-test_norm <- function(resids) {
-  print("Testing normality")
-  if (length(resids) <= 300) {
-    print("Fewer than 300 data points so performing Shapiro-Wilk's test")
-    print(shapiro.test(resids))
-    print("below 0.05, the data significantly deviate from a normal distribution")
-  } else {
-    print("More than 300 data points so using the skewness and kurtosis
-approach")
-    print("Skewness should be between -3 and +3 (best around zero")
-    print(skewness(resids))
-    print("")
-    print("Excess kurtosis (i.e. absolute kurtosis -3) should be less than 4; ideally around zero")
-    print(kurtosis(resids))
-  }
-}
-
-# function to report a model output
-output_lmer <- function(model) {
-  print("------------RESIDUALS NORMALITY------------")
-  test_norm(residuals(model))
-  print("------------SUMMARY------------")
-  print(summary(model))
-  print("------------ANOVA------------")
-  print(Anova(model))
-  print("------------RSQUARED------------")
-  print(r.squaredGLMM(model))
-  #tab_model(model)
-}
+# # function to test normality of residuals
+# test_norm <- function(resids) {
+#   print("Testing normality")
+#   if (length(resids) <= 300) {
+#     print("Fewer than 300 data points so performing Shapiro-Wilk's test")
+#     print(shapiro.test(resids))
+#     print("below 0.05, the data significantly deviate from a normal distribution")
+#   } else {
+#     print("More than 300 data points so using the skewness and kurtosis
+# approach")
+#     print("Skewness should be between -3 and +3 (best around zero")
+#     print(skewness(resids))
+#     print("")
+#     print("Excess kurtosis (i.e. absolute kurtosis -3) should be less than 4; ideally around zero")
+#     print(kurtosis(resids))
+#   }
+# }
+# 
+# # function to report a model output
+# output_lmer <- function(model) {
+#   print("------------RESIDUALS NORMALITY------------")
+#   test_norm(residuals(model))
+#   print("------------SUMMARY------------")
+#   print(summary(model))
+#   print("------------ANOVA------------")
+#   print(Anova(model))
+#   print("------------RSQUARED------------")
+#   print(r.squaredGLMM(model))
+#   #tab_model(model)
+# }
 
 ## extras that could be added to function above
 # plot(m2)
@@ -192,11 +192,17 @@ if (USER == "2A13_Office") {
 scripts_path <- paste0("/home/",usr,"/Ant_Tracking/Scripts/code_Social_Network_Plasticity_Exp_2018_AW/2_statistics_and_plotting/source")
 data_path    <- paste0("/home/",usr,"/Ant_Tracking/Data/PhD-Ant_Colonies_Tracking_Analysis")
 
-DATADIR <- paste0("/media/",usr,"/DISK4/EXP1_base_analysis/EXP_summary_data")
+DATADIR <- paste0("/media/",usr,"/DISK4/Lasius-Bristol_pathogen_experiment/main_experiment/original_data")
 IMMUNITY_DATA <- paste0("/media/",usr,"/DISK4/EXP1_base_analysis/Personal_Immunity/Pathogen_Quantification_Data")
 WORKDIR <- paste(data_path,"molecular_bio_analysis/", sep ="/")
 
 ProcessedData <- paste0("/media/",usr,"/DISK4/Lasius-Bristol_pathogen_experiment/main_experiment/processed_data/")
+
+save_dir_plots <- paste0("/home/cf19810/Documents/RTqPCR_immune_genes_plots/")
+
+
+source(paste(scripts_path,"libraries.R",sep="/"))
+source(paste(scripts_path,"functions_new.R",sep="/"))
 
 #######################################################################################################
 ### DATA PREP: FULL PATHOGEN EXPOSED DATASET ##########################################################
@@ -339,17 +345,30 @@ DNA_Results$Colony <- NULL
 # MERGE DNA_Results and plate_positions
 common_col_names <- intersect(names(DNA_Results), names(plate_positions))
 DNA_Results_annotated <- merge(DNA_Results, plate_positions, by = common_col_names, all.x = TRUE)
-# read metadata
-metadata <- read.table(paste(DATADIR, "/Metadata_Exp1_2021_2023-02-27.txt", sep = ""), header = T, stringsAsFactors = F, sep = ",")
+# read  old metadata as it has the tag id identifier
+# in task_groups.txt (new data) what is called "tag" is the ant id ("changed for compatibility with Stroeymeyt pipeline)
+old_metadata <- read.table("/media/cf19810/DISK4/EXP1_base_analysis/EXP_summary_data/Metadata_Exp1_2021_2023-02-27.txt", header = T, stringsAsFactors = F, sep = ",")
+#add antID to DNA_Results_annotated
+colnames(old_metadata)[which(colnames(old_metadata) == "tagIDdecimal")] <- "TagID" #tagIDdecimal
+colnames(old_metadata)[which(colnames(old_metadata) == "REP_treat")] <- "Colony"
+old_metadata$AntTask <- NULL
+common_col_names1a <- intersect(names(DNA_Results_annotated), names(old_metadata))
+DNA_Results_annotated <- merge(DNA_Results_annotated, old_metadata, by = common_col_names1a, all.x = TRUE)
+
+#finally, add task groups
+metadata <- read.table(paste(DATADIR,"/task_groups.txt", sep = ""), header = T, stringsAsFactors = F, sep = "\t") # "/Metadata_Exp1_2021_2023-02-27.txt"
 # rename cols to match the DNA results
-colnames(metadata)[which(colnames(metadata) == "REP_treat")] <- "Colony"
+colnames(metadata)[which(colnames(metadata) == "REP_treat")] <- "Colony" # REP_treat
 # MERGE BASED ON TAG ID AS THE PLATE POSTION ANTidS ARE NOT RELIABLE (misalignment issue spotted for Q of R4BP, which had right TagID=228, but wrong antID (153 instead of 152). )
-colnames(metadata)[which(colnames(metadata) == "tagIDdecimal")] <- "TagID"
+colnames(metadata)[which(colnames(metadata) == "tag")] <- "antID" #tagIDdecimal
+metadata <- metadata[,c(1:5)]
+DNA_Results_annotated$treatment <- NULL
+#metadata$treatment <- NULL
 # Merge info file of plate positions with the DNA results
 common_col_names1 <- intersect(names(DNA_Results_annotated), names(metadata))
 DNA_Results_annotated <- merge(DNA_Results_annotated, metadata, by = common_col_names1, all.x = TRUE)
 # ASSIGN QUEEN LABEL TO QUEEN INSTEAD OF NURSE (SHOULD BE FIXED IN METADATA!!!)
-DNA_Results_annotated[which(DNA_Results_annotated$IsQueen == TRUE), "AntTask1perc"] <- "queen"
+#DNA_Results_annotated[which(DNA_Results_annotated$IsQueen == TRUE), "AntTask1perc"] <- "queen"
 
 ###### filter objects below detection threshold of the qPCR machine.
 ## threshold calculated as the point of inflection of the values curve (scatterplot of the ordered Cts), getting the values of second derivative.
@@ -382,10 +401,10 @@ DNA_Results_annotated$above_detection_threshold <- "T"
 #over Ct threshold
 DNA_Results_annotated[which(DNA_Results_annotated$Ct_mean > 37), "above_detection_threshold"] <- "F"
 # when Ct is missing and 0.000001 is assigned
-DNA_Results_annotated[which(DNA_Results_annotated$MbruDNA == 0.000001), "above_detection_threshold"] <- "F"
+DNA_Results_annotated[which(DNA_Results_annotated$MbruDNA == 0.0003), "above_detection_threshold"] <- "F"
 
 # remove  dead ants
-DNA_Results_annotated <- DNA_Results_annotated[which(!is.na(DNA_Results_annotated$AntTask1perc)), ]
+DNA_Results_annotated <- DNA_Results_annotated[which(!is.na(DNA_Results_annotated$task_group)), ]
 # remove extra cols
 DNA_Results_annotated <- DNA_Results_annotated[, !(names(DNA_Results_annotated) %in% c("X.ScanTime", "tagIDdecimal", "surviv_time", "ExpStart", "ExpEnd", "Comment", "TagID", "tagIDdecimal", "qPCR_Plate", "qPCR_Well", "Ori_Plate", "Ori_Well", "Date", "fileName", "identifStart", "identifEnd"))]
 
@@ -405,13 +424,13 @@ levels(DNA_Results_annotated$Exposed)[levels(DNA_Results_annotated$Exposed) == "
 levels(DNA_Results_annotated$Exposed)[levels(DNA_Results_annotated$Exposed) == "FALSE"] <- "untreated"
 
 # Create new category Ant_status
-DNA_Results_annotated$Ant_status <- paste(DNA_Results_annotated$Exposed, DNA_Results_annotated$AntTask1perc)
+DNA_Results_annotated$Ant_status <- paste(DNA_Results_annotated$Exposed, DNA_Results_annotated$task_group)
 
 # save output!
-write.csv(Meta_all_combs, file = "/home/cf19810/Documents/scriptsR/EXP1_base_analysis/Personal_Immunity/Pathogen_Quantification_Data/Adriano_qPCR_pathogen_load_MASTER_REPORT.csv", row.names = FALSE)
+write.csv(DNA_Results_annotated, file = paste(data_path,"/molecular_bio_analysis/Adriano_qPCR_pathogen_load_MASTER_REPORT.csv",sep=""), row.names = FALSE)
 
 
-### remove samples above threshold
+### remove samples below threshold
 DNA_Results_annotated <- DNA_Results_annotated[which(DNA_Results_annotated$above_detection_threshold =="T"), ]
 }
 
@@ -420,12 +439,12 @@ DNA_Results_annotated <- DNA_Results_annotated[which(DNA_Results_annotated$above
 #####################################################################################
 
 DNA_Results_annotated <- read.csv(paste(WORKDIR, "Adriano_qPCR_pathogen_load_MASTER_REPORT.csv", sep = "/"))
-warning("THE ANT_STATUS HERE PRESENT IS BASED ON THE ANT_TASK_1PERCENT, WHILE THE FINAL USED ONE IS 2PERCENT. MOVE THE SPACE USE AND NETWORK MERGING BEFORE AND USE THE INFORMAION THEREIN")
+
 
 ### HIST OF ANTS THAT RECEIVED A LOAD BY TASK
 ggplot(DNA_Results_annotated, aes(x = log(MbruDNA), fill = Exposed)) +
   geom_histogram(position = "identity", bins = 30, alpha = 0.7) +
-  facet_wrap(~Treatment) +
+  facet_wrap(~treatment) +
   xlab("LOG MbruDNA") #+
 # scale_fill_discrete(labels=c('untreated', 'treated'))
 
@@ -435,46 +454,76 @@ constant <- min(DNA_Results_annotated$MbruDNA[which(DNA_Results_annotated$MbruDN
 #####################################################################################
 ##### TEST DIFFERENCE OF MbruDNA.LOAD BETWEEN SIZES FOR EACH Ant_status (ANTTASK*TREATMENT CONDITION)
 
-m1 <- lmer(log10(MbruDNA + constant) ~ Treatment * Ant_status + (1 | Colony), data = DNA_Results_annotated) # the "/" is for the nesting #  + (1|time_of_day)
+m1 <- lmer(log10(MbruDNA + constant) ~ treatment * Ant_status + (1 | Colony), data = DNA_Results_annotated) # the "/" is for the nesting #  + (1|time_of_day)
 output_lmer(m1)
+anova(m1)
+
+#simplify as int is non sign
+m1 <- lmer(log10(MbruDNA + constant) ~ treatment + Ant_status + (1 | Colony), data = DNA_Results_annotated) # the "/" is for the nesting #  + (1|time_of_day)
+anova(m1)
+
 # for reporting: report sig. results from the Anova: " N=1040,  P<0.0001 (LMM, Ant_status)"
 
 # plot the interaction terms
 # interaction.plot(DNA_Results_annotated$Treatment, DNA_Results_annotated$Ant_status, DNA_Results_annotated$MbruDNA, legend = TRUE, xlab = "Treatment", ylab = "MbruDNA", pch = 19)
 # produce post-hocs for significant
-## IMPROVE: HOW TO SAVE IN posthoc_list WITHOUT EXPLICITLY CALLING IT?
 posthoc_list <- compute_posthocs(m1)
 
-m2 <-  lmer(log10(MbruDNA + constant) ~ Treatment + Ant_status + (1 | Colony), data = DNA_Results_annotated[which(DNA_Results_annotated$Ant_status!="treated nurse"),])
-anova(m2)
+m2 <-  lmer(log10(MbruDNA + constant) ~ treatment + Ant_status + (1 | Colony), data = DNA_Results_annotated[which(DNA_Results_annotated$Ant_status!="treated nurse"),])
 
 
 ### NOTE: No need for post-hocs if there is no significant interaction
 
+
+colScale_treatment1 <-
+  scale_color_manual(name = "treatment", values = myColors_Treatment[c("pathogen.big","pathogen.small")],labels = function(x) str_to_title(gsub("big", "large", gsub("\\.", " ", x))),drop=T) #for lines
+
+DNA_Results_annotated$treatment <- as.factor(DNA_Results_annotated$treatment)
 ############
 #### BOXPLOT | MbruDNA VS Ant_status BY TREATMENT
-ggplot(
+load_plot <- ggplot(
   DNA_Results_annotated,
-  aes(x = Ant_status, y = log(MbruDNA + constant))
+  aes(x = Ant_status, y = log10(MbruDNA + constant), color = treatment)
 ) + # ,group = Exposed,color = Exposed
   # geom_text(position = position_jitter(seed = 5),fontface = "bold",aes(alpha = ifelse(MbruDNA == 0, 0.5, 1)))+
-  geom_point(aes(fill = Treatment, colour = Colony), position = position_jitterdodge(), size = 1, alpha = 0.4) + # ,alpha= 0.8,stroke=0
-  geom_boxplot(aes(colour = Treatment), lwd = 0.8, alpha = 0.3) + # lwd=0.8
-  # geom_point() +
-  STYLE +
-  # theme(legend.position = "none") +
-  labs( # title = "Pathogen Quantification Adriano",
-    # subtitle = "All ants",
-    y = "LOG  M. brunneum quantification ng/µL per ant",
-    # x="",
-    # caption = paste("Threshold cycle (Ct) missing for", N_ants_NoCt , "ants in cols", No_CT_REPs)
+  geom_point(position=position_jitterdodge(jitter.width = 0.6), size = 1, alpha = 0.3) + # ,alpha= 0.8,stroke=0 aes(fill = treatment)
+  #geom_boxplot(aes(colour = treatment), lwd = 0.8, alpha = 0.3) + # lwd=0.8
+  #geom_point() +
+  stat_summary(
+    fun.data = mean_se, # The function used to calculate the st.errors
+    geom = "errorbar",
+    width = 0.6,
+    size = 0.7,
+    aes( group = treatment), color = "black", # Color the errorbar based on treatment
+    position = position_dodge(width = 0.7)
   ) +
-  geom_text(data = posthoc_list$m1_Ant_status, aes(x = Ant_status, y = 3, group = Ant_status, label = V1, cex = 2, fontface = "bold"), show.legend = FALSE) #+ ,position = position_jitterdodge()
+  stat_summary( # To add a point for the mean
+    fun = mean,
+    geom = "point",
+    size = 1, # Customize the size
+    aes( group = treatment),color = "black", # Map group aesthetic to treatment
+    position = position_dodge(width = 0.7)
+  ) +
+  colScale_treatment1 +
+  STYLE +
+  guides(color = guide_legend(override.aes = list(size = 4))) + # This line will change the size of the points in the legend
+  # theme(legend.position = "none") +
+  labs(y = "M. brunneum quantification\n\n\nng/µL per ant (log)", x= "task group" ) +
+  scale_x_discrete(labels = c("treated\n\n\nnurse","untreated\n\n\nforager","untreated\n\n\nnurse","queen")) +
+  geom_text(data = posthoc_list$`Ant_status-m1`, aes(x = Ant_status, y = 1.5, label = letters, cex = 1, fontface = "plain"), show.legend = FALSE, inherit.aes = FALSE) #+ ,position = position_jitterdodge()
+
+
+SavePrint_plot(plot_obj = load_plot,
+               plot_name= "load_plot",
+               plot_size = c(7, 4),
+               font_size = 15,
+               dataset_name="Pathogen",
+               save_dir = save_dir_plots)
 
 
 #####################################################################################
 ##### TEST DIFFERENCE OF MbruDNA.LOAD BETWEEN SIZES ONLY FOR TREATED NURSES (ANTTASK*TREATMENT CONDITION)
-m3 <- lmer(log10(MbruDNA + constant) ~ Treatment + (1 | Colony), data = DNA_Results_annotated[which(DNA_Results_annotated$Ant_status == "treated nurse"), ]) # the "/" is for the nesting #  + (1|time_of_day)
+m3 <- lmer(log10(MbruDNA + constant) ~ treatment + (1 | Colony), data = DNA_Results_annotated[which(DNA_Results_annotated$Ant_status == "treated nurse"), ]) # the "/" is for the nesting #  + (1|time_of_day)
 output_lmer(m3)
 posthoc_list <- compute_posthocs(m3)
 
@@ -556,22 +605,25 @@ for (STATUS in c("treated nurse")) { # "untreated forager","untreated nurse"  ,
 #####################################################################################
 ##### TEST DIFFERENCE OF MbruDNA.LOAD BETWEEN SIZES FOR EACH Ant_status (ANTTASK*TREATMENT CONDITION)
 ##### MbruDNA.LOAD AS BINARY FACTOR (1 = POSITIVE = non-zero load)
-DNA_Results_annotated$positive <- 1
-DNA_Results_annotated[which(DNA_Results_annotated$above_detection_threshold == F), "positive"] <- 0
-m2 <- glmer(positive ~ Treatment * Ant_status + (1 | Colony), data = DNA_Results_annotated[which(DNA_Results_annotated$Ant_status!="treated nurse"&DNA_Results_annotated$Ant_status!="untreated queen"),], family = binomial) # the "/" is for the nesting #  + (1|time_of_day)
+#DNA_Results_annotated$positive <- 1
+#DNA_Results_annotated[which(DNA_Results_annotated$above_detection_threshold == F), "positive"] <- 0
+# PREVALENCE
+DNA_Results_annotated$positive <- ifelse(DNA_Results_annotated$above_detection_threshold, 1, 0)
+
+m2 <- glmer(positive ~ treatment * Ant_status + (1 | Colony), data = DNA_Results_annotated[which(DNA_Results_annotated$Ant_status!="treated nurse"&DNA_Results_annotated$Ant_status!="untreated queen"),], family = binomial) # the "/" is for the nesting #  + (1|time_of_day)
 output_lmer(m2)
 Anova(m2)
 
-m3 <- glmer(positive ~ Treatment + Ant_status + (1 | Colony), data = DNA_Results_annotated[which(DNA_Results_annotated$Ant_status!="treated nurse"&DNA_Results_annotated$Ant_status!="untreated queen"),], family = binomial) # the "/" is for the nesting #  + (1|time_of_day)
+m3 <- glmer(positive ~ treatment + Ant_status + (1 | Colony), data = DNA_Results_annotated[which(DNA_Results_annotated$Ant_status!="treated nurse"&DNA_Results_annotated$Ant_status!="untreated queen"),], family = binomial) # the "/" is for the nesting #  + (1|time_of_day)
 Anova(m3)
 # binomial model diagnostics with DHARMa
-simulationOutput <- simulateResiduals(fittedModel = m2)
+simulationOutput <- simulateResiduals(fittedModel = m3)
 # Main plot function from DHARMa, which gives
 # Left: a qq-plot to detect overall deviations from the expected distribution
 # Right: a plot of the residuals against the rank-transformed model predictions
 plot(simulationOutput)
 # Plotting standardized residuals against the predicted value
-plotResiduals(simulationOutput, fitted(m1), xlab = "fitted(m1)")
+plotResiduals(simulationOutput, fitted(m1), xlab = "fitted(m3)")
 
 ### POST-HOCs
 # within ant-status
@@ -580,30 +632,44 @@ warning("posthoc_list shows only 1 letter in cld ")
 
 ############
 #### BARPLOT | PROPORTION OF ZERO LOAD VS Ant_status BY TREATMENT
-table(DNA_Results_annotated$positive, DNA_Results_annotated$Treatment, DNA_Results_annotated$Ant_status)
+table(DNA_Results_annotated$positive, DNA_Results_annotated$treatment, DNA_Results_annotated$Ant_status)
 
 DNA_Results_ColPropPos <- DNA_Results_annotated %>%
-  group_by(AntTask1perc, Exposed, treatment, Treatment, Ant_status) %>%
+  group_by(task_group, Exposed, Treatment, treatment, Ant_status) %>%
   summarise(count = n(), positive = sum(positive == 1))
 DNA_Results_ColPropPos$negative <- DNA_Results_ColPropPos$count - DNA_Results_ColPropPos$positive
 # prop of zero
 DNA_Results_ColPropPos$propZeros <- (DNA_Results_ColPropPos$negative / DNA_Results_ColPropPos$count) * 100
 # select only relevant cols
-DNA_Results_ColPropPos <- DNA_Results_ColPropPos[, c("Treatment", "Ant_status", "propZeros")]
+DNA_Results_ColPropPos <- DNA_Results_ColPropPos[, c("treatment", "Ant_status", "propZeros")]
 
 # #bad way to get table, it works as there are single vals per each condition...
 # #table useless? not possible to test percentages...
 # DNA_Results_ColPropPosTABLE <- tapply(DNA_Results_ColPropPos$propZeros, list(DNA_Results_ColPropPos$Treatment, DNA_Results_ColPropPos$Ant_status), mean)
 
-ggplot(DNA_Results_ColPropPos, aes(fill = Treatment, y = propZeros, x = Ant_status)) +
+ggplot(DNA_Results_ColPropPos, aes(fill = treatment, y = propZeros, x = Ant_status)) +
   geom_bar(position = "dodge", stat = "identity") +
   STYLE +
   labs( # title = "Pathogen Quantification Adriano",
     # subtitle = "All ants",
-    y = "% of close to 0 values",
+    y = "% of individuals under detection threshold",
     # x="",
     # caption = paste("Threshold cycle (Ct) missing for", N_ants_NoCt , "ants in cols", No_CT_REPs)
   )
+
+
+#OR:
+
+# Calculate proportions
+proportions_data <- DNA_Results_annotated %>%
+  group_by(treatment, Ant_status) %>%
+  summarise(prevalence = mean(positive))
+
+# Plot
+ggplot(proportions_data, aes(x = treatment, y = prevalence, fill = Ant_status)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  labs(y = "Prevalence") +
+  theme_minimal()
 
 
 #####################################################################################
@@ -636,8 +702,8 @@ SpaceUsage <- read.table(paste(ProcessedData, "individual_behaviour/pre_vs_post_
 # freqList
 
 # REMOVE DEAD ANTS
-#SpaceUsage <- SpaceUsage[which(!is.na(SpaceUsage$AntTask1perc)), ]
-#NetworkProp_individual <- NetworkProp_individual[which(!is.na(NetworkProp_individual$AntTask1perc)), ]
+#SpaceUsage <- SpaceUsage[which(!is.na(SpaceUsage$task_group)), ]
+#NetworkProp_individual <- NetworkProp_individual[which(!is.na(NetworkProp_individual$task_group)), ]
 
 
 # Merge network data with the DNA results INDIVIDUAL MEANS
@@ -667,7 +733,7 @@ NetworkProp_individual$time_of_day <- factor(NetworkProp_individual$time_of_day,
 
 
 # ASSIGN QUEEN LABEL TO QUEEN INSTEAD OF NURSE (SHOULD BE FIXED IN METADATA!!!)
-#NetworkProp_individual[which(NetworkProp_individual$IsQueen == TRUE), "AntTask1perc"] <- "queen"
+#NetworkProp_individual[which(NetworkProp_individual$IsQueen == TRUE), "task_group"] <- "queen"
 # keep only colonies that have been subjected to qPCR
 NetworkProp_individual <- NetworkProp_individual[NetworkProp_individual$Colony %in% unique(DNA_Results_annotated$Colony), ]
 
@@ -676,11 +742,11 @@ NetworkProp_individual <- NetworkProp_individual[, !(names(NetworkProp_individua
 
 # #calculate means by colony for plotting
 # #for aggregate dist
-# NetworkProp_ColMean <- NetworkProp_individual %>% group_by(Colony, AntTask1perc, Exposed, treatment) %>% summarize( mean_distance_to_queen = mean(aggregated_distance_to_queen))
+# NetworkProp_ColMean <- NetworkProp_individual %>% group_by(Colony, task_group, Exposed, treatment) %>% summarize( mean_distance_to_queen = mean(aggregated_distance_to_queen))
 # # Remove duplicate rows
 # NetworkProp_ColMean <- NetworkProp_ColMean[!duplicated(NetworkProp_ColMean), ]
 # #for pathogen load
-# DNA_Results_ColMean <- DNA_Results_annotated %>% group_by(Colony, AntTask1perc, Exposed, treatment,Treatment, Ant_status) %>% summarize( mean_MbruDNA = mean(MbruDNA))
+# DNA_Results_ColMean <- DNA_Results_annotated %>% group_by(Colony, task_group, Exposed, treatment,Treatment, Ant_status) %>% summarize( mean_MbruDNA = mean(MbruDNA))
 # DNA_Results_ColMean <- DNA_Results_ColMean[!duplicated(DNA_Results_ColMean), ]
 #
 # #add info from network to DNA_Results_annotated
@@ -692,7 +758,7 @@ NetworkProp_individual <- NetworkProp_individual[, !(names(NetworkProp_individua
 
 #Adapt DNA_Results_annotated
 
-DNA_Results_annotated$AntTask1perc <- NULL
+DNA_Results_annotated$task_group <- NULL
 DNA_Results_annotated$Treatment <- NULL
 DNA_Results_annotated$treatment <- NULL
 DNA_Results_annotated$status <- NULL

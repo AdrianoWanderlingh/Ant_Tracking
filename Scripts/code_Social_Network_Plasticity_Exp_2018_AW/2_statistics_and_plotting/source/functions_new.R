@@ -5518,9 +5518,9 @@ colScale_Colony <-
 #new_scale_fill() +
 # geom_line(aes(color = Sample)) +
 colScale_Treatment <-
-  scale_color_manual(name = "Treatment", values = myColors_Treatment,labels = function(x) str_to_title(gsub("big", "large", gsub("\\.", " ", x)))) #for lines
+  scale_color_manual(name = "Treatment", values = myColors_Treatment,labels = function(x) str_to_title(gsub("big", "large", gsub("\\.", " ", x))),drop=T) #for lines
 colScale_treatment <-
-  scale_color_manual(name = "treatment", values = myColors_Treatment,labels = function(x) str_to_title(gsub("big", "large", gsub("\\.", " ", x)))) #for lines
+  scale_color_manual(name = "treatment", values = myColors_Treatment,labels = function(x) str_to_title(gsub("big", "large", gsub("\\.", " ", x))),drop=T) #for lines
 ####FILL
 # geom_point(aes(color = Sample)) +
 colFill_Colony <-
@@ -5531,9 +5531,9 @@ colFill_Colony <-
 #new_scale_fill() +
 # geom_line(aes(color = Sample)) +
 colFill_Treatment <-
-  scale_fill_manual(name = "Treatment", values = myColors_Treatment,labels = function(x) str_to_title(gsub("big", "large", gsub("\\.", " ", x)))) #for lines
+  scale_fill_manual(name = "Treatment", values = myColors_Treatment,labels = function(x) str_to_title(gsub("big", "large", gsub("\\.", " ", x))),drop=T) #for lines
 colFill_treatment <-
-  scale_fill_manual(name = "treatment", values = myColors_Treatment,labels = function(x) str_to_title(gsub("big", "large", gsub("\\.", " ", x)))) #for lines
+  scale_fill_manual(name = "treatment", values = myColors_Treatment,labels = function(x) str_to_title(gsub("big", "large", gsub("\\.", " ", x))),drop=T) #for lines
 
 colScale_period <-
   scale_colour_manual(name = "period",
