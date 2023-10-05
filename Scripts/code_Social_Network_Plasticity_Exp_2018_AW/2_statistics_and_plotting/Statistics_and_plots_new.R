@@ -419,26 +419,28 @@ p_interaction_vars_time <- anov["variables:time_hours","Pr(>F)"]
 ###### PLOT
 
 # 1. Calculate the mean of the variable
-mean_data <- aggregate(measure ~ period + time_hours + variables + colony,
+mean_data <- aggregate(measure ~ period + time_hours + variables + colony + treatment,
                        FUN = mean, na.rm = T, na.action = na.pass, CompareBehavs)
 
 # 2. Calculate the grand mean and standard error dropping the colony AND TREATMENT factors
 grand_mean_data <- mean_data %>%
-  group_by(period, time_hours, variables) %>% #treatment
+  group_by(period, time_hours, variables, treatment) %>% #treatment
   summarise(grand_mean = mean(measure),
             standard_error = sd(measure) / sqrt(n()))
 
 # Add NA values at time_hours == -3
-unique_treatments <- unique(grand_mean_data$variables)
-unique_periods <- unique(grand_mean_data$period)
+unique_treatments <- unique(grand_mean_data$treatment)
+unique_vars       <- unique(grand_mean_data$variables)
+unique_periods    <- unique(grand_mean_data$period)
 na_rows <- expand.grid(period = unique_periods,
                        time_hours = -3,
-                       variables = unique_treatments,
+                       variables = unique_vars,
+                       treatment = unique_treatments,
                        grand_mean = NA,
                        standard_error = NA)
 
 grand_mean_data <- rbind(grand_mean_data, na_rows) %>%
-  arrange( period, time_hours, variables) #treatment,
+  arrange( period, time_hours, variables, treatment) #treatment,
 
 
 # Perform scaling by group # scale() function standardizes a vector to have mean 0 and standard deviation 1
@@ -447,11 +449,10 @@ grand_mean_data_scaled <- grand_mean_data %>%
   dplyr::mutate(scaled_grand_mean = scale(grand_mean),scaled_standard_error = scale(standard_error)) %>%
   ungroup()
 
-
-# Wrap the legend labels
-# grand_mean_data_scaled$variables <- str_wrap(grand_mean_data_scaled$variables, width = 20)  # Adjust the width as needed
-# #add colours for vars
-# colors <- brewer.pal(length(unique(grand_mean_data_scaled$variables)), "Set2")
+# overall means
+overall_grand_mean <- grand_mean_data_scaled %>%
+  group_by(time_hours, period, variables) %>%
+  summarise(scaled_grand_mean = mean(scaled_grand_mean))
 
 #plot fit
 GroomingVsTimeOutside <- ggplot(grand_mean_data_scaled, aes(x = time_hours, y = scaled_grand_mean, fill = variables, color= variables, group = variables)) +
@@ -475,6 +476,32 @@ GroomingVsTimeOutside <- ggplot(grand_mean_data_scaled, aes(x = time_hours, y = 
         legend.background = element_rect(fill='transparent'),
         legend.title = element_blank()) +
   guides(fill = guide_legend(nrow = 2,ncol = 1))
+
+# Wrap the legend labels
+# grand_mean_data_scaled$variables <- str_wrap(grand_mean_data_scaled$variables, width = 20)  # Adjust the width as needed
+# #add colours for vars
+# colors <- brewer.pal(length(unique(grand_mean_data_scaled$variables)), "Set2")
+
+ggplot(grand_mean_data_scaled, aes(x = time_hours, y = scaled_grand_mean, color = treatment, group = treatment)) +
+  # Add lines for each treatment
+  geom_smooth(data = subset(grand_mean_data_scaled, period == "pre"), method = "lm", linetype = "dashed", aes(linetype = "pre")) +
+  geom_smooth(data = subset(grand_mean_data_scaled, period == "post"),method = "lm", linetype = "solid", aes(linetype = "post")) +
+  geom_ribbon(data = subset(grand_mean_data_scaled, period == "post"), stat = "smooth", method = "lm", fill = NA) +
+  # Add overall mean line
+  #geom_smooth(data = subset(overall_grand_mean, period == "pre"),  method = "lm", linetype = "dashed", aes(linetype = "pre", group = variables), color = "black") +
+  #geom_smooth(data = subset(overall_grand_mean, period == "post"), method = "lm", linetype = "solid", aes(linetype = "post", group = variables),color = "black") + 
+  STYLE +
+  colFill_treatment +
+  colScale_treatment +
+  facet_grid(.~variables) +
+  theme(legend.position = c(.05, .95), # Position legend inside plot area
+        legend.justification = c(0, 1), # Justify legend at top left
+        legend.box.just = "left",
+        legend.direction = "horizontal",
+        legend.background = element_rect(fill='transparent'),
+        legend.title = element_blank()) +
+  guides(fill = guide_legend(nrow = 2,ncol = 1)) +
+  facet_grid(.~variables) 
 
 
 ###################################################################################################################################
