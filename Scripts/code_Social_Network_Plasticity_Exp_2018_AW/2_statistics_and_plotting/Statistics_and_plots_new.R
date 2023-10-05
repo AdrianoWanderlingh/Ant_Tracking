@@ -402,6 +402,26 @@ CompareBehavs <- reshape(CompareBehavs,
 CompareBehavs$variables <- as.factor(CompareBehavs$variables)
 CompareBehavs$variables <- gsub("_", " ", CompareBehavs$variables)
 
+
+### check decline with time per HOUR ()see time 0, 3, etc
+  # Filter data for specific times and variable
+  filtered_data <- CompareBehavs %>%
+    filter(time_hours %in% c(0, 3, 6) & variables == "duration grooming received min") %>%
+    group_by(time_hours) %>%
+    summarise(mean_measure = round(mean(measure, na.rm = TRUE)/3, 3), #divide by 3 to get the per hour
+              sd_measure = round(sd(measure, na.rm = TRUE)/3, 3))
+  
+  # Extract values and format them into a string
+  values <- paste0(filtered_data$time_hours, "h: ", filtered_data$mean_measure, " ± ", filtered_data$sd_measure)
+  formatted_values <- paste(values, collapse = ", ")
+  
+  # Insert the formatted values into the sentence
+  sentence <- paste0("It is of note that the duration of the grooming received by treated ants sharply decreased after 3h from the treatment (", formatted_values, ").")
+  
+  print(sentence)
+  
+
+
 ###### MODEL # only post exposure
 
 #scaling for model (for plot, performed only after that the vars means are calculated)
