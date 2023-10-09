@@ -155,9 +155,9 @@ ind_treated_beh_lineplot <- line_plot(data_path,which_individuals="treated",show
 root_path <- paste(disk_path,"/main_experiment_grooming",sep="") # root_path <- paste(disk_path,"/main_experiment_grooming",sep="")
 data_path=paste(root_path,"/processed_data/individual_behaviour/pre_vs_post_treatment",sep="")
 pattern="individual_behavioural_data"
-variable_list <-        c("duration_grooming_received_min","number_contacts_received","prop_duration_grooming_received_outside_min") #GROOMING  ouside is negligibile as only 58/6016 events happen outside , "prop_duration_grooming_received_outside_min","duration_grooming_received_min_zone2", , "inter_caste_contact_duration"
-names(variable_list) <- c("duration grooming received (min)","number grooming contacts received","prop. duration grooming received outside (min)") # , "prop duration grooming received outside min","duration grooming received outside min"
-transf_variable_list <- c("log"                             ,"log"                     , "Box_Cox")   ######"none", "sqrt" "log","power2"
+variable_list <-        c("duration_grooming_received_min","number_contacts_received") #,"prop_duration_grooming_received_outside_min") #GROOMING  ouside is negligibile as only 58/6016 events happen outside , "prop_duration_grooming_received_outside_min","duration_grooming_received_min_zone2", , "inter_caste_contact_duration"
+names(variable_list) <- c("duration grooming received (min)","number grooming contacts received") #,"prop. duration grooming received outside (min)") # , "prop duration grooming received outside min","duration grooming received outside min"
+transf_variable_list <- c("log"                             ,"log"                     ) #, "Box_Cox")   ######"none", "sqrt" "log","power2"
 
 
 ind_treated_grooming <- individual_ONE_analysis(data_path,which_individuals="treated",showPlot=F) # "treated","queen","nurse","forager"
@@ -513,7 +513,6 @@ ggplot(grand_mean_data_scaled, aes(x = time_hours, y = scaled_grand_mean, color 
   STYLE +
   colFill_treatment +
   colScale_treatment +
-  facet_grid(.~variables) +
   theme(legend.position = c(.05, .95), # Position legend inside plot area
         legend.justification = c(0, 1), # Justify legend at top left
         legend.box.just = "left",
@@ -523,6 +522,217 @@ ggplot(grand_mean_data_scaled, aes(x = time_hours, y = scaled_grand_mean, color 
   guides(fill = guide_legend(nrow = 2,ncol = 1)) +
   facet_grid(.~variables) 
 
+
+###################################################################################################################################
+### ASSESS degree and time outside ############################################################################################
+###################################################################################################################################
+
+
+### network properties
+root_path <- paste(disk_path,"/main_experiment",sep="") # root_path <- paste(disk_path,"/main_experiment_grooming",sep="")
+data_path=paste(root_path,"/processed_data/network_properties_edge_weights_duration/pre_vs_post_treatment/all_workers",sep="")
+pattern="individual_data"
+variable_list <-        c("degree")#,"aggregated_distance_to_queen") 
+names(variable_list) <- c("degree")#,"aggregated distance to queen")
+#transf_variable_list <- c("none"  )#,"log")  ######"none", "sqrt" "log","power2"
+
+degree_data <- read_data(data_path,which_individuals="treated")
+
+
+root_path <- paste(disk_path,"/main_experiment",sep="") # root_path <- paste(disk_path,"/main_experiment_grooming",sep="")
+data_path=paste(root_path,"/processed_data/individual_behaviour/pre_vs_post_treatment",sep="")
+pattern="individual_behavioural_data"
+variable_list <-        c("prop_time_outside") #,"proportion_time_active", "average_bout_speed_pixpersec" ,"total_distance_travelled_pix", "inter_caste_contact_duration") #inter_caste_contact_duration?
+names(variable_list) <- c("prop. time outside") # ,"prop. time active", "average bout speed pixpersec" ,"total distance travelled pix", "inter caste contact duration")
+#transf_variable_list <- c("power0.01"        )#,"none"                  ,"log"                          ,"log"                      ,"sqrt"                   )  ######"none", "sqrt" "log","power2"
+
+prop_time_out_data <- read_data(data_path,which_individuals="treated")
+
+root_path <- paste(disk_path,"/main_experiment_grooming",sep="") # root_path <- paste(disk_path,"/main_experiment_grooming",sep="")
+data_path=paste(root_path,"/processed_data/individual_behaviour/pre_vs_post_treatment",sep="")
+pattern="individual_behavioural_data"
+variable_list <-        c("duration_grooming_received_min") #GROOMING  ouside is negligibile as only 58/6016 events happen outside , "prop_duration_grooming_received_outside_min","duration_grooming_received_min_zone2"
+names(variable_list) <- c("duration grooming received (min)") # , "prop duration grooming received outside min","duration grooming received outside min"
+#transf_variable_list <- c("log"                           )   ######"none", "sqrt" "log","power2"
+
+dur_groom_rec_data <- read_data(data_path,which_individuals="treated")
+
+
+#merge
+common_col_names <- intersect(names(degree_data), names(prop_time_out_data))
+common_col_names <-  common_col_names[common_col_names %in% c("colony", "tag","antID", "treatment", "time_hours","period")]
+#common_col_names <- common_col_names_NetSpace[!common_col_names_NetSpace %in% c("age")]
+CompareBehavs <- dplyr::left_join(prop_time_out_data,degree_data, by = common_col_names[])
+
+#merge
+common_col_names <- intersect(names(CompareBehavs), names(dur_groom_rec_data))
+common_col_names <-  common_col_names[common_col_names %in% c("colony", "tag","antID", "treatment", "time_hours","period")]
+#common_col_names <- common_col_names_NetSpace[!common_col_names_NetSpace %in% c("age")]
+CompareBehavs <- dplyr::left_join(CompareBehavs,dur_groom_rec_data, by = common_col_names[])
+
+# remove extra cols
+CompareBehavs <- CompareBehavs %>%
+  dplyr::select(colony, tag, antID, time_hours, treatment, period, 
+                prop_time_outside.x, degree , duration_grooming_received_min
+  )
+
+CompareBehavs$prop_time_outside <- CompareBehavs$prop_time_outside.x; CompareBehavs$prop_time_outside.x <- NULL
+
+
+# melt the dataframe to long format
+CompareBehavs <- reshape(CompareBehavs,
+                         varying = c("prop_time_outside", "degree","duration_grooming_received_min"),
+                         v.names = "measure",
+                         times = c("prop_time_outside", "degree","duration_grooming_received_min"),
+                         timevar = "variables",
+                         direction = "long")
+CompareBehavs$variables <- as.factor(CompareBehavs$variables)
+CompareBehavs$variables <- gsub("_", " ", CompareBehavs$variables)
+
+
+###### MODEL # only post exposure
+
+# #scaling for model (for plot, performed only after that the vars means are calculated)
+# CompareBehavs<- CompareBehavs %>%
+#   group_by(variables)  %>%
+#   dplyr::mutate(measure_scaled = scale(measure)) %>%
+#   ungroup()
+# 
+# mod1 <- lmer(log_transf(measure_scaled) ~ variables*time_hours + (1|colony) + (1|antID), data = CompareBehavs[which(CompareBehavs$period=="post"),])
+# #output_lmer(mod1)
+# anov  <- anova(mod1)
+# p_interaction_vars_time <- anov["variables:time_hours","Pr(>F)"]
+# 
+
+###### PLOT
+
+# 1. Calculate the mean of the variable
+mean_data <- aggregate(measure ~ period + time_hours + variables + colony + treatment,
+                       FUN = mean, na.rm = T, na.action = na.pass, CompareBehavs)
+
+# 2. Calculate the grand mean and standard error dropping the colony AND TREATMENT factors
+grand_mean_data <- mean_data %>%
+  group_by(period, time_hours, variables, treatment) %>% #treatment
+  summarise(grand_mean = mean(measure),
+            standard_error = sd(measure) / sqrt(n()))
+
+# Add NA values at time_hours == -3
+unique_treatments <- unique(grand_mean_data$treatment)
+unique_vars       <- unique(grand_mean_data$variables)
+unique_periods    <- unique(grand_mean_data$period)
+na_rows <- expand.grid(period = unique_periods,
+                       time_hours = -3,
+                       variables = unique_vars,
+                       treatment = unique_treatments,
+                       grand_mean = NA,
+                       standard_error = NA)
+
+grand_mean_data <- rbind(grand_mean_data, na_rows) %>%
+  arrange( period, time_hours, variables, treatment) #treatment,
+
+
+# # Perform scaling by group # scale() function standardizes a vector to have mean 0 and standard deviation 1
+# grand_mean_data_scaled <- grand_mean_data %>%
+#   group_by(variables)  %>%
+#   dplyr::mutate(scaled_grand_mean = scale(grand_mean),scaled_standard_error = scale(standard_error)) %>%
+#   ungroup()
+
+# overall means
+overall_grand_mean <- grand_mean_data %>%
+  group_by(time_hours, period, variables) %>%
+  summarise(grand_mean = mean(grand_mean))
+
+# #plot fit
+# DegreeVsTimeOutside <- ggplot(grand_mean_data, aes(x = time_hours, y = scaled_grand_mean, fill = variables, color= variables, group = variables)) +
+#   geom_smooth(data = subset(grand_mean_data, period == "pre"), method = "lm", se = T, linetype = "dashed") +
+#   geom_smooth(data = subset(grand_mean_data, period == "post"), method = "lm", se = T, linetype = "solid") +
+#   scale_x_continuous(limits = c(min(grand_mean_data$time_hours), max(grand_mean_data$time_hours)), expand = c(0, 0)) +
+#   labs(#title = "Prop Time Outside by Time Hours and Treatment",
+#     x = "Time Hours since treatment exposure",
+#     #y = "scaled variables" #names(variable_list[i])
+#     y = "\nScaled\nvariables"
+#   ) +
+#   #geom_text(aes(x = 10, label = from_p_to_ptext(p_interaction_vars_time))) 
+#   STYLE +
+#   scale_fill_manual(values = c("#E69F00", "#56B4E9")) +
+#   scale_color_manual(values = c("#E69F00", "#56B4E9")) + #inverting the order of scale fill and scale color breaks the plot
+#   theme(legend.position = c(.05, .95), # Position legend inside plot area
+#         legend.justification = c(0, 1), # Justify legend at top left
+#         legend.box.just = "left",
+#         legend.direction = "horizontal",
+#         legend.background = element_rect(fill='transparent'),
+#         legend.title = element_blank()) +
+#   guides(fill = guide_legend(nrow = 2,ncol = 1))
+
+
+
+#library(tidyr)
+grand_mean_data <- subset(grand_mean_data, time_hours != -3)
+
+
+wide_data <- as.data.frame(grand_mean_data %>%
+  tidyr::pivot_wider(id_cols = c(period, time_hours, treatment),
+              names_from = variables, 
+              values_from = c(grand_mean, standard_error)) %>%
+  rename_with(~ gsub("grand_mean_", "", .x), starts_with("grand_mean")) %>%
+  rename_with(~ gsub("standard_error_", "se_", .x), starts_with("standard_error")) )
+
+
+DegreeLine <- ggplot(wide_data, aes(x = time_hours, y = degree, color = treatment, group = treatment)) +
+  # Add lines for each treatment
+  geom_smooth(data = subset(wide_data, period == "pre"), method = "lm", linetype = "dashed", aes(linetype = "pre")) +
+  geom_smooth(data = subset(wide_data, period == "post"),method = "lm", linetype = "solid", aes(linetype = "post")) +
+  geom_ribbon(data = subset(wide_data, period == "pre"), stat = "smooth", method = "lm", fill = NA) +
+  geom_ribbon(data = subset(wide_data, period == "post"), stat = "smooth", method = "lm", fill = NA) +
+  STYLE +
+  colFill_treatment +
+  colScale_treatment +
+  labs(x = "hours since exposure to the treatment") +
+  theme(legend.position = "bottom",      # Position legend at the bottom
+        legend.justification = "center", # Center the legend
+        legend.box.just = "center",      # Center the legend box
+        legend.direction = "horizontal", # Make legend horizontal
+        legend.background = element_rect(fill='transparent'), # Transparent legend background
+        legend.title = element_blank(),  # Remove legend title
+        legend.margin = margin(t = 10, b = 10)) # Add some margin to the top and bottom of the legend
+
+PropOutLine <- ggplot(wide_data, aes(x = time_hours, y = `prop time outside`, color = treatment, group = treatment)) +
+  # Add lines for each treatment
+  geom_smooth(data = subset(wide_data, period == "pre"), method = "lm", linetype = "dashed", aes(linetype = "pre")) +
+  geom_smooth(data = subset(wide_data, period == "post"),method = "lm", linetype = "solid", aes(linetype = "post")) +
+  geom_ribbon(data = subset(wide_data, period == "pre"), stat = "smooth", method = "lm", fill = NA) +
+  geom_ribbon(data = subset(wide_data, period == "post"), stat = "smooth", method = "lm", fill = NA) +
+  STYLE +
+  colFill_treatment +
+  colScale_treatment +
+  labs(x = "hours since exposure to the treatment",
+       y= "prop. time outside") +
+  theme(legend.position = "bottom",      # Position legend at the bottom
+        legend.justification = "center", # Center the legend
+        legend.box.just = "center",      # Center the legend box
+        legend.direction = "horizontal", # Make legend horizontal
+        legend.background = element_rect(fill='transparent'), # Transparent legend background
+        legend.title = element_blank(),  # Remove legend title
+        legend.margin = margin(t = 10, b = 10)) # Add some margin to the top and bottom of the legend
+
+GroomLine <- ggplot(wide_data, aes(x = time_hours, y = `duration grooming received min`, color = treatment, group = treatment)) +
+  # Add lines for each treatment
+  geom_smooth(data = subset(wide_data, period == "pre"), method = "lm", linetype = "dashed", aes(linetype = "pre")) +
+  geom_smooth(data = subset(wide_data, period == "post"),method = "lm", linetype = "solid", aes(linetype = "post")) +
+  geom_ribbon(data = subset(wide_data, period == "pre"), stat = "smooth", method = "lm", fill = NA) +
+  geom_ribbon(data = subset(wide_data, period == "post"), stat = "smooth", method = "lm", fill = NA) +
+  STYLE +
+  colFill_treatment +
+  colScale_treatment +
+  labs(x = "hours since exposure to the treatment",
+       y = "duration grooming received (min)") +
+  theme(legend.position = "bottom",      # Position legend at the bottom
+        legend.justification = "center", # Center the legend
+        legend.box.just = "center",      # Center the legend box
+        legend.direction = "horizontal", # Make legend horizontal
+        legend.background = element_rect(fill='transparent'), # Transparent legend background
+        legend.title = element_blank(),  # Remove legend title
+        legend.margin = margin(t = 10, b = 10)) # Add some margin to the top and bottom of the legend
 
 ###################################################################################################################################
 ### COMPARE  grooming given and duration of contacts with treated #################################################################
@@ -651,10 +861,13 @@ allplots <- cowplot::align_plots(plot_list[[1]] + ylim(plot_comps$y_limits) + gg
                                  plot_list[[2]] + ylim(plot_comps$y_limits) + ggtitle("untreated\nnurses")  + fixed_aspect_theme  + remove_x_labs + guides(fill = "none") + remove_y_labs,
                                  plot_list[[3]] + ylim(plot_comps$y_limits) + ggtitle("untreated\nforagers")+ fixed_aspect_theme  + remove_x_labs + guides(fill = "none") + remove_y_labs,
                                  align="h")
-ind_net_degree <- cowplot::plot_grid(
-  cowplot::plot_grid(allplots[[1]], allplots[[2]], allplots[[3]],
+
+ind_net_degree <-  cowplot::plot_grid(allplots[[1]], allplots[[2]], allplots[[3]],
                      ncol=3, rel_widths = c(0.28,0.24,0.24))
-  , plot_comps$leg, ncol=1, rel_heights = c(0.9, 0.1))
+# ind_net_degree <- cowplot::plot_grid(
+#   cowplot::plot_grid(allplots[[1]], allplots[[2]], allplots[[3]],
+#                      ncol=3, rel_widths = c(0.28,0.24,0.24))
+#   , plot_comps$leg, ncol=1, rel_heights = c(0.9, 0.1))
 
 
 ###################################################################################################################################  
@@ -764,6 +977,25 @@ GroomVSTimeOut <- cowplot::plot_grid(
                      ncol=2, rel_widths = c(0.24,0.24,0.24,0.20))
   , plot_comps1$leg, ncol=1, rel_heights = c(0.9, 0.15))
 
+###################################################################################################################################
+### comparing timeline of degree and time_outside line_plots  ### 2 panels
+plot_list <- list(DegreeLine, PropOutLine, GroomLine)
+YLIM_extra <- 0
+#plot_comps1 <- multi_plot_comps(plot_list,ylim_extra=YLIM_extra)
+leg <-cowplot::get_legend(plot_list[[1]] + guides(fill = guide_legend(nrow = 2,ncol = 2)))
+
+#inherit legend from elsewhere
+allplots1 <- cowplot::align_plots(plot_list[[1]] + theme(aspect.ratio = 0.5) +  guides(fill = "none") + theme(legend.position = "none") ,
+                                  plot_list[[2]] + theme(aspect.ratio = 0.5) + guides(fill = "none") + theme(legend.position = "none") ,
+                                  plot_list[[3]] + theme(aspect.ratio = 0.5) +  guides(fill = "none") + theme(legend.position = "none") + labs(y = split_title(plot_list[[3]]$labels$y)),
+                                  align="v")
+DegreeVSPropOut <- cowplot::plot_grid(allplots1[[1]], allplots1[[2]], allplots1[[3]], leg,
+                     ncol=2, rel_widths = c(0.24,0.24))
+
+# DegreeVSPropOut <- cowplot::plot_grid(
+#   cowplot::plot_grid(allplots1[[1]], allplots1[[2]], allplots1[[3]], 
+#                      ncol=2, rel_widths = c(0.24,0.24,0.20))
+#   , leg, ncol=1, rel_heights = c(0.9, 0.15))
 
 ###################################################################################################################################
 ### collective_net_properties ### 
@@ -848,6 +1080,15 @@ SavePrint_plot(
   plot_obj = GroomVSTimeOut, 
   plot_name = "GroomVSTimeOut",
   plot_size = c(520/ppi, 300/ppi), #extra length required to fix the different digits on y-axis
+  # font_size_factor = 4,
+  dataset_name = "Grid",
+  save_dir = figurefolder
+)
+
+SavePrint_plot(
+  plot_obj = DegreeVSPropOut, 
+  plot_name = "DegreeVSPropOut",
+  plot_size = c(520/ppi, 280/ppi), #extra length required to fix the different digits on y-axis
   # font_size_factor = 4,
   dataset_name = "Grid",
   save_dir = figurefolder
