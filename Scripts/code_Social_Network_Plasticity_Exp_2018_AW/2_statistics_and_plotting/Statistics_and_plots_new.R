@@ -857,13 +857,13 @@ plot_list <- list(ind_treated_net$barplot_delta_period_list$degree,
 # Set the same y-axis limits for all plots
 YLIM_extra <- 1
 plot_comps <- multi_plot_comps(plot_list,ylim_extra=YLIM_extra)
-allplots <- cowplot::align_plots(plot_list[[1]] + ylim(plot_comps$y_limits) + ggtitle("treated\nnurses")    + fixed_aspect_theme  + remove_x_labs + guides(fill = "none") ,
+allplots <- cowplot::align_plots(plot_list[[1]] + ylim(plot_comps$y_limits) + ggtitle("treated\nnurses")    + fixed_aspect_theme  + remove_x_labs + guides(fill = "none") + labs(y = "\n\nΔ degree"),
                                  plot_list[[2]] + ylim(plot_comps$y_limits) + ggtitle("untreated\nnurses")  + fixed_aspect_theme  + remove_x_labs + guides(fill = "none") + remove_y_labs,
                                  plot_list[[3]] + ylim(plot_comps$y_limits) + ggtitle("untreated\nforagers")+ fixed_aspect_theme  + remove_x_labs + guides(fill = "none") + remove_y_labs,
                                  align="h")
 
 ind_net_degree <-  cowplot::plot_grid(allplots[[1]], allplots[[2]], allplots[[3]],
-                     ncol=3, rel_widths = c(0.28,0.24,0.24))
+                     ncol=3, rel_widths = c(0.3,0.24,0.24))
 # ind_net_degree <- cowplot::plot_grid(
 #   cowplot::plot_grid(allplots[[1]], allplots[[2]], allplots[[3]],
 #                      ncol=3, rel_widths = c(0.28,0.24,0.24))
@@ -879,28 +879,30 @@ plot_list <- list(ind_treated_beh$barplot_delta_period_list$prop_time_outside,
                   ind_untreated_beh_forag$barplot_delta_period_list$prop_time_outside)
 YLIM_extra <- 0.01
 plot_comps1 <- multi_plot_comps(plot_list,ylim_extra=YLIM_extra)
-allplots1 <- cowplot::align_plots(plot_list[[1]] + ylim(plot_comps1$y_limits) + ggtitle("treated\nnurses")    + fixed_aspect_theme  + remove_x_labs + guides(fill = "none") ,
-                                 plot_list[[2]] + ylim(plot_comps1$y_limits) + ggtitle("untreated\nnurses")  + fixed_aspect_theme  + remove_x_labs + guides(fill = "none") + remove_y_labs,
-                                 plot_list[[3]] + ylim(plot_comps1$y_limits) + ggtitle("untreated\nforagers")+ fixed_aspect_theme  + remove_x_labs + guides(fill = "none") + remove_y_labs,
+allplots1 <- cowplot::align_plots(plot_list[[1]] + ylim(plot_comps1$y_limits)  + fixed_aspect_theme  + remove_x_labs + guides(fill = "none") + labs(y = "Δ prop. time\noutside (power0.1)") , # + ggtitle("treated\nnurses")   
+                                 plot_list[[2]] + ylim(plot_comps1$y_limits)  + fixed_aspect_theme  + remove_x_labs + guides(fill = "none") + remove_y_labs, #+ ggtitle("untreated\nnurses") 
+                                 plot_list[[3]] + ylim(plot_comps1$y_limits) + fixed_aspect_theme  + remove_x_labs + guides(fill = "none") + remove_y_labs, #+ ggtitle("untreated\nforagers")
                                  align="h")
-prop_time_outside <- cowplot::plot_grid(
+prop_time_outside <- 
   cowplot::plot_grid(allplots1[[1]], allplots1[[2]], allplots1[[3]],
-                     ncol=3, rel_widths = c(0.28,0.24,0.24))
-  , plot_comps1$leg, ncol=1, rel_heights = c(0.9, 0.1))
+                     ncol=3, rel_widths = c(0.30,0.24,0.24))
 
 
 ### ind_beh_measures### 2 panels
 # create text boxes for titles (to ensure equal size of all plotted objects)
-titlePlots <- cowplot::align_plots(ggplot() + theme_void() + annotate("text", x = 0.5, y = 0.5, label = "untreated\nnurses", family = "Liberation Serif",  size = 4, hjust = 0.5), #fontface = "bold",
-                                   ggplot() + theme_void() + annotate("text", x = 0.5, y = 0.5, label = "untreated\nforagers",family = "Liberation Serif", size = 4, hjust = 0.5), #fontface = "bold",
-                                   align="h")
-titlePlots_untreated <- cowplot::plot_grid(titlePlots[[1]], titlePlots[[2]], ncol=2, rel_widths = c(0.28,0.24))
+titlePlots <- cowplot::align_plots(ggplot() + theme_void() + annotate("text", x = 0.2, y = 0.5, label = "untreated\nnurses", family = "Liberation Serif",  size = 5, hjust = 0.05, lineheight = 0.8), #fontface = "bold",
+                                   ggplot() + theme_void() + annotate("text", x = 0.2, y = 0.5, label = "untreated\nforagers",family = "Liberation Serif", size = 5, hjust = 0.05, lineheight = 0.8), #fontface = "bold",
+                                   align="v")
+titlePlots_untreated <- cowplot::plot_grid(titlePlots[[1]], titlePlots[[2]], ncol=2, rel_widths = c(0.23,0.26))
+
+spacingPlot <- ggplot() + theme_void() + annotate("text", x = 0.2, y = 0.5, label = "", family = "Liberation Serif",  size = 4, hjust = 0.05)
+                                  
 
 
 ## duration_of_contact_with_treated_min
 plot_list <- list(ind_untreated_beh_nurse$barplot_delta_period_list$duration_of_contact_with_treated_min,
                   ind_untreated_beh_forag$barplot_delta_period_list$duration_of_contact_with_treated_min)
-YLIM_extra <- 0.05
+YLIM_extra <- 0.02
 plot_comps1 <- multi_plot_comps(plot_list,ylim_extra=YLIM_extra)
 allplots1 <- cowplot::align_plots(plot_list[[1]] + ylim(plot_comps1$y_limits)    + fixed_aspect_theme  + remove_x_labs + guides(fill = "none") + labs(y = split_title(plot_list[[1]]$labels$y)),
                                   plot_list[[2]] + ylim(plot_comps1$y_limits)    + fixed_aspect_theme  + remove_x_labs + guides(fill = "none") + remove_y_labs,
@@ -921,10 +923,11 @@ inter_caste_contact_duration <- cowplot::plot_grid(allplots1[[1]], allplots1[[2]
 ## duration_grooming_given_to_treated_min
 plot_list <- list(ind_untreated_grooming_nurse$barplot_delta_period_list$duration_grooming_given_to_treated_min,
                   ind_untreated_grooming_forag$barplot_delta_period_list$duration_grooming_given_to_treated_min)
-#YLIM_extra <- 0
+YLIM_extra <- 0.03
 plot_comps1 <- multi_plot_comps(plot_list,ylim_extra=YLIM_extra)
-allplots1 <- cowplot::align_plots(plot_list[[1]] + fixed_aspect_theme  + remove_x_labs + guides(fill = "none") + labs(y = split_title(plot_list[[1]]$labels$y)), # ylim(plot_comps1$y_limits)
-                                  plot_list[[2]] + fixed_aspect_theme  + remove_x_labs + guides(fill = "none") + remove_y_labs, # ylim(plot_comps1$y_limits)
+plot_comps1$y_limits[1] <- 0
+allplots1 <- cowplot::align_plots(plot_list[[1]]  +  ylim(plot_comps1$y_limits) + fixed_aspect_theme  + remove_x_labs + guides(fill = "none") + labs(y = split_title(plot_list[[1]]$labels$y)), # ylim(plot_comps1$y_limits)
+                                  plot_list[[2]]  +  ylim(plot_comps1$y_limits) + fixed_aspect_theme  + remove_x_labs + guides(fill = "none") + remove_y_labs, # ylim(plot_comps1$y_limits)
                                   align="h")
 duration_grooming_given_to_treated_min <- cowplot::plot_grid(allplots1[[1]], allplots1[[2]],
                                                    ncol=2, rel_widths = c(0.28,0.24))
@@ -937,24 +940,55 @@ ind_beh_measures <- cowplot::plot_grid(
   duration_of_contact_with_treated,
   inter_caste_contact_duration,
   duration_grooming_given_to_treated_min,
-  plot_comps1$leg, ncol=1, rel_heights = c(0.08,0.30,0.30,0.30, 0.05))
+  spacingPlot,
+   ncol=1, rel_heights = c(0.04,0.30,0.30,0.30,0.08), labels = c("","D","E","F"))
 
 
 ###################################################################################################################################
-### ind_grooming_received ### 3 panels
+### ind_grooming_received ### 2 panels
+titlePlots_treated <- ggplot() + theme_void() + annotate("text", x = 0.2, y = 0.5, label = "treated nurses", family = "Liberation Serif",  size = 5, lineheight = 0.8)
+
+
 plot_list <- list(ind_treated_grooming$barplot_delta_period_list$duration_grooming_received_min,
-                  ind_treated_grooming$barplot_delta_period_list$number_contacts_received,
-                  ind_treated_grooming$barplot_delta_period_list$prop_duration_grooming_received_outside_min)
-YLIM_extra <- 0
+                  ind_treated_grooming$barplot_delta_period_list$number_contacts_received)
+YLIM_extra <- 0.18
 plot_comps1 <- multi_plot_comps(plot_list,ylim_extra=YLIM_extra)
-allplots1 <- cowplot::align_plots(plot_list[[1]] + fixed_aspect_theme  + remove_x_labs + guides(fill = "none") + labs(y = split_title(plot_list[[1]]$labels$y)),
-                                  plot_list[[2]] + fixed_aspect_theme  + remove_x_labs + guides(fill = "none") + labs(y = split_title(plot_list[[2]]$labels$y)),
-                                  plot_list[[3]] + fixed_aspect_theme  + remove_x_labs + guides(fill = "none") + labs(y = split_title(plot_list[[3]]$labels$y)),
+plot_comps1$y_limits[1] <- 0
+allplots1 <- cowplot::align_plots(plot_list[[1]] + ylim(plot_comps1$y_limits) + fixed_aspect_theme  + remove_x_labs + guides(fill = "none") + labs(y = split_title(plot_list[[1]]$labels$y)),
+                                  plot_list[[2]] + ylim(c(0,0.55)) + fixed_aspect_theme  + remove_x_labs + guides(fill = "none") + labs(y = split_title(plot_list[[2]]$labels$y)),
                                   align="h")
-treated_grooming <- cowplot::plot_grid(
-  cowplot::plot_grid(allplots1[[1]], allplots1[[2]], allplots1[[3]],
-                     ncol=3, rel_widths = c(0.24,0.25,0.265))
-  , plot_comps1$leg, ncol=1, rel_heights = c(0.8, 0.2))
+treated_grooming <- cowplot::plot_grid( titlePlots_treated,
+  cowplot::plot_grid(allplots1[[1]], allplots1[[2]],
+                     ncol=2, rel_widths = c(0.24,0.25))
+  , ncol=1, rel_heights = c(0.2, 0.8))
+
+
+
+###################################################################################################################################
+#MASTER BEHAVIOURAL PLOT
+plot_list <- list(ind_net_degree,
+                  prop_time_outside,
+                  treated_grooming)
+
+# Set the same y-axis limits for all plots
+YLIM_extra <- 1
+plot_comps <- multi_plot_comps(plot_list,ylim_extra=YLIM_extra)
+allplots <- cowplot::align_plots(plot_list[[1]],
+                                 plot_list[[2]],
+                                 plot_list[[3]],
+                                 align="v")
+
+leftPanelBeh <-  cowplot::plot_grid(allplots[[1]], allplots[[2]], allplots[[3]],
+                                      ncol=1, rel_heights  = c(0.26,0.22,0.28), 
+                                    labels = c('A', 'B',"C"))
+FullBehGrid <- cowplot::plot_grid(
+cowplot::plot_grid(leftPanelBeh,ind_beh_measures, ncol=2, rel_widths = c(0.9,0.6)),
+plot_comps1$leg, ncol=1, rel_heights = c(0.9, 0.18))
+# ind_net_degree <- cowplot::plot_grid(
+#   cowplot::plot_grid(allplots[[1]], allplots[[2]], allplots[[3]],
+#                      ncol=3, rel_widths = c(0.28,0.24,0.24))
+#   , plot_comps$leg, ncol=1, rel_heights = c(0.9, 0.1))
+
 
 ###################################################################################################################################
 ### comparing timeline of grooming and time_outside line_plots  ### 3 panels
@@ -1037,43 +1071,55 @@ collective_net_properties <- cowplot::plot_grid(
 # width_pixels <- 450 (150 x panel)
 # height_pixels <- 300 (2/3 of width)
 
+# SavePrint_plot(
+#   plot_obj = ind_net_degree,
+#   plot_name = "ind_net_degree",
+#   plot_size = c(430/ppi, 300/ppi),
+#   # font_size_factor = 4,
+#   dataset_name = "Grid",
+#   save_dir = figurefolder
+# )
+# 
+# SavePrint_plot(
+#   plot_obj = prop_time_outside,
+#   plot_name = "prop_time_outside",
+#   plot_size = c(430/ppi, 300/ppi),
+#   # font_size_factor = 4,
+#   dataset_name = "Grid",
+#   save_dir = figurefolder
+# )
+# 
+# # ISSUE WITH PVAL IN MODEL!!!!!!!!!!!!!!!!!!!!!!!!!
+# SavePrint_plot(
+#   plot_obj = ind_beh_measures,
+#   plot_name = "ind_beh_measures",
+#   plot_size = c(330/ppi, 900/ppi), #extra length required to get y-axis labeled and unlabeled of same size
+#   # font_size_factor = 4,
+#   dataset_name = "Grid",
+#   save_dir = figurefolder
+# )
+
+# # remove inter_Caste_grooming_duration
+# SavePrint_plot(
+#   plot_obj = treated_grooming, 
+#   plot_name = "treated_grooming",
+#   plot_size = c(430/ppi, 230/ppi), #extra length required to fix the different digits on y-axis
+#   # font_size_factor = 4,
+#   dataset_name = "Grid",
+#   save_dir = figurefolder
+# )
+
+
+# FullBehGrid
 SavePrint_plot(
-  plot_obj = ind_net_degree,
-  plot_name = "ind_net_degree",
-  plot_size = c(430/ppi, 300/ppi),
+  plot_obj = FullBehGrid,
+  plot_name = "FullBehGrid",
+  plot_size = c(700/ppi, 700/ppi), #extra length required to fix the different digits on y-axis
   # font_size_factor = 4,
-  dataset_name = "Grid",
+  dataset_name = "",
   save_dir = figurefolder
 )
 
-SavePrint_plot(
-  plot_obj = prop_time_outside,
-  plot_name = "prop_time_outside",
-  plot_size = c(430/ppi, 300/ppi),
-  # font_size_factor = 4,
-  dataset_name = "Grid",
-  save_dir = figurefolder
-)
-
-# ISSUE WITH PVAL IN MODEL!!!!!!!!!!!!!!!!!!!!!!!!!
-SavePrint_plot(
-  plot_obj = ind_beh_measures, 
-  plot_name = "ind_beh_measures",
-  plot_size = c(330/ppi, 900/ppi), #extra length required to get y-axis labeled and unlabeled of same size
-  # font_size_factor = 4,
-  dataset_name = "Grid",
-  save_dir = figurefolder
-)
-
-# remove inter_Caste_grooming_duration
-SavePrint_plot(
-  plot_obj = treated_grooming, 
-  plot_name = "treated_grooming",
-  plot_size = c(430/ppi, 230/ppi), #extra length required to fix the different digits on y-axis
-  # font_size_factor = 4,
-  dataset_name = "Grid",
-  save_dir = figurefolder
-)
 
 
 SavePrint_plot(
