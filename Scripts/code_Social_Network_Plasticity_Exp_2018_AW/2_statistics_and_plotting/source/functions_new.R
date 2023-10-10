@@ -5283,13 +5283,13 @@ split_title <- function(title) {
 }
 
 
-multi_plot_comps <- function(plot_list,ylim_extra){
+multi_plot_comps <- function(plot_list,ylim_extra,legsize=12){
   
   # Set the same y-axis limits for all plots
   y_limits <- c(min(sapply(plot_list, function(x) ggplot_build(x)$data[[1]]$ymin)), 
                 max(sapply(plot_list, function(x) ggplot_build(x)$data[[1]]$ymax)) + ylim_extra)
   
-  leg <-cowplot::get_legend(plot_list[[1]] + theme(legend.direction="horizontal"))
+  leg <-cowplot::get_legend(plot_list[[1]] + theme(legend.direction="horizontal",legend.title =element_text(size=legsize), legend.text=element_text(size=legsize)) + guides(fill=guide_legend(nrow=1, ncol=4))) 
   
   multi_plot_comps_list <- list(y_limits=y_limits,leg=leg)
   
