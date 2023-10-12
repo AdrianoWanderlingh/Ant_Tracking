@@ -31,7 +31,7 @@ Ant Tracking
 
 
 ## 📍 Overview
-Code used for Adriano Wanderlingh's Lasius niger Colony Maturation Experiment.  :ant: 🦠
+Code used for Adriano Wanderlingh's Lasius niger Group Size Effects Experiment.  :ant: 🦠
 
 Testing Social Immunity role in disease hindering dynamics in societies, using ant colonies interaction networks and behaviour | experimental epidemiology.
 
