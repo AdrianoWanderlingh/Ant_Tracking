@@ -87,11 +87,15 @@ WORKDIR <- paste(data_path,"molecular_bio_analysis/", sep ="/")
 #plot saving folder
 warning("change to local Docs folder as done in Stroeymeyt pipeline!!")
 save_dir_plots <- paste0("/home/cf19810/Documents/RTqPCR_immune_genes_plots/")
+figurefolder <- save_dir_plots
 
 ###source function scripts
 print("Loading functions and libraries...")
 source(paste(scripts_path,"libraries.R",sep="/"))
 source(paste(scripts_path,"functions_new.R",sep="/"))
+source(paste(scripts_path,"plotting_parameters.R",sep="/"))
+source(paste(scripts_path,"analysis_parameters.R",sep="/"))
+
 
 ### fixed PARAMETERS
 #Technical_error
@@ -1815,8 +1819,10 @@ genes_data$Category[genes_data$Category=="evaluate_abs_diff_Ct" & (genes_data$ab
                   colFill_treatment +
                   colScale_treatment +
                   STYLE +
-                  scale_y_continuous(labels = function(x) format(x*100, digits=2, nsmall=1,scientific = FALSE), trans = "log10") +
-                  ylab("% relative gene expression") +
+                  scale_y_continuous(labels = function(x) format(x, digits=1, nsmall=1,scientific = FALSE), trans = "log2") +
+                  theme(plot.margin = margin(2, 2, 3.5, 15) ) +
+                  ylab(expression(paste("log₂ fold-change\nin gene expression"))) +
+                  #ylab(expression("log"["2"] ~ "fold-change\nin gene expression")) +
                   theme(legend.position = "bottom", legend.direction = "horizontal") +
                   geom_text(data = mod_Q[which(mod_Q$GROUP==GROUP),], aes(x = gene, y = 0.2, label = P.stars) , color = "black") # , fontface = "bold", position = position_jitterdodge(seed = 2) # jitterdodge in geom_text will need the grouping aesthetic (eg, colour) to be defined inside ggplot() +
               )
@@ -1912,16 +1918,16 @@ genes_data$Category[genes_data$Category=="evaluate_abs_diff_Ct" & (genes_data$ab
                   colFill_Treatment +
                   colScale_Treatment +
                   STYLE +
-                  #ggtitle(paste(unique(CLEAN_DATA[which(CLEAN_DATA$GROUP==GROUP),"Ant_status"]), collapse = ", ")) +
-              scale_y_continuous(labels = function(x) format(x*100, digits=2, nsmall=1,scientific = FALSE), trans = "log10") +
-              ylab("% relative gene expression") +                #geom_text(data = label_treatment[which(label_treatment$GROUP==GROUP),], aes(x = gene, y = 10, group = Treatment, label = V1, fontface = "bold"), position = position_jitterdodge(seed = 2)) # jitterdodge in geom_text will need the grouping aesthetic (eg, colour) to be defined inside ggplot() +
-            geom_text(data = base_model, 
+              scale_y_continuous(labels = function(x) format(x, digits=1, nsmall=1,scientific = FALSE), trans = "log2") +
+              theme(plot.margin = margin(2, 2, 15, 15) ) +
+              ylab(expression(paste("log₂ fold-change\nin gene expression"))) +
+              geom_text(data = base_model, 
                       aes(y = 100.55, label = P.Treatment.stars, fontface = "plain"),color = "black")
           
             
             #CLEAN_DATA$AntTask <-  factor(CLEAN_DATA$AntTask , levels = status_order[which(status_order %in% CLEAN_DATA$AntTask)])
             CLEAN_DATA$Ant_status <- as.factor(CLEAN_DATA$Ant_status)
-            CLEAN_DATA$Ant_status <- factor(CLEAN_DATA$Ant_status, levels = rev(levels(CLEAN_DATA$Ant_status)))
+            CLEAN_DATA$Ant_status <- factor(CLEAN_DATA$Ant_status, levels = c("queen", "treated nurse", "untreated nurse", "untreated forager"))
             
             NURSE_col <- statuses_colours["nurse"]; names(NURSE_col) <- NULL
             FORAG_col <- statuses_colours["forager"]; names(FORAG_col) <- NULL
@@ -1951,10 +1957,11 @@ genes_data$Category[genes_data$Category=="evaluate_abs_diff_Ct" & (genes_data$ab
               #colFill_Treatment +
               #colScale_Treatment +
               STYLE +
-              #ggtitle(paste(unique(CLEAN_DATA[which(CLEAN_DATA$GROUP==GROUP),"Ant_status"]), collapse = ", ")) + #,subtitle = "95% C.I."
-              scale_y_continuous(labels = function(x) format(x*100, digits=2, nsmall=1,scientific = FALSE), trans = "log10") +
+              scale_y_continuous(labels = function(x) format(x, digits=1, nsmall=1,scientific = FALSE), trans = "log2") +
+              theme(plot.margin = margin(2, 2, 3.5, 15) ) +
+              ylab(expression(paste("log₂ fold-change\nin gene expression"))) +
               scale_x_discrete(labels = c("untreated\nnurse","untreated\nforager")) +
-              ylab("% relative gene expression") +              facet_grid(. ~ gene)+
+              facet_grid(. ~ gene)+
               geom_text(data = base_model, aes(x = 1.5, y = 100.35, label = P.Status.stars, fontface = "plain") , color = "black") #, position = position_jitterdodge(seed = 2) # jitterdodge in geom_text will need the grouping aesthetic (eg, colour) to be defined inside ggplot() +
             
             # arrange plots side by side
@@ -1964,8 +1971,7 @@ genes_data$Category[genes_data$Category=="evaluate_abs_diff_Ct" & (genes_data$ab
             
             SavePrint_plot(plot_obj = immune_genes_plots,
                            plot_name= "immune_genes_plots",
-                           plot_size = c(7, 9),
-                           #font_size_factor = 4,
+                           plot_size = c(6, 8),
                            dataset_name=deparse(substitute(genes_data)),
                            save_dir = save_dir_plots)
             # 
