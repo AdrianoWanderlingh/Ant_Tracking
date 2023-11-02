@@ -4522,17 +4522,38 @@ plot_distribution <- function(experiments,desired_treatments,seeds){
 }
 
 
-# normalised entropy
-norm_entropy <- function(x) {
-  # Remove missing values from x
-  x <- x[!is.na(x)]
-  if (length(x) == 0) {
-    warning("Input vector contains no valid values.")
-    return(NA)
-  }
-  norm_entropy_value <-entropy(x)/entropy(rep(1,length(x)))
-  return(norm_entropy_value)
+## Define a function to compute the maximum possible entropy for a given colony size N:
+max_entropy <- function(N) {
+  p_max = 1/N
+  return(-N * (p_max * log(p_max, base=2)))
 }
+
+## Define a function to compute the normalized entropy using the entropy function:
+norm_entropy <- function(variable) {
+  variable <- variable[!is.na(variable)]
+  # Calculate Shannon's entropy using the entropy function
+  H = entropy::entropy(table(variable), unit="log2")
+  
+  # Compute maximum possible entropy based on colony size
+  N = length(variable)
+  H_max = max_entropy(N)
+  
+  # Return normalized entropy
+  return(H / H_max)
+}
+# 
+# 
+# # normalised entropy
+# norm_entropy <- function(x) {
+#   # Remove missing values from x
+#   x <- x[!is.na(x)]
+#   if (length(x) == 0) {
+#     warning("Input vector contains no valid values.")
+#     return(NA)
+#   }
+#   norm_entropy_value <-entropy(x)/entropy(rep(1,length(x)))
+#   return(norm_entropy_value)
+# }
 
 # Define a function to perform the dip test and extract the dip statistic
 perform_dip_test <- function(x) {
@@ -5609,9 +5630,7 @@ STYLE <- list(#colScale, fillScale,
       "rand_shades",
       "treatment_labs",
       "Shades",
-      "palette",
-      "mixed_color1",
-      "mixed_color2"
+      "palette"
     )
   # cleaning
   rm(list = ls()[which(ls() %in% remove)])

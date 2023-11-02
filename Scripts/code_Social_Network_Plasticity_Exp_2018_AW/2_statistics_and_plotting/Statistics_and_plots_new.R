@@ -227,7 +227,7 @@ root_path <- paste(disk_path,"/main_experiment",sep="") # root_path <- paste(dis
 data_path=paste(root_path,"/processed_data/individual_behaviour/pre_vs_post_treatment",sep="")
 pattern="individual_behavioural_data"
 
-Entropy_size <- calculate_entropy(data_path,which_individuals=all_workers,number_permutations=5,showPlot=F) # 500 PERMS  # "treated","queen","nurse","forager"
+Entropy_size <- calculate_entropy(data_path,which_individuals=all_workers,number_permutations=5,showPlot=F, pre_only = T) # 500 PERMS  # "treated","queen","nurse","forager"
 
 Entropy_size$Dip_plot
 Entropy_size$entropy_plot
@@ -270,11 +270,11 @@ SocialMaturity <- ggplot(density_data, aes(x = x, y = y, fill = size)) +
     y = "Density"
   ) +
   scale_colour_manual(
-    values = c("small" = mixed_color2, "big" = mixed_color1),
+    values = c("small" = pooled_small_cols_colour, "big" = pooled_large_cols_colour),
     labels = function(x) str_to_title(gsub("big", "large", gsub("\\.", " ", x)))
   ) +
   scale_fill_manual(
-    values = c("small" = mixed_color2, "big" = mixed_color1),
+    values = c("small" = pooled_small_cols_colour, "big" = pooled_large_cols_colour),
     labels = function(x) str_to_title(gsub("big", "large", gsub("\\.", " ", x)))
   ) + # you can choose your own colors
   scale_x_continuous(limits = c(0, 1)) +
@@ -1789,11 +1789,11 @@ plot_seeds(experiments="main_experiment",seeds=seeds,variables=variables,transf=
   
   # Arrange ggplot objects horizontally
   top_row <- ggarrange(Entropy_size$entropy_plot, SocialMaturity, 
-                       ncol = 2, widths = c(0.4, 0.6),labels = c("B", "C"))
+                       ncol = 2, widths = c(0.4, 0.6),labels = c("A", "B"))
   
   # Use plot_grid to arrange the top row and the base plot in two rows
-  pre_DOL_plot <- cowplot::plot_grid(base_plot,top_row,  nrow = 2, rel_heights = c(0.6, 0.3),
-                     labels = c("A"))
+  pre_DOL_plot <- cowplot::plot_grid(top_row, base_plot,  nrow = 2, rel_heights = c(0.3, 0.6),
+                     labels = c("C"))
   
   
   #DON'T TOUCH IT, IT IS VERY DELICATE
