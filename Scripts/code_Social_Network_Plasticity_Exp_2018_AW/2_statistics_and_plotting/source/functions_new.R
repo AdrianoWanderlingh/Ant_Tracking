@@ -27,7 +27,8 @@ get_posthoc_groups <-
     
     post_hoc <-
       summary(glht(model, contrast_matrix), test = adjusted("BH"))
-    # print("z value");print(post_hoc$test$tstat);print("Pr>|z|");print(post_hoc$test$pvalues);
+    # print("z value");print(post_hoc$test$tstat);print("Pr>|z|");print(post_hoc$test$pvalues)
+    print(post_hoc)
     p_values <-
       as.numeric(post_hoc$test$pvalues)
     names(p_values) <- names(post_hoc$test$coefficients)
@@ -1417,7 +1418,7 @@ plot_observed_vs_random <- function(data_path,experiments,data_input = NULL, see
     # title settings
     par(mar = c(0,0,0,0)); plot(1,1,type = "n",frame.plot = FALSE,axes = FALSE); u <- par("usr")
     # Add a black line above the title
-    abline(h=u[4] - 0.05, col="black", lwd=1)  # Adjust 0.1 as needed to set the desired line position
+    abline(h=u[4] - 0.005, col="black", lwd=1)  # Adjust 0.1 as needed to set the desired line position
     # Adjust title position using the adj parameter
     #text(1, u[4], labels = names(seeds[seeds==seed]), font=2, adj=c(0.5, 1.2), pos = 1)  # Adjust 1.2 to move title up or down as needed
     text(1,u[4] - 0.3,labels = names(seeds[seeds==seed]),font=2, pos = 1)
@@ -1647,7 +1648,7 @@ plot_observed_vs_random <- function(data_path,experiments,data_input = NULL, see
       Edgington_outcome <- c(Edgington_outcome,paste0(ifelse(current_size=="big","large",current_size),": |Z score| = ", abs(round(as.numeric(statistic),2)),", P ≤ ",format(from_p_to_prounded(as.numeric(pval)),scientific=F) ))
       
       #add p_val
-      if (pval>0.05){p_cex <- inter_cex*0.6;adjust_line <- 0.3;fonty <- 1}else{p_cex <- max_cex*1.1*0.6;adjust_line <- 0; fonty <-  2} # adjust titles
+      if (pval>0.05){p_cex <- max_cex*1.1*0.6;adjust_line <- 0;fonty <- 1}else{p_cex <- max_cex*1.1*0.6;adjust_line <- 0; fonty <-  2} # adjust titles ##inter_cex*0.6
       #      if (pval>0.05){p_cex <- inter_cex;adjust_line <- 0.3;fonty <- 1}else{p_cex <- max_cex*1.1;adjust_line <- 0; fonty <-  2}
 
       #add size title
@@ -1984,7 +1985,7 @@ plot_observed_vs_random_TASK <- function(data_path,experiments,data_input = NULL
       Edgington_outcome <- c(Edgington_outcome,paste0(current_task,": |Z score| = ", abs(round(as.numeric(statistic),2)),", P ≤ ",format(from_p_to_prounded(as.numeric(pval)),scientific=F) ))
       
       #add p_val
-      if (pval>0.05){p_cex <- inter_cex*0.6;adjust_line <- 0.3;fonty <- 1}else{p_cex <- max_cex*1.1*0.6;adjust_line <- 0; fonty <-  2} # adjust titles
+      if (pval>0.05){p_cex <- max_cex*1.1*0.6;adjust_line <- 0.3;fonty <- 1}else{p_cex <- max_cex*1.1*0.6;adjust_line <- 0; fonty <-  2} # adjust titles  inter_cex*0.6
       #      if (pval>0.05){p_cex <- inter_cex;adjust_line <- 0.3;fonty <- 1}else{p_cex <- max_cex*1.1;adjust_line <- 0; fonty <-  2}
       
       # #add size title
@@ -2589,6 +2590,7 @@ collective_analysis_rescal <- function(data_path=data_path,showPlot=T){
     model <- lmer(   variable ~ period*treatment + (1|time_of_day) + (1|colony) ,data=data,control = model_n_interations)
     anov  <- anova(model)
     p_interaction_treatment <- anov["period:treatment","Pr(>F)"]
+    p_period <- anov["period",]; print(p_period)
     
     # Check if the model converged
     if(length(summary(model)$optinfo$conv$lme4$messages) != 0) {
@@ -2858,6 +2860,8 @@ individual_ONE_analysis <- function(data_path=data_path,which_individuals,pre_on
       
       anov  <- anova(model)
       p_interaction_treatment <- anov["period:treatment","Pr(>F)"]
+      p_period <- anov["period",]; print(p_period)
+      
       
       # Check if the model converged
       if(length(summary(model)$optinfo$conv$lme4$messages) != 0) {
@@ -4691,14 +4695,19 @@ calculate_entropy <- function(data_path=data_path,which_individuals,number_permu
   #   ) +
   #   STYLE_generic
   
+  # Create the spectral palette
+  spectral_palette <-  colorRampPalette(brewer.pal(11, "Spectral"))((length(unique(entropy_data$colony))))
+  
+  
   # Create a boxplot using ggplot
   entropy_plot <- ggplot(entropy_data, aes(x = size, y = norm_entropy)) +
     stat_boxplot(geom ='errorbar',lwd= 0.3, width = 0.1) + 
     geom_boxplot(lwd= 0.3,width = 0.2) +
     geom_point(aes(color = colony), position = position_jitter(width = 0.1), size=0.3) +
     annotate("text", x = 1.5, y = Inf, vjust = 1, label = from_p_to_ptext(pvalue)) + # Adjust vjust as needed
-    labs(x = "",y = "Normalized Shannon's entropy",color = "Colony") +
+    labs(x = "",y = "normalized Shannon's entropy",color = "Colony") +
     scale_x_discrete(position = "top", labels = function(x) str_to_title(gsub("big", "large", gsub("\\.", " ", x))))+
+    scale_color_manual(values = spectral_palette) +
     guides(color = "none") +
     theme_minimal() +
     theme(
@@ -5261,28 +5270,59 @@ assign_CTDiff_15PipErr <- function(mean_Ct) {
 #standard pixels per inch
 ppi <- 72
 
-SavePrint_plot <- function(plot_obj, plot_name, dataset_name, save_dir, plot_size = c(7, 4), dpi = 300, font_size = 30) {
+SavePrint_plot <- function(plot_obj, plot_name, dataset_name, save_dir, plot_size = c(7, 4), dpi = 300, font_size = 30, SVG = FALSE) {
   # Create the directory if it doesn't exist
   if (!dir.exists(save_dir)) {
     dir.create(save_dir, recursive = TRUE)
   }
-  # Modify the plot object to adjust the font size for jpg
-  plot_obj_jpg <- plot_obj + theme(text = element_text(size = font_size, lineheight = .3))
+  # Modify the plot object to adjust the font size
+  plot_obj_mod <- plot_obj + theme(text = element_text(size = font_size))
   # Check if the directory is writable
   if (!file.access(save_dir, 2)) {
-    # Save plot as png
-    ggsave(paste0(save_dir, dataset_name, "_", plot_name, "_", Sys.Date(), ".png"), plot = plot_obj_jpg, width = plot_size[1], height = plot_size[2], dpi = dpi)
-    # Save plot as pdf
-    #ggsave(paste0(save_dir, dataset_name, "_", plot_name, "_", Sys.Date(), ".pdf"), plot = plot_obj, width = plot_size[1], height = plot_size[2])
-    # issue with font_import(), loadfonts(device = "pdf")
-    # More than one version of regular/bold/italic found for Liberation Serif. Skipping setup for this font.
-    # Print the plot to the currently open device (the cumulative PDF file)
-    #print(plot_obj)
+    # Save plot as SVG or png depending on the SVG parameter
+    if (SVG) {
+      # Save plot as SVG
+      ggsave(paste0(save_dir, dataset_name, "_", plot_name, "_", Sys.Date(), ".svg"), 
+             plot = plot_obj_mod, 
+             width = plot_size[1], 
+             height = plot_size[2])  # No dpi for SVG
+    } else {
+      # Save plot as png
+      ggsave(paste0(save_dir, dataset_name, "_", plot_name, "_", Sys.Date(), ".png"), 
+             plot = plot_obj_mod, 
+             width = plot_size[1], 
+             height = plot_size[2], 
+             dpi = dpi)  # Use dpi for png
+    }
   } else {
     cat("Error: The directory is not writable.")
   }
 }
 
+
+
+# SavePrint_plot <- function(plot_obj, plot_name, dataset_name, save_dir, plot_size = c(7, 4), dpi = 300, font_size = 30) {
+#   # Create the directory if it doesn't exist
+#   if (!dir.exists(save_dir)) {
+#     dir.create(save_dir, recursive = TRUE)
+#   }
+#   # Modify the plot object to adjust the font size for jpg
+#   plot_obj_jpg <- plot_obj + theme(text = element_text(size = font_size, lineheight = .3))
+#   # Check if the directory is writable
+#   if (!file.access(save_dir, 2)) {
+#     # Save plot as png
+#     ggsave(paste0(save_dir, dataset_name, "_", plot_name, "_", Sys.Date(), ".png"), plot = plot_obj_jpg, width = plot_size[1], height = plot_size[2], dpi = dpi)
+#     # Save plot as pdf
+#     #ggsave(paste0(save_dir, dataset_name, "_", plot_name, "_", Sys.Date(), ".pdf"), plot = plot_obj, width = plot_size[1], height = plot_size[2])
+#     # issue with font_import(), loadfonts(device = "pdf")
+#     # More than one version of regular/bold/italic found for Liberation Serif. Skipping setup for this font.
+#     # Print the plot to the currently open device (the cumulative PDF file)
+#     #print(plot_obj)
+#   } else {
+#     cat("Error: The directory is not writable.")
+#   }
+# }
+# 
 
 ######### STYLING FUNCTIONS ###########
 

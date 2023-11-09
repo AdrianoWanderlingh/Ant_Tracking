@@ -85,7 +85,7 @@ full_statuses_names <- c("Treated\nnurses","Untreated\nworkers","Queen\n"
                          ,
                          "Sham","Path."
                          ,
-                         "Ran","Obs"
+                         "R","O"
                          ,
                          "Q\ncomm.","Other\ncomm."
                          ,

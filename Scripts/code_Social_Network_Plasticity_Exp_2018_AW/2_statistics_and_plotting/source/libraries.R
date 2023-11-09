@@ -34,6 +34,8 @@ require(MuMIn)
 require(diptest) #dip test for bimodularity
 require(entropy)
 
+require(svglite)
+
 # in case of installation issues, use mamba install r-PACKAGENAME
 
 ### AW # for plotting

@@ -107,9 +107,9 @@ coll_no_rescal_net <- collective_analysis_no_rescal(data_path,showPlot=F)
 root_path <- paste(disk_path,"/main_experiment/processed_data",sep="") # root_path <- paste(disk_path,"/main_experiment_grooming/processed_data",sep="")
 data_path <- paste(root_path,"/network_properties_edge_weights_duration/pre_vs_post_treatment/all_workers",sep="")
 pattern="colony_data.txt"
-variable_list <- c("modularity_FacetNet","clustering","task_assortativity","efficiency","degree_mean","density") #,"degree_maximum","diameter"
-names(variable_list) <- c("modularity (FacetNet)","clustering","task assortativity","efficiency","mean degree","density") # ,"degree maximum","diameter"
-transf_variable_list <- c("sqrt"       ,"sqrt"      ,"Box_Cox"              ,"log"       ,"log"        ,"log" ) # ,"log"   ,"power0.01"  ######"none", "sqrt" "log","power2"
+variable_list <- c("modularity_FacetNet","task_assortativity","efficiency","degree_mean","density") # "clustering","degree_maximum","diameter"
+names(variable_list) <- c("modularity","task assortativity","efficiency","mean degree","density") # "clustering",,"degree maximum","diameter"
+transf_variable_list <- c("sqrt"             ,"Box_Cox"              ,"log"       ,"log"        ,"log" ) # ,"sqrt","log"   ,"power0.01"  ######"none", "sqrt" "log","power2"
 # TRANSFORMATION NOTE: task_assortativity is hard to normalise (no transformation has the best result) - used Box_Cox
 
 coll_rescal_net <- collective_analysis_rescal(data_path,showPlot=F)
@@ -266,8 +266,8 @@ SocialMaturity <- ggplot(density_data, aes(x = x, y = y, fill = size)) +
   geom_line(aes(color=size),size=1, alpha=1) +
   #geom_line(aes(color=size), stat="density", size=2, alpha=1, adjust=1/1.2) +
   labs(
-    x = "Social maturity",
-    y = "Density"
+    x = "social maturity",
+    y = "density"
   ) +
   scale_colour_manual(
     values = c("small" = pooled_small_cols_colour, "big" = pooled_large_cols_colour),
@@ -838,7 +838,9 @@ calculated_values <- CompareBehavs2 %>%
 ############### CH5: PRE-POST DIFFERENCES PLOTS ###################################################################################
 ###################################################################################################################################
 
-
+  spacingPlot <- ggplot() + theme_void() + annotate("text", x = 0.2, y = 0.5, label = "", family = "Liberation Serif",  size = 4, hjust = 0.05)
+  
+  
 ### PLOT GRIDS ####################################################################################################################
 
 
@@ -869,6 +871,24 @@ ind_net_degree <-  cowplot::plot_grid(allplots[[1]], allplots[[2]], allplots[[3]
 #                      ncol=3, rel_widths = c(0.28,0.24,0.24))
 #   , plot_comps$leg, ncol=1, rel_heights = c(0.9, 0.1))
 
+#################################################################################################################################
+
+#SELF-ISOLATION
+plot_list <- list(ind_treated_net$barplot_delta_period_list$degree,
+                  ind_treated_beh$barplot_delta_period_list$prop_time_outside)
+
+# Set the same y-axis limits for all plots
+YLIM_extra <- 1
+plot_comps <- multi_plot_comps(plot_list,ylim_extra=YLIM_extra)
+allplots <- cowplot::align_plots(plot_list[[1]] + ylim(c(-4.41,4.41)) + ggtitle("treated\nnurses")    + fixed_aspect_theme  + remove_x_labs + guides(fill = "none") + labs(y = "\n\nΔ degree"),
+                                 plot_list[[2]] + ylim(c(-0.08,0.08)) + ggtitle("treated\nnurses")    + fixed_aspect_theme  + remove_x_labs + guides(fill = "none") + labs(y = "Δ prop. time\noutside (power0.1)") ,
+                                 align="h")
+
+SelfIsolation <- cowplot::plot_grid(
+  cowplot::plot_grid(spacingPlot,allplots[[1]], allplots[[2]],spacingPlot,
+                     ncol=4, rel_widths = c(0.24,0.24,0.24,0.24)),
+  plot_comps1$leg,
+  ncol=1, rel_heights = c(0.9, 0.1))
 
 ###################################################################################################################################  
 ### ind_beh_measures ### 3 panels
@@ -894,9 +914,6 @@ titlePlots <- cowplot::align_plots(ggplot() + theme_void() + annotate("text", x 
                                    ggplot() + theme_void() + annotate("text", x = 0.2, y = 0.5, label = "untreated\nforagers",family = "Liberation Serif", size = 4.7, hjust = 0.05, lineheight = 0.8), #fontface = "bold",
                                    align="v")
 titlePlots_untreated <- cowplot::plot_grid(titlePlots[[1]], titlePlots[[2]], ncol=2, rel_widths = c(0.23,0.26))
-
-spacingPlot <- ggplot() + theme_void() + annotate("text", x = 0.2, y = 0.5, label = "", family = "Liberation Serif",  size = 4, hjust = 0.05)
-                                  
 
 
 ## duration_of_contact_with_treated_min
@@ -944,6 +961,12 @@ ind_beh_measures <- cowplot::plot_grid(
    ncol=1, rel_heights = c(0.04,0.30,0.30,0.30,0.01), labels = c("D","","E","F"))
 
 
+#SANITARY CARE INVESTMENT
+SanitaryCare2 <- cowplot::plot_grid(
+  titlePlots_untreated,
+  duration_grooming_given_to_treated_min,
+  ncol=1, rel_heights = c(0.15,0.90), labels = c("B","","",""))
+
 ###################################################################################################################################
 ### ind_grooming_received ### 2 panels
 #titlePlots_treated <- ggplot() + theme_void() + annotate("text", x = 0.2, y = 0.5, label = "treated nurses", family = "Liberation Serif",  size = 4.7, lineheight = 0.8)
@@ -959,14 +982,51 @@ plot_list <- list(ind_treated_grooming$barplot_delta_period_list$duration_groomi
 YLIM_extra <- 0.18
 plot_comps1 <- multi_plot_comps(plot_list,ylim_extra=YLIM_extra)
 plot_comps1$y_limits[1] <- 0
+
+
+
+
 allplots1 <- cowplot::align_plots(plot_list[[1]] + scale_y_continuous(limits = c(0, plot_comps1$y_limits[2]), expand = c(0, 0)) + fixed_aspect_theme  + remove_x_labs + guides(fill = "none") + labs(y = split_title(plot_list[[1]]$labels$y)),
                                   plot_list[[2]] + scale_y_continuous(limits = c(0, 0.55), expand = c(0, 0))                    + fixed_aspect_theme  + remove_x_labs + guides(fill = "none") + labs(y = split_title(plot_list[[2]]$labels$y)),
                                   align="h")
-treated_grooming <- cowplot::plot_grid( titlePlots_treated,
-  cowplot::plot_grid(allplots1[[1]], allplots1[[2]],spacingPlot,
-                     ncol=3, rel_widths = c(0.24,0.24,0.24)) # extra widths for centering
-  , ncol=1, rel_heights = c(0.1, 0.9))
+# treated_grooming <- cowplot::plot_grid( titlePlots_treated,
+#   cowplot::plot_grid(allplots1[[1]], allplots1[[2]],spacingPlot,
+#                      ncol=3, rel_widths = c(0.24,0.24,0.24)) # extra widths for centering
+#   , ncol=1, rel_heights = c(0.1, 0.9))
 
+
+SanitaryCare1 <- cowplot::plot_grid( titlePlots_treated,
+  cowplot::plot_grid(allplots1[[1]], allplots1[[2]],
+                     ncol=2, rel_widths = c(0.24,0.24)) # extra widths for centering
+  , ncol=1, rel_heights = c(0.15, 0.9),  labels= c("A",""))
+
+
+SanitaryCare <- cowplot::plot_grid(
+  cowplot::plot_grid(SanitaryCare1,spacingPlot, SanitaryCare2, ncol=3, rel_widths = c(0.9,0.05,0.9)),
+  plot_comps1$leg,
+  ncol=1, rel_heights = c(0.9, 0.1))
+
+###################################################################################################################################
+#SOCIAL DISTANCING
+
+## duration_of_contact_with_treated_min
+plot_list <- list(ind_untreated_beh_nurse$barplot_delta_period_list$inter_caste_contact_duration,
+                  ind_untreated_beh_forag$barplot_delta_period_list$inter_caste_contact_duration,
+                  ind_untreated_net_nurse$barplot_delta_period_list$degree,
+                  ind_untreated_net_forag$barplot_delta_period_list$degree)
+YLIM_extra <- 0.02
+plot_comps1 <- multi_plot_comps(plot_list,ylim_extra=YLIM_extra)
+allplots1 <- cowplot::align_plots(plot_list[[1]] + ylim(c(-0.462,0.462)) + ggtitle("untreated\nnurses")    + fixed_aspect_theme  + remove_x_labs + guides(fill = "none") + labs(y = split_title(plot_list[[1]]$labels$y)),
+                                  plot_list[[2]] + ylim(c(-0.462,0.462))  + ggtitle("untreated\nforagers")    + fixed_aspect_theme  + remove_x_labs + guides(fill = "none") + remove_y_labs,
+                                  plot_list[[3]] + ylim(c(-6.33,6.33)) + ggtitle("untreated\nnurses")  + fixed_aspect_theme  + remove_x_labs + guides(fill = "none") ,
+                                  plot_list[[4]] + ylim(c(-6.33,6.33)) + ggtitle("untreated\nforagers")+ fixed_aspect_theme  + remove_x_labs + guides(fill = "none") + remove_y_labs,
+                                  align="h")
+SocialDistancing <- cowplot::plot_grid(
+  
+    cowplot::plot_grid(allplots1[[1]], allplots1[[2]],spacingPlot,allplots1[[3]], allplots1[[4]],
+                                                       ncol=5, rel_widths = c(0.28,0.24,0.02,0.28,0.24), labels = c("A","","","B","")),
+    plot_comps1$leg,
+    ncol=1, rel_heights = c(0.9, 0.1))
 
 
 ###################################################################################################################################
@@ -1040,7 +1100,7 @@ DegreeVSPropOut <- cowplot::plot_grid(allplots1[[1]], allplots1[[2]], allplots1[
 ###################################################################################################################################
 ### collective_net_properties ### 
 plot_list <- list(coll_rescal_net$barplot_delta_period_list$modularity_FacetNet,
-                  coll_rescal_net$barplot_delta_period_list$clustering,
+                  #coll_rescal_net$barplot_delta_period_list$clustering,
                   coll_rescal_net$barplot_delta_period_list$task_assortativity,
                   coll_rescal_net$barplot_delta_period_list$density,
                   coll_rescal_net$barplot_delta_period_list$efficiency,
@@ -1050,20 +1110,32 @@ YLIM_extra <- 0.01
 #have 2 scales: 1 for top row (measures expected to increase), 1 for bottom row (measures expected to decrease), 
 plot_compsA <- multi_plot_comps(plot_list[3],ylim_extra=YLIM_extra)
 plot_compsA$y_limits[1] <- -plot_compsA$y_limits[2]  #minor adjustments to ensure alignment
-plot_compsB <- multi_plot_comps(plot_list[4:6],ylim_extra=YLIM_extra,legsize=10)
-plot_compsC <- multi_plot_comps(plot_list[1:2],ylim_extra=YLIM_extra)
+plot_compsB <- multi_plot_comps(plot_list[4:5],ylim_extra=YLIM_extra,legsize=10)
+plot_compsC <- multi_plot_comps(plot_list[1],ylim_extra=YLIM_extra)
 plot_compsC$y_limits[1] <- -plot_compsC$y_limits[2]  #minor adjustments to ensure alignment
 
 allplots <- cowplot::align_plots(plot_list[[1]] + ylim(plot_compsC$y_limits) + fixed_aspect_theme  + remove_x_labs + guides(fill = "none") ,
-                                 plot_list[[2]] + ylim(plot_compsC$y_limits) + fixed_aspect_theme  + remove_x_labs + guides(fill = "none") ,
-                                 plot_list[[3]] + ylim(plot_compsA$y_limits) + fixed_aspect_theme  + remove_x_labs + guides(fill = "none") + labs(y = paste0("\n",plot_list[[3]]$labels$y)),
+                                 #plot_list[[2]] + ylim(plot_compsC$y_limits) + fixed_aspect_theme  + remove_x_labs + guides(fill = "none") ,
+                                 plot_list[[2]] + ylim(c(-3,3)) + fixed_aspect_theme  + remove_x_labs + guides(fill = "none") + labs(y = paste0("\n",split_title(plot_list[[2]]$labels$y))),
+                                 plot_list[[3]] + ylim(c(-0.0263,0.0263)) + fixed_aspect_theme  + remove_x_labs + guides(fill = "none") ,
                                  plot_list[[4]] + ylim(plot_compsB$y_limits) + fixed_aspect_theme  + remove_x_labs + guides(fill = "none") ,
                                  plot_list[[5]] + ylim(plot_compsB$y_limits) + fixed_aspect_theme  + remove_x_labs + guides(fill = "none") ,
-                                 plot_list[[6]] + ylim(plot_compsB$y_limits) + fixed_aspect_theme  + remove_x_labs + guides(fill = "none") ,
                                  align="h")
+
+
+
+top_row <-  cowplot::plot_grid(
+  cowplot::plot_grid(allplots[[1]], allplots[[2]], allplots[[3]],
+                     ncol=3,  rel_widths = c(0.1,0.1,0.1)))
+
+bottom_row <-  cowplot::plot_grid(
+  cowplot::plot_grid(allplots[[4]], allplots[[5]], spacingPlot,
+                     ncol=3,  rel_widths = c(0.1,0.1,0.1)))
+
+
 collective_net_properties <- cowplot::plot_grid(
-  cowplot::plot_grid(allplots[[1]], allplots[[2]], allplots[[3]],allplots[[4]], allplots[[5]], allplots[[6]],
-                     ncol=3, rel_widths = c(0.1,0.1,0.1,0.1,0.1,0.1))
+  cowplot::plot_grid(top_row, bottom_row,
+                     ncol =1,  rel_widths  = c(0.1,0.1))
   , plot_compsB$leg, ncol=1, rel_heights = c(0.9, 0.1))
 # width_pixels <- 600 
 # height_pixels <- 600
@@ -1116,6 +1188,40 @@ collective_net_properties <- cowplot::plot_grid(
 # )
 
 
+##SanitaryCare
+SavePrint_plot(
+  plot_obj = SanitaryCare,
+  plot_name = "SanitaryCare",
+  plot_size = c(500/ppi, 220/ppi), #extra length required to fix the different digits on y-axis
+  # font_size_factor = 4,
+  dataset_name = "",
+  save_dir = figurefolder,
+  SVG = T
+)
+
+#Self-isolation
+SavePrint_plot(
+  plot_obj = SelfIsolation,
+  plot_name = "SelfIsolation",
+  plot_size = c(500/ppi, 180/ppi), #extra length required to fix the different digits on y-axis
+  # font_size_factor = 4,
+  dataset_name = "",
+  save_dir = figurefolder,
+  SVG = T
+)
+
+#SocialDistancing
+SavePrint_plot(
+  plot_obj = SocialDistancing,
+  plot_name = "SocialDistancing",
+  plot_size = c(500/ppi, 210/ppi), #extra length required to fix the different digits on y-axis
+  # font_size_factor = 4,
+  dataset_name = "",
+  save_dir = figurefolder,
+  SVG = T
+)
+
+
 # FullBehGrid
 SavePrint_plot(
   plot_obj = FullBehGrid,
@@ -1160,10 +1266,11 @@ SavePrint_plot(
 SavePrint_plot(
   plot_obj = collective_net_properties, 
   plot_name = "collective_net_properties",
-  plot_size = c(450/ppi,480/ppi), #extra length required to get y-axis labeled and unlabeled of same size
+  plot_size = c(400/ppi,360/ppi), #extra length required to get y-axis labeled and unlabeled of same size
   # font_size_factor = 4,
   dataset_name = "Grid",
-  save_dir = figurefolder
+  save_dir = figurefolder,
+  SVG = T
 )
 
 
@@ -1688,8 +1795,8 @@ dol_RandObs <- plot_observed_vs_random(data_path,experiments=c("main_experiment"
 # Science 2018: S2. Constitutive properties of the ant social networks compared to randomized networks
 data_path <- paste(disk_path,"/main_experiment/processed_data/network_properties_edge_weights_duration/random_vs_observed",sep="")
 pattern="network_properties"
-variable_list        <- c("modularity_FacetNet","clustering","task_assortativity","efficiency","degree_mean","density")
-names(variable_list) <- c("modularity","clustering","task assortativity","efficiency","mean degree","density")
+variable_list        <- c("modularity_FacetNet","task_assortativity","efficiency","degree_mean","density") #"clustering",
+names(variable_list) <- c("modularity","task assortativity","efficiency","mean degree","density") #"clustering",
 
 starting_data <- NULL; warning("I've no idea what I did wrong but, for the love of god,without 'starting_data' in the global env the function crashes ")
 net_RandObs <- plot_observed_vs_random(data_path,experiments=c("main_experiment"))
@@ -1770,6 +1877,14 @@ plot_seeds(experiments="main_experiment",seeds=seeds,variables=variables,transf=
 # 
 # 
 
+
+pdf(file=paste(figurefolder,"/Figure_DOL_RandObs_plots_BOTTOM.pdf",sep=""),family=text_font,font=text_font,bg="white",width=double_col*0.58,height=double_col*0.6,pointsize=pointsize_less_than_2row2col) #height=page_height*0.25
+replayPlot(dol_RandObs$saved_plot$QNurse_over_QForager_contact_duration)
+dev.off()
+
+
+
+
   # Convert base R plot to a grid object
   grid.newpage()
   dol_RandObs$saved_plot#plot(1:10) # Replace this with your base R plot: dol_RandObs$saved_plot
@@ -1779,29 +1894,49 @@ plot_seeds(experiments="main_experiment",seeds=seeds,variables=variables,transf=
   library(cowplot)
   library(ggpubr)
   
+  # lot them separately and stitch in inkscape
   
   # Reduce the font size of the top row plots
   Entropy_size$entropy_plot <- Entropy_size$entropy_plot +
-    theme(axis.text = element_text(size = 6), axis.title = element_text(size = 6))
+    theme(axis.text = element_text(size = 9), axis.title = element_text(size = 9))
   
   SocialMaturity <- SocialMaturity +
-    theme(axis.text = element_text(size = 6), axis.title = element_text(size = 6))
+    theme(axis.text = element_text(size = 9), axis.title = element_text(size = 9))
   
   # Arrange ggplot objects horizontally
   top_row <- ggarrange(Entropy_size$entropy_plot, SocialMaturity, 
-                       ncol = 2, widths = c(0.4, 0.6),labels = c("A", "B"))
+                       ncol = 2, widths = c(0.4, 0.7),labels = c("A", "B"))
+  
+  # side_spacer <- ggplot()
+  # 
+  # base_plot1 <- cowplot::plot_grid(side_spacer, base_plot, side_spacer, ncol=3, rel_widths = c(3,6,3), labels = c("     C","",""))
+  # 
+  # # Use plot_grid to arrange the top row and the base plot in two rows
+  # pre_DOL_plot <- cowplot::plot_grid(base_plot1, top_row,  nrow = 2, rel_heights = c(0.6, 0.3)
+  #                                    #,labels = c("A")
+  #                    )
+  
+  # #DON'T TOUCH IT, IT IS VERY DELICATE
+  # # THERE ARE SOME GRAPHICAL ABBERATIONS ON THE TOP ROW (RAN MISSING and top trimmed) BUT THAT CAN BE FIXED LATER
+  # SavePrint_plot(
+  #   plot_obj = pre_DOL_plot,
+  #   plot_name = "pre_DOL_plot",
+  #   plot_size = c(480/ppi, 450/ppi),
+  #   # font_size_factor = 4,
+  #   dataset_name = "Grid",
+  #   save_dir = figurefolder
+  # )
+  # 
   
   # Use plot_grid to arrange the top row and the base plot in two rows
-  pre_DOL_plot <- cowplot::plot_grid(top_row, base_plot,  nrow = 2, rel_heights = c(0.3, 0.6),
-                     labels = c("C"))
-  
+  pre_DOL_plot <- cowplot::plot_grid( top_row,  nrow = 1)
   
   #DON'T TOUCH IT, IT IS VERY DELICATE
   # THERE ARE SOME GRAPHICAL ABBERATIONS ON THE TOP ROW (RAN MISSING and top trimmed) BUT THAT CAN BE FIXED LATER
   SavePrint_plot(
     plot_obj = pre_DOL_plot,
     plot_name = "pre_DOL_plot",
-    plot_size = c(480/ppi, 450/ppi),
+    plot_size = c(480/ppi, 150/ppi),
     # font_size_factor = 4,
     dataset_name = "Grid",
     save_dir = figurefolder
@@ -1844,7 +1979,7 @@ plot_seeds(experiments="main_experiment",seeds=seeds,variables=variables,transf=
 
 
 ### NETWORK MEASURES
-  pdf(file=paste(figurefolder,"/Figure_sim_NET_RandObs_plots.pdf",sep=""),family=text_font,font=text_font,bg="white",width=double_col*1.6,height=double_col*0.7,pointsize=pointsize_less_than_2row2col) #height=page_height*0.25
+  pdf(file=paste(figurefolder,"/Figure_sim_NET_RandObs_plots.pdf",sep=""),family=text_font,font=text_font,bg="white",width=double_col*1.45,height=double_col*0.6,pointsize=pointsize_less_than_2row2col) #height=page_height*0.25
   replayPlot(net_RandObs$saved_plot$density)
   dev.off()
 
@@ -1866,13 +2001,13 @@ plot_seeds(experiments="main_experiment",seeds=seeds,variables=variables,transf=
   # 
   # cowplot::plot_grid(base_plot1, base_plot2, base_plot3,  nrow = 2, rel_heights = c(0.3, 0.3))
   
-pdf(file=paste(figurefolder,"/Figure_sim_RandObs_plots_ALL.pdf",sep=""),family=text_font,font=text_font,bg="white",width=double_col*0.8,height=double_col*0.7,pointsize=pointsize_less_than_2row2col) #height=page_height*0.25
+pdf(file=paste(figurefolder,"/Figure_sim_RandObs_plots_ALL.pdf",sep=""),family=text_font,font=text_font,bg="white",width=double_col*0.8,height=double_col*0.5,pointsize=pointsize_less_than_2row2col) #height=page_height*0.25
 replayPlot(sim_RandObs_plots$foragers)
 replayPlot(sim_RandObs_plots$random_workers)
 replayPlot(sim_RandObs_plots$nurses)
 dev.off()
 
-pdf(file=paste(figurefolder,"/Figure_sim_RandObs_plots_TASK.pdf",sep=""),family=text_font,font=text_font,bg="white",width=double_col*1.6,height=double_col*0.7,pointsize=pointsize_less_than_2row2col) #height=page_height*0.25
+pdf(file=paste(figurefolder,"/Figure_sim_RandObs_plots_TASK.pdf",sep=""),family=text_font,font=text_font,bg="white",width=double_col*1.45,height=double_col*0.6,pointsize=pointsize_less_than_2row2col) #height=page_height*0.25
 replayPlot(net_RandObs_TASK$saved_plot$net_mean_dist_small)
 dev.off()
 
