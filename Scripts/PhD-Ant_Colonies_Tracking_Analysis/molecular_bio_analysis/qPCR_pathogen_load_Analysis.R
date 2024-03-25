@@ -192,11 +192,11 @@ if (USER == "2A13_Office") {
 scripts_path <- paste0("/home/",usr,"/Ant_Tracking/Scripts/code_Social_Network_Plasticity_Exp_2018_AW/2_statistics_and_plotting/source")
 data_path    <- paste0("/home/",usr,"/Ant_Tracking/Data/PhD-Ant_Colonies_Tracking_Analysis")
 
-DATADIR <- paste0("/media/",usr,"/DISK4/Lasius-Bristol_pathogen_experiment/main_experiment/original_data")
-IMMUNITY_DATA <- paste0("/media/",usr,"/DISK4/EXP1_base_analysis/Personal_Immunity/Pathogen_Quantification_Data")
+DATADIR <- paste0("/media/",usr,"/Seagate Portable Drive/Lasius-Bristol_pathogen_experiment/main_experiment/original_data")
+IMMUNITY_DATA <- paste0("/media/",usr,"/Seagate Portable Drive/EXP1_base_analysis/Personal_Immunity/Pathogen_Quantification_Data")
 WORKDIR <- paste(data_path,"molecular_bio_analysis/", sep ="/")
 
-ProcessedData <- paste0("/media/",usr,"/DISK4/Lasius-Bristol_pathogen_experiment/main_experiment/processed_data/")
+ProcessedData <- paste0("/media/",usr,"/Seagate Portable Drive/Lasius-Bristol_pathogen_experiment/main_experiment/processed_data/")
 
 save_dir_plots <- paste0("/home/cf19810/Documents/RTqPCR_immune_genes_plots/")
 
@@ -236,8 +236,8 @@ if (!file.exists(paste(WORKDIR, "Adriano_qPCR_pathogen_load_MASTER_REPORT.csv", 
     Meta_all_combs <- Reduce(function(x, y) merge(x, y, all = TRUE), Meta_all_combs)
     
     # Meta_all_combs[which(Meta_all_combs$MbruDNA == "#DIV/0!"),] <- NA
-    # Non detected values manually set to 0.000001
-    No_CT_value <- 0.000001
+    # Non detected values manually set to 0.0003
+    No_CT_value <- 0.0003
     Meta_all_combs[which(Meta_all_combs$MbruDNA == "#DIV/0!"), "NOTE"] <- paste(Meta_all_combs[which(Meta_all_combs$MbruDNA == "#DIV/0!"), "NOTE"], "No CT is either no DNA or issue in extraction", sep = ".")
     Meta_all_combs[which(Meta_all_combs$MbruDNA == "#DIV/0!"), "MbruDNA"] <- No_CT_value # No CT (either no DNA or issue in extraction)
     
@@ -259,9 +259,12 @@ if (!file.exists(paste(WORKDIR, "Adriano_qPCR_pathogen_load_MASTER_REPORT.csv", 
     
     No_CT_REPs <- toString(Meta_all_combs[which(Meta_all_combs$MbruDNA == No_CT_value), "REP_treat"])
     
+    const <- min(Meta_all_combs$MbruDNA[which(Meta_all_combs$MbruDNA != 0)], na.rm = T) / 2
+    
+    
     ggplot(
       Meta_all_combs,
-      aes(x = Treatment, y = MbruDNA, group = Treatment, color = Treatment, label = REP_treat)
+      aes(x = Treatment, y = log(MbruDNA + const), group = Treatment, color = Treatment, label = REP_treat)
     ) +
       # geom_jitter(position = position_jitter(seed = 1)) +
       # geom_text(position = position_jitter(seed = 5),fontface = "bold") +
@@ -286,6 +289,11 @@ if (!file.exists(paste(WORKDIR, "Adriano_qPCR_pathogen_load_MASTER_REPORT.csv", 
 ##############################
 # The file contains the data for the first run (09/08/22) with 2 ants per colony + half of the pathogen colonies (up to the 3/11/22)
 DNA_Results <- read.csv(paste(IMMUNITY_DATA, "/02-11-22_Adriano-DNA_Results_Analysis_with_Identities_Path_plus_sampleShams.csv", sep = ""), header = T, stringsAsFactors = F, sep = ",")
+# #add sham to plot as per reviewer request
+# Sham_tests <- read.table(paste(IMMUNITY_DATA, "/220809-Adriano-MetIS2-colony-checkup_Analysis_with_Identities.txt", sep = ""), header = T, stringsAsFactors = F, sep = ",")
+# Sham_tests <- Sham_tests[Sham_tests$Treatment %in% c("BS", "SS"), ]
+# 
+
 
 # fix missing labels
 # names(DNA_Results)[which(names(DNA_Results)=="Sample_position")] <- "Ori_Well"
@@ -298,9 +306,9 @@ DNA_Results$Treatment <- RIGHT(DNA_Results$Colony, 2)
 # Select only pathogen treated colonies
 # DNA_Results <- DNA_Results[ which(DNA_Results$Treatment == "Big Pathogen" | DNA_Results$Treatment == "Small Pathogen") , ]
 # filter colonies with only handful of individuals
-DNA_Results <- DNA_Results %>%
-  group_by(Colony) %>%
-  filter(sum(NROW(Colony)) > 10)
+# DNA_Results <- DNA_Results %>%
+#   group_by(Colony) %>%
+#   filter(sum(NROW(Colony)) > 10)
 
 #ADD EXTRA Q
 ExtraQueens <- read.csv(paste(IMMUNITY_DATA, "/230127_additional_queens_sporeQtf_AW.csv", sep = ""), header = T, stringsAsFactors = F, sep = ",")
@@ -347,7 +355,7 @@ common_col_names <- intersect(names(DNA_Results), names(plate_positions))
 DNA_Results_annotated <- merge(DNA_Results, plate_positions, by = common_col_names, all.x = TRUE)
 # read  old metadata as it has the tag id identifier
 # in task_groups.txt (new data) what is called "tag" is the ant id ("changed for compatibility with Stroeymeyt pipeline)
-old_metadata <- read.table("/media/cf19810/DISK4/EXP1_base_analysis/EXP_summary_data/Metadata_Exp1_2021_2023-02-27.txt", header = T, stringsAsFactors = F, sep = ",")
+old_metadata <- read.table("/media/cf19810/Seagate Portable Drive/EXP1_base_analysis/EXP_summary_data/Metadata_Exp1_2021_2023-02-27.txt", header = T, stringsAsFactors = F, sep = ",")
 #add antID to DNA_Results_annotated
 colnames(old_metadata)[which(colnames(old_metadata) == "tagIDdecimal")] <- "TagID" #tagIDdecimal
 colnames(old_metadata)[which(colnames(old_metadata) == "REP_treat")] <- "Colony"
@@ -400,7 +408,7 @@ ggplot(
 DNA_Results_annotated$above_detection_threshold <- "T"
 #over Ct threshold
 DNA_Results_annotated[which(DNA_Results_annotated$Ct_mean > 37), "above_detection_threshold"] <- "F"
-# when Ct is missing and 0.000001 is assigned
+# when Ct is missing and 0.0003 is assigned
 DNA_Results_annotated[which(DNA_Results_annotated$MbruDNA == 0.0003), "above_detection_threshold"] <- "F"
 
 # remove  dead ants
@@ -426,12 +434,16 @@ levels(DNA_Results_annotated$Exposed)[levels(DNA_Results_annotated$Exposed) == "
 # Create new category Ant_status
 DNA_Results_annotated$Ant_status <- paste(DNA_Results_annotated$Exposed, DNA_Results_annotated$task_group)
 
+#fix leftovers
+DNA_Results_annotated[which(DNA_Results_annotated$MbruDNA == 1.000000e-06), "MbruDNA"] <- No_CT_value
+
+
 # save output!
 write.csv(DNA_Results_annotated, file = paste(data_path,"/molecular_bio_analysis/Adriano_qPCR_pathogen_load_MASTER_REPORT.csv",sep=""), row.names = FALSE)
 
 
 ### remove samples below threshold
-DNA_Results_annotated <- DNA_Results_annotated[which(DNA_Results_annotated$above_detection_threshold =="T"), ]
+#DNA_Results_annotated <- DNA_Results_annotated[which(DNA_Results_annotated$above_detection_threshold =="T"), ]
 }
 
 #####################################################################################
@@ -439,6 +451,16 @@ DNA_Results_annotated <- DNA_Results_annotated[which(DNA_Results_annotated$above
 #####################################################################################
 
 DNA_Results_annotated <- read.csv(paste(WORKDIR, "Adriano_qPCR_pathogen_load_MASTER_REPORT.csv", sep = "/"))
+
+#remove the rogue point
+DNA_Results_annotated <- DNA_Results_annotated[!(DNA_Results_annotated$treatment == "control.small" & DNA_Results_annotated$Ant_status == "untreated nurse"), ]
+
+# Select only pathogen treated colonies
+# DNA_Results <- DNA_Results[ which(DNA_Results$Treatment == "Big Pathogen" | DNA_Results$Treatment == "Small Pathogen") , ]
+# filter colonies with only handful of individuals
+# DNA_Results <- DNA_Results %>%
+#   group_by(Colony) %>%
+#   filter(sum(NROW(Colony)) > 10)
 
 
 ### HIST OF ANTS THAT RECEIVED A LOAD BY TASK
@@ -451,15 +473,22 @@ ggplot(DNA_Results_annotated, aes(x = log(MbruDNA), fill = Exposed)) +
 # create constant to make zeros a small number
 constant <- min(DNA_Results_annotated$MbruDNA[which(DNA_Results_annotated$MbruDNA != 0)], na.rm = T) / 2
 
+
+
+
 #####################################################################################
 ##### TEST DIFFERENCE OF MbruDNA.LOAD BETWEEN SIZES FOR EACH Ant_status (ANTTASK*TREATMENT CONDITION)
 
-m1 <- lmer(log10(MbruDNA + constant) ~ treatment * Ant_status + (1 | Colony), data = DNA_Results_annotated) # the "/" is for the nesting #  + (1|time_of_day)
+#test only among path cols
+DNA_Results_annotated1 <- subset(DNA_Results_annotated, treatment == "pathogen.big" | treatment == "pathogen.small")
+
+
+m1 <- lmer(log10(MbruDNA + constant) ~ treatment * Ant_status + (1 | Colony), data = DNA_Results_annotated1) # the "/" is for the nesting #  + (1|time_of_day)
 output_lmer(m1)
 anova(m1)
 
 #simplify as int is non sign
-m1 <- lmer(log10(MbruDNA + constant) ~ treatment + Ant_status + (1 | Colony), data = DNA_Results_annotated) # the "/" is for the nesting #  + (1|time_of_day)
+m1 <- lmer(log10(MbruDNA + constant) ~ treatment + Ant_status + (1 | Colony), data = DNA_Results_annotated1) # the "/" is for the nesting #  + (1|time_of_day)
 anova(m1)
 
 # for reporting: report sig. results from the Anova: " N=1040,  P<0.0001 (LMM, Ant_status)"
@@ -469,14 +498,15 @@ anova(m1)
 # produce post-hocs for significant
 posthoc_list <- compute_posthocs(m1)
 
-m2 <-  lmer(log10(MbruDNA + constant) ~ treatment + Ant_status + (1 | Colony), data = DNA_Results_annotated[which(DNA_Results_annotated$Ant_status!="treated nurse"),])
+m2 <-  lmer(log10(MbruDNA + constant) ~ treatment + Ant_status + (1 | Colony), data = DNA_Results_annotated1[which(DNA_Results_annotated1$Ant_status!="treated nurse"),])
 
 
 ### NOTE: No need for post-hocs if there is no significant interaction
-
-
 colScale_treatment1 <-
-  scale_color_manual(name = "treatment", values = myColors_Treatment[c("pathogen.big","pathogen.small")],labels = function(x) str_to_title(gsub("big", "large", gsub("\\.", " ", x))),drop=T) #for lines
+  scale_color_manual(name = "treatment", values = myColors_Treatment,labels = function(x) str_to_title(gsub("big", "large", gsub("\\.", " ", x))),drop=T) #for lines
+
+# colScale_treatment1 <-
+#   scale_color_manual(name = "treatment", values = myColors_Treatment[c("pathogen.big","pathogen.small")],labels = function(x) str_to_title(gsub("big", "large", gsub("\\.", " ", x))),drop=T) #for lines
 
 DNA_Results_annotated$treatment <- as.factor(DNA_Results_annotated$treatment)
 ############
@@ -508,13 +538,15 @@ load_plot <- ggplot(
   STYLE +
   guides(color = guide_legend(override.aes = list(size = 4))) + # This line will change the size of the points in the legend
   # theme(legend.position = "none") +
-  labs(y = "M. brunneum quantification\n\n\nng/µL per ant (log)", x= "task group" ) +
-  scale_x_discrete(labels = c("treated\n\n\nnurse","untreated\n\n\nforager","untreated\n\n\nnurse","queen")) +
+  labs(y = "M. brunneum quantification\nng/µL per ant (log)", x= "task group" ) +
+  scale_x_discrete(labels = c("treated\nnurse","untreated\nforager","untreated\nnurse","queen")) +
+  # labs(y = "M. brunneum quantification\n\n\nng/µL per ant (log)", x= "task group" ) +
+  # scale_x_discrete(labels = c("treated\n\n\nnurse","untreated\n\n\nforager","untreated\n\n\nnurse","queen")) +
   geom_text(data = posthoc_list$`Ant_status-m1`, aes(x = Ant_status, y = 1.5, label = letters, cex = 1, fontface = "plain"), show.legend = FALSE, inherit.aes = FALSE) #+ ,position = position_jitterdodge()
 
 
 SavePrint_plot(plot_obj = load_plot,
-               plot_name= "load_plot",
+               plot_name= "load_plot_withSham",
                plot_size = c(7, 4),
                font_size = 15,
                dataset_name="Pathogen",
@@ -523,9 +555,29 @@ SavePrint_plot(plot_obj = load_plot,
 
 #####################################################################################
 ##### TEST DIFFERENCE OF MbruDNA.LOAD BETWEEN SIZES ONLY FOR TREATED NURSES (ANTTASK*TREATMENT CONDITION)
-m3 <- lmer(log10(MbruDNA + constant) ~ treatment + (1 | Colony), data = DNA_Results_annotated[which(DNA_Results_annotated$Ant_status == "treated nurse"), ]) # the "/" is for the nesting #  + (1|time_of_day)
+m3 <- lm(log10(MbruDNA + constant) ~ treatment + (1 | Colony), data = DNA_Results_annotated1[which(DNA_Results_annotated1$Ant_status == "treated nurse"), ]) # the "/" is for the nesting #  + (1|time_of_day)
 output_lmer(m3)
 posthoc_list <- compute_posthocs(m3)
+
+
+# library(MASS)
+# 
+# # Find the best Box-Cox transformation
+# bc <- boxcox(MbruDNA ~ treatment, data = DNA_Results_annotated1)
+# 
+# # Identify the lambda value that maximizes the log-likelihood
+# lambda <- bc$x[which.max(bc$y)]
+# 
+# # Apply the Box-Cox transformation
+# DNA_Results_annotated1$MbruDNA_transformed <- (DNA_Results_annotated1$MbruDNA^lambda - 1) / lambda
+# 
+# # Fit the model with the transformed dependent variable
+# m3_transformed <- lmer(MbruDNA_transformed ~ treatment + (1 | Colony), data = DNA_Results_annotated1[which(DNA_Results_annotated1$Ant_status == "treated nurse"), ])
+# 
+# # Check the output and diagnostics of the new model
+# print(summary(m3_transformed))
+# 
+
 
 #####################################################################################
 #### PERMUTATION TEST to check for difference in VARIANCE of MbruDNA.LOAD in TREATED NURSES by TREATMENT
@@ -536,8 +588,8 @@ number_permutations <- 1000
 ## HERE ONLY FOR TREATED NURSES
 for (STATUS in c("treated nurse")) { # "untreated forager","untreated nurse"  ,
   # subset data by colony size
-  STATUS_large <- DNA_Results_annotated[which(DNA_Results_annotated$Treatment == "Big Pathogen" & DNA_Results_annotated$Ant_status == STATUS), ]
-  STATUS_small <- DNA_Results_annotated[which(DNA_Results_annotated$Treatment == "Small Pathogen" & DNA_Results_annotated$Ant_status == STATUS), ]
+  STATUS_large <- DNA_Results_annotated1[which(DNA_Results_annotated1$Treatment == "Big Pathogen" & DNA_Results_annotated1$Ant_status == STATUS), ]
+  STATUS_small <- DNA_Results_annotated1[which(DNA_Results_annotated1$Treatment == "Small Pathogen" & DNA_Results_annotated1$Ant_status == STATUS), ]
 
   large_colonies_list <- unique(STATUS_large$Colony)
 
